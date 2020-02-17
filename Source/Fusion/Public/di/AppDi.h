@@ -16,14 +16,15 @@
 #include <InputManager.h>
 #include <Renderable.h>
 #include <WidgetRepo.h>
-
 /// Models
 #include <Models/LoggerModel.h>
 #include <Models/PlayerModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
+#include <Presenters/PlayerViewportPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
+#include <Views/PlayerViewportView.h>
 
 namespace fusion {
 namespace di {
@@ -36,7 +37,8 @@ auto AppDiModule = []() {
 			LoggerModel,
 			SettingsRepo,
 			PlayerModel,
-			PlayerControllerPresenter
+			PlayerControllerPresenter,
+			PlayerViewportPresenter
 		>(),
 		boost::di::bind<app::Updateable*[]>().to<
 			app::AppWindow
