@@ -49,7 +49,7 @@ void LoggerSettings::Load(const std::string& filepath)
 	if (!in_fs.is_open())
 		return;
 
-	IStreamWrapper in_Sw(in_fs);
+	IStreamWrapper in_sw(in_fs);
 	Document doc;
 	doc.ParseStream(in_sw);
 
