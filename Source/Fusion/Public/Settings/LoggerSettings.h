@@ -7,15 +7,15 @@
 
 namespace fusion {
 ///
-class LoggerSetings : public Settings<WriterType::PrettyWriter>, public Settings<WriterType::File>
+class LoggerSettings : public Settings<WriterType::PrettyWriter>, public Settings<WriterType::File>
 {
 public:
 	std::string LogFilepath;
 
-	void save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& writer) override;
-	void load(rapidjson::Document& doc) override;
-	void save(const std::string& filepath) override;
-	void load(const std::string& filepath) override;	
+	void Save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& writer) override;
+	void Load(rapidjson::Document& doc) override;
+	void Save(const std::string& filepath) override;
+	void Load(const std::string& filepath) override;	
 };	///	!struct LoggerSettings
 }	///	!namespace fusion
 #endif	///	!__FUSION_PUBLIC_SETTINGS_LOGGERSETTINGS_H__
