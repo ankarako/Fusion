@@ -72,7 +72,8 @@ void SettingsRepo::Save(const std::string& filepath)
 		s->Save(writer);
 	writer.EndObject();
 	out_fs.close();
-	std::string savePath = std::experimental::filesystem::path(filepath).parent_path().generic_string();
+	//std::string savePath = std::experimental::filesystem::path(filepath).parent_path().generic_string();
+	std::string savePath = filepath;
 	m_Impl->m_SettingsSaved = true;
 	m_Impl->m_OnSettingsSavedSubject.get_subscriber().on_next(nullptr);
 }

@@ -105,7 +105,9 @@ PrintList("${FusionSettingsHdrFiles}" "Gathered Settings header files")
 file (GLOB FusionSettingsSrcFiles "Private/Settings/*.cpp")
 GroupSource("${FusionSettingsSrcFiles}" "Private\\Settings")
 PrintList("${FusionSettingsSrcFiles}" "Gathered Settings source files")
-
+#################
+# Fusion Project
+#################
 add_executable(
 	Fusion
 	"Source/main.cpp"
@@ -155,3 +157,8 @@ target_include_directories(Fusion PRIVATE "${3rdPartyPath}/plog/include")
 # add_subdirectory("${3rdPartyPath}/rapidjson" rapidjson)
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rapidjson/include")
 # set_target_properties(travis_doc PROPERTIES FOLDER "3rdParty")
+##################
+# VideoTranscoder
+##################
+add_subdirectory("../VideoTranscoder" VideoTranscoder)
+target_link_libraries(Fusion VideoTranscoder)

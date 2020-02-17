@@ -19,6 +19,11 @@
 
 /// Models
 #include <Models/LoggerModel.h>
+#include <Models/PlayerModel.h>
+/// Presenters
+#include <Presenters/PlayerControllerPresenter.h>
+///	Widgets
+#include <Views/PlayerControllerView.h>
 
 namespace fusion {
 namespace di {
@@ -29,7 +34,9 @@ auto AppDiModule = []() {
 		boost::di::bind<app::Initializable*[]>().to<
 			app::AppWindow,
 			LoggerModel,
-			SettingsRepo
+			SettingsRepo,
+			PlayerModel,
+			PlayerControllerPresenter
 		>(),
 		boost::di::bind<app::Updateable*[]>().to<
 			app::AppWindow
@@ -39,6 +46,9 @@ auto AppDiModule = []() {
 		>(),
 		boost::di::bind<app::Renderable>().to<
 			app::WidgetRepo
+		>(),
+		boost::di::bind<app::Widget*[]>().to<
+			PlayerControllerView
 		>(),
 		boost::di::bind<Settings<WriterType::File>>().to<SettingsRepo>()
 	);
