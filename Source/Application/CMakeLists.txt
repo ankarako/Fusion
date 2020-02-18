@@ -77,3 +77,8 @@ set_target_properties(ImGui PROPERTIES FOLDER "3rdParty")
 ########
 # only the include directory suffices
 target_include_directories(FusionApplication PRIVATE "${3rdPartyPath}/rxcpp/Rx/v2/src")
+#############
+# Font Icons
+#############
+# only the include dir suffices
+target_include_directories(FusionApplication PUBLIC "${3rdPartyPath}/IconFont")

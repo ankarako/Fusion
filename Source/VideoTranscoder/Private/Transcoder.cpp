@@ -13,4 +13,16 @@ void Transcoder::Initialize()
 	if (!m_FormatContext)
 		LOG_ERROR << "Failed to allocate memory for Format context.";
 }
+void Transcoder::LoadFile(const std::string& filepath)
+{
+	LOG_INFO << "Opening file: " << filepath;
+	if (!avformat_open_input(&m_FormatContext, filepath.c_str(), NULL, NULL))
+	{
+		throw std::runtime_error("Failed to load file: " + filepath);
+	}
+	LOG_INFO << "File: " << filepath;
+	LOG_INFO << "Format  : " << m_FormatContext->iformat->name;
+	LOG_INFO << "Duration: " << m_FormatContext->duration;
+	LOG_INFO << "Bit Rate: " << m_FormatContext->bit_rate;
+}
 }
