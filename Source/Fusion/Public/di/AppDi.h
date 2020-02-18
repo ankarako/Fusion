@@ -7,7 +7,8 @@
 #include <Updateable.h>
 #include <Destroyable.h>
 #include <Widget.h>
-#include <WindowFlags.h>>
+#include <WindowFlags.h>
+#include <FontManager.h>
 /// Core
 #include <Core/SettingsRepo.h>
 ///	implementations
@@ -19,12 +20,15 @@
 /// Models
 #include <Models/LoggerModel.h>
 #include <Models/PlayerModel.h>
+#include <Models/FileExplorerModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
+#include <Presenters/FileExplorerPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
+#include <Views/FileExplorerView.h>
 
 namespace fusion {
 namespace di {
@@ -34,17 +38,22 @@ auto AppDiModule = []() {
 	auto Injector = boost::di::make_injector(
 		boost::di::bind<app::Initializable*[]>().to<
 			app::AppWindow,
+			app::FontManager,
 			LoggerModel,
 			SettingsRepo,
 			PlayerModel,
 			PlayerControllerPresenter,
-			PlayerViewportPresenter
+			PlayerViewportPresenter,
+			FileExplorerModel,
+			FileExplorerPresenter,
+			FileExplorerView
 		>(),
 		boost::di::bind<app::Updateable*[]>().to<
 			app::AppWindow
 		>(),
 		boost::di::bind<app::Destroyable*[]>().to<
-			app::AppWindow
+			app::AppWindow,
+			FileExplorerModel
 		>(),
 		boost::di::bind<app::Renderable>().to<
 			app::WidgetRepo

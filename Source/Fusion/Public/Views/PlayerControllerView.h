@@ -2,15 +2,18 @@
 #define __FUSION_PUBLIC_VIEWS_PLAYERCONTROLLERVIEW_H__
 
 #include <Widget.h>
-
 #include <spimpl.h>
 
+namespace app {
+class FontManager;
+}
 namespace fusion {
 class PlayerControllerView : public app::Widget
 {
 public:
+	using fman_ptr_t = std::shared_ptr<app::FontManager>;
 	/// Construction
-	PlayerControllerView();
+	PlayerControllerView(fman_ptr_t fman);
 	///	widget rendering
 	void Render() override;
 private:

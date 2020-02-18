@@ -6,9 +6,12 @@ namespace fusion {
 ///	\brief	PlayerModel implementation
 struct PlayerModel::Impl
 {
-	video::Transcoder m_Transcoder;
+	using transcoder_ptr_t = std::shared_ptr<video::Transcoder>;
+	transcoder_ptr_t	m_Transcoder;
 	/// Construction
-	Impl() { }
+	Impl() 
+		: m_Transcoder(std::make_shared<video::Transcoder>())
+	{ }
 };	///	!struct Impl
 /// Construction
 ///	\brief default constructor
@@ -21,7 +24,7 @@ PlayerModel::~PlayerModel() { }
 ///
 void PlayerModel::Init()
 {
-	m_Impl->m_Transcoder.Initialize();
+	m_Impl->m_Transcoder->Initialize();
 }
 ///	\brief open a video file
 void PlayerModel::LoadFile(const std::string& filepath)

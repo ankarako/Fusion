@@ -4,13 +4,18 @@
 #include <Widget.h>
 #include <spimpl.h>
 
+namespace app {
+class FontManager;
+}
+
 namespace fusion {
 ///	\class PlayerViewportView
 class PlayerViewportView : public app::Widget
 {
 public:
+	using fman_ptr_t = std::shared_ptr<app::FontManager>;
 	/// Construction
-	PlayerViewportView();
+	PlayerViewportView(fman_ptr_t fman);
 	///	widget render
 	void Render() override;
 private:

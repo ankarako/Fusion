@@ -162,3 +162,16 @@ target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rapidjson/include")
 ##################
 add_subdirectory("../VideoTranscoder" VideoTranscoder)
 target_link_libraries(Fusion VideoTranscoder)
+#### copy resources
+# we use configure_file() instead file() because it creates a 
+# file-level dependency
+# \see: https://stackoverflow.com/questions/34799916/copy-file-from-source-directory-to-binary-directory-using-cmake
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/calibri.ttf" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/calibri.ttf" COPYONLY)
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/fa-regular-400.ttf" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/fa-regular-400.ttf" COPYONLY)
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/MaterialIcons-Regular.ttf" COPYONLY)
