@@ -25,10 +25,12 @@
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
 #include <Presenters/FileExplorerPresenter.h>
+#include <Presenters/MainToolbarPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
 #include <Views/FileExplorerView.h>
+#include <Views/MainToolbarView.h>
 
 namespace fusion {
 namespace di {
@@ -44,9 +46,10 @@ auto AppDiModule = []() {
 			PlayerModel,
 			PlayerControllerPresenter,
 			PlayerViewportPresenter,
-			FileExplorerModel,
+			FileExplorerView,
 			FileExplorerPresenter,
-			FileExplorerView
+			FileExplorerModel,		
+			MainToolbarPresenter
 		>(),
 		boost::di::bind<app::Updateable*[]>().to<
 			app::AppWindow

@@ -38,7 +38,5 @@ void FileExplorerPresenter::Init()
 	m_Impl->m_Model->CurrentDirHierarchyFlowOut().subscribe(m_Impl->m_View->CurrentDirHierarchyIn());
 	m_Impl->m_Model->DriveCountFlowOut().subscribe(m_Impl->m_View->DriveCountFlowIn());
 	m_Impl->m_Model->DriveLettersFlowOut().subscribe(m_Impl->m_View->DriveLettersFlowIn());
-
-	m_Impl->m_View->Activate();
 }
 }	///	!namespace fusion
