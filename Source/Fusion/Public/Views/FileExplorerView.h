@@ -9,14 +9,17 @@
 #include <string>
 #include <rxcpp/rx.hpp> 
 
+namespace app {
+class FontManager;
+}
+
 namespace fusion {
-///	\enum FileExplorerMode
-///	\brief open or save
 enum class FileExplorerMode
 {
-	Open,
-	Save
-};
+	OpenProject,
+	SaveProject,
+	OpenVideoFile,
+};	///	!enum FileExplorerCommand
 ///	\class FileExplorerView
 ///	\brief the file exploer widget
 class FileExplorerView : public app::Widget, public app::Initializable
@@ -24,8 +27,9 @@ class FileExplorerView : public app::Widget, public app::Initializable
 public:
 	using drive_letter_array = std::shared_ptr<std::vector<std::string>>;
 	using dir_entry_array	= std::shared_ptr<std::vector<DirEntry>>;
-
-	FileExplorerView();
+	using fman_ptr_t = std::shared_ptr<app::FontManager>;
+	
+	FileExplorerView(fman_ptr_t fman);
 
 	void Init() override;
 	void Render() override;
@@ -36,6 +40,9 @@ public:
 	rxcpp::observer<dir_entry_array> CurrentDirHierarchyIn();
 	rxcpp::observer<unsigned int> DriveCountFlowIn();
 	rxcpp::observer<drive_letter_array> DriveLettersFlowIn();
+	rxcpp::observable<std::string> OpenProjectFileFlowOut();
+	rxcpp::observable<std::string> SaveProjectFileFlowOut();
+	rxcpp::observable<std::string> OpenVideoFileFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

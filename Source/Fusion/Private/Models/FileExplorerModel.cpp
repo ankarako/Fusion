@@ -46,15 +46,14 @@ struct FileExplorerModel::Impl
 		DWORD drive_buf_len = k_DriveBufferLength;
 		TCHAR DriveBuffer[k_DriveBufferLength];
 		memset(DriveBuffer, 0, k_DriveBufferLength * sizeof(TCHAR));
-		SetLastError(0);
 		DWORD res = GetLogicalDriveStrings(drive_buf_len, DriveBuffer);
-		if (res)
-		{
-			std::string msg = "Cannot get the hardware drives from the platform: " + std::to_string(res);
-			throw std::exception(msg.c_str());
-		}
+		//if (res)
+		//{
+		//	std::string msg = "Cannot get the hardware drives from the platform: " + std::to_string(res);
+		//	throw std::exception(msg.c_str());
+		//}
 		TCHAR* pcd = DriveBuffer;
-		while (pcd)
+		while (*pcd)
 		{
 			std::string d = std::string(1, char(*pcd)) + ":";
 			m_DriveLetters->emplace_back(d);
@@ -130,14 +129,15 @@ void FileExplorerModel::Init() noexcept
 		m_Impl->m_CurrentDirectory = std::experimental::filesystem::current_path().generic_string();
 		out_ini_fs << m_Impl->m_CurrentDirectory;
 		out_ini_fs.close();
+		in_ini_fs = std::ifstream("fileexplorer.ini");
 	}
-	in_ini_fs = std::ifstream("fileexplorer.ini");
 	if (in_ini_fs.good())
 	{
 		std::string curdir;
 		while (std::getline(in_ini_fs, curdir))
 		{
 			m_Impl->m_CurrentDirectory = curdir;
+			m_Impl->CurrentDirectoryFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentDirectory);
 		}
 	}
 	in_ini_fs.close();
