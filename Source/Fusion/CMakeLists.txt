@@ -94,6 +94,18 @@ file (GLOB FusionCoreSrcFiles "Private/Core/*.cpp")
 GroupSource("${FusionCoreSrcFiles}" "Private\\Core")
 PrintList("${FusionCoreSrcFiles}" "Gathered Core source files")
 #############################
+# Gather Core UI header files
+#############################
+file (GLOB FusionCoreUIHdrFiles "Public/Core/UI/*.h")
+GroupSource("${FusionCoreUIHdrFiles}" "Public\\Core\\UI")
+PrintList("${FusionCoreUIHdrFiles}" "Gathered Core header files")
+#############################
+# Gather Core source files
+#############################
+file (GLOB FusionCoreUISrcFiles "Private/Core/UI/*.cpp")
+GroupSource("${FusionCoreUISrcFiles}" "Private\\Core\\UI")
+PrintList("${FusionCoreUISrcFiles}" "Gathered Core source files")
+#############################
 # Gather Settings header files
 #############################
 file (GLOB FusionSettingsHdrFiles "Public/Settings/*.h")
@@ -122,6 +134,8 @@ add_executable(
 	"${FusionViewsSrcFiles}"
 	"${FusionCoreHdrFiles}"
 	"${FusionCoreSrcFiles}"
+	"${FusionCoreUIHdrFiles}"
+	"${FusionCoreUISrcFiles}"
 	"${FusionSettingsHdrFiles}"
 	"${FusionSettingsSrcFiles}"
 )
@@ -162,6 +176,11 @@ target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rapidjson/include")
 ##################
 add_subdirectory("../VideoTranscoder" VideoTranscoder)
 target_link_libraries(Fusion VideoTranscoder)
+# target_link_libraries(Fusion FusionCommon)
+######
+# STB
+#####
+target_include_directories(Fusion PUBLIC "${3rdPartyPath}/stb")
 #### copy resources
 # we use configure_file() instead file() because it creates a 
 # file-level dependency

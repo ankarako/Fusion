@@ -62,21 +62,15 @@ target_include_directories(VideoTranscoder PUBLIC "Public")
 target_include_directories(VideoTranscoder PUBLIC "${3rdPartyPath}/ffmpeg-cpp/include")
 target_include_directories(VideoTranscoder PUBLIC "${3rdPartyPath}/ffmpeg-cpp/ffmpeg/include")
 # link to ffmpeg
-# add_library(ffmpegcpp_debug )
-# add_library(ffmpegcpp_release )
-# target_link_libraries(VideoTranscoder "${3rdPartyPath}/ffmpeg-cpp/lib/x64/Debug/ffmpeg-cpp.lib" debug)
 target_link_libraries(VideoTranscoder ${3rdPartyPath}/ffmpeg-cpp/lib/x64/Debug/ffmpeg-cpp.lib)
 target_link_libraries(VideoTranscoder ${3rdPartyPath}/ffmpeg-cpp/lib/x64/Release/ffmpeg-cpp.lib)
-# target_link_libraries(VideoTranscoder release "${ffmpegcpp_release}")
-
-# target_link_libraries(VideoTranscoder "${3rdPartyPath}/ffmpeg-win32/lib/avdevice-58.lib")
-# target_link_libraries(VideoTranscoder "${3rdPartyPath}/ffmpeg-win32/lib/avfilter-7.lib")
-# target_link_libraries(VideoTranscoder "${3rdPartyPath}/ffmpeg-win32/lib/avformat-58.lib")
-# target_link_libraries(VideoTranscoder "${3rdPartyPath}/ffmpeg-win32/lib/avutil-56.lib")
-# target_link_libraries(VideoTranscoder "${3rdPartyPath}/ffmpeg-win32/lib/postproc-55.lib")
-# target_link_libraries(VideoTranscoder "${3rdPartyPath}/ffmpeg-win32/lib/swresample-3.lib")
-# target_link_libraries(VideoTranscoder "${3rdPartyPath}/ffmpeg-win32/lib/swscale-5.lib")
 #########
 # plog
 #######
 target_include_directories(VideoTranscoder PRIVATE "${3rdPartyPath}/plog/include")
+#########
+# Common
+#########
+cmake_policy(SET CMP0079 NEW)
+add_subdirectory("../Common" FusionCommon)
+target_link_libraries(VideoTranscoder FusionCommon)
