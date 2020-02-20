@@ -57,5 +57,11 @@ void FileExplorerPresenter::Init()
 	{
 		m_Impl->m_Model->MoveUp();
 	});
+
+	m_Impl->m_View->OnMoveIntoDirectory().subscribe(
+		[this](auto dir) 
+	{
+		m_Impl->m_Model->MoveInto(dir);
+	});
 }
 }	///	!namespace fusion

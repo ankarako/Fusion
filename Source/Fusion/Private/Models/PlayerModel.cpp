@@ -29,7 +29,8 @@ void PlayerModel::Init()
 ///	\brief open a video file
 void PlayerModel::LoadFile(const std::string& filepath)
 {
-	return;
+	m_Impl->m_Transcoder->LoadFile(filepath);
+	m_Impl->m_Transcoder->InitializeDecoder();
 }
 ///	\brief get the loaded video's frame count
 ///	\return the video's frame count
@@ -52,7 +53,7 @@ void PlayerModel::SeekFrame(size_t index)
 ///	\brief start playback
 void PlayerModel::Play()
 {
-
+	m_Impl->m_Transcoder->DecoderStep();
 }
 ///	\brief pause playback
 void PlayerModel::Pause()

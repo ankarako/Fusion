@@ -13,6 +13,7 @@ namespace fusion {
 ///
 class PlayerModel;
 class PlayerControllerView;
+class FileExplorerView;
 
 ///	\class PlayerControllerPresenter
 ///	\brief presenter for controlling playeback
@@ -25,9 +26,11 @@ public:
 	using view_ptr_t = std::shared_ptr<PlayerControllerView>;
 	///	\typedef
 	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
+	///	\typedef 
+	using fexp_view_ptr_t = std::shared_ptr<FileExplorerView>;
 	/// Construction
 	///	\brief construct from model and view
-	PlayerControllerPresenter(model_ptr_t model, view_ptr_t view, wrepo_ptr_t wrepo);
+	PlayerControllerPresenter(model_ptr_t model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo);
 	///	\brief initialize the presenter
 	///	makes aubscriptions
 	void Init() override;

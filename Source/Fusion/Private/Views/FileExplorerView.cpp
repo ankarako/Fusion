@@ -10,9 +10,10 @@ struct FileExplorerView::Impl
 
 	FileExplorerMode	m_Mode;
 	drive_letter_array 	m_DriveLetters;
-	dir_entry_array		m_CurrentDirEntries;
+	//dir_entry_array		m_CurrentDirEntries;
 	dir_entry_array		m_CurrentDirHierarchy;
 	DirEntry			m_SelectedEntry;
+	std::vector<std::pair<bool, DirEntry>>	m_CurrentDirEntries;
 	unsigned int		m_DriveCount{ 0 };
 	std::string			m_CurrentDirectory;
 	std::string			m_SelectedFile;
@@ -60,7 +61,12 @@ void FileExplorerView::Init()
 	m_Impl->CurrentDirEntriesFlowInSubj.get_observable().subscribe(
 		[this](auto dentries) 
 	{
-		m_Impl->m_CurrentDirEntries = dentries;
+		//m_Impl->m_CurrentDirEntries = dentries;
+		m_Impl->m_CurrentDirEntries.clear();
+		for (int de = 0; de < dentries->size(); de++)
+		{
+			m_Impl->m_CurrentDirEntries.emplace_back(std::make_pair(false, dentries->at(de)));
+		}
 	});
 
 	m_Impl->CurrentDirHierarchyInSubj.get_observable().subscribe(
@@ -91,6 +97,7 @@ void FileExplorerView::Init()
 void FileExplorerView::Render() 
 {
 	bool selected = false;
+	ImGuiIO& io = ImGui::GetIO();
 	ImGui::PushFont(m_Impl->m_FontManager->GetFont(app::FontManager::FontType::Regular));
 	ImGui::Begin("File explorer");
 	{
@@ -109,9 +116,20 @@ void FileExplorerView::Render()
 		ImGui::PushItemWidth(60);
 		if (ImGui::BeginCombo("##drivecombo", m_Impl->m_CurrentSelectedDrive.c_str()))
 		{
-			for (int dr = 0; dr < m_Impl->m_CurrentDirEntries->size(); dr++)
+			for (int dr = 0; dr < m_Impl->m_DriveLetters->size(); dr++)
 			{
-				//bool currentSelectedDrive = m_Impl->m_CurrentSelectedDrive == m_Impl->m_DriveLetters->at(dr);
+				bool currentSelectedDrive = m_Impl->m_CurrentSelectedDrive == m_Impl->m_DriveLetters->at(dr);
+				if (ImGui::Selectable(m_Impl->m_DriveLetters->at(dr).c_str(), currentSelectedDrive))
+				{
+					m_Impl->m_CurrentSelectedDrive = m_Impl->m_DriveLetters->at(dr);
+					std::string path = m_Impl->m_CurrentSelectedDrive + "/";
+					m_Impl->OnMoveIntoClickedSubj.get_subscriber().on_next(path);
+					memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+				}
+				if (currentSelectedDrive)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
 			}
 			ImGui::EndCombo();
 		}
@@ -123,33 +141,65 @@ void FileExplorerView::Render()
 			if (ImGui::Button(label.c_str()))
 			{
 				m_Impl->OnMoveIntoClickedSubj.get_subscriber().on_next(m_Impl->m_CurrentDirHierarchy->at(dh).AbsPath);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 			}
 		}
 		ImGui::Separator();
 		ImGui::BeginChild("ScrollingRegion##fexp", m_Impl->m_ContentWindowSize);
 		{
 			/// display current dir entries
-			for (int de = 0; de < m_Impl->m_CurrentDirEntries->size(); de++)
+			for (int de = 0; de < m_Impl->m_CurrentDirEntries.size(); de++)
 			{
-				if (m_Impl->m_CurrentDirEntries->at(de).EntryType == DirEntry::Type::Folder)
+				if (m_Impl->m_CurrentDirEntries[de].second.EntryType == DirEntry::Type::Folder)
 				{
-					std::string label = std::string(ICON_MD_FOLDER) + m_Impl->m_CurrentDirEntries->at(de).Name;
-					if (ImGui::Selectable(label.c_str(), &selected))
+					std::string label = std::string(ICON_MD_FOLDER) + std::string(" ") + m_Impl->m_CurrentDirEntries[de].second.Name;
+					if (ImGui::Selectable(label.c_str(), &m_Impl->m_CurrentDirEntries[de].first))
 					{
-
+						m_Impl->m_SelectedEntry = m_Impl->m_CurrentDirEntries[de].second;
+					}
+					if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0))
+					{
+						m_Impl->OnMoveIntoClickedSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+						memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+					}
+					if (ImGui::IsItemClicked(0) && ImGui::IsMouseClicked(0))
+					{
+						strcpy(m_Impl->m_InputTextBuffer, m_Impl->m_SelectedEntry.Name.c_str());
 					}
 				}
+				m_Impl->m_CurrentDirEntries[de].first = false;
 			}
-			for (int de = 0; de < m_Impl->m_CurrentDirEntries->size(); de++)
+			for (int de = 0; de < m_Impl->m_CurrentDirEntries.size(); de++)
 			{
-				if (m_Impl->m_CurrentDirEntries->at(de).EntryType == DirEntry::Type::File)
+				if (m_Impl->m_CurrentDirEntries[de].second.EntryType == DirEntry::Type::File)
 				{
-					std::string label = std::string(ICON_MD_DESCRIPTION) + m_Impl->m_CurrentDirEntries->at(de).Name;
-					if (ImGui::Selectable(label.c_str(), &selected))
+					std::string label = std::string(ICON_MD_DESCRIPTION) + std::string(" ") + m_Impl->m_CurrentDirEntries[de].second.Name;
+					if (ImGui::Selectable(label.c_str(), &m_Impl->m_CurrentDirEntries[de].first))
 					{
-
+						m_Impl->m_SelectedEntry = m_Impl->m_CurrentDirEntries[de].second;
+					}
+					if (ImGui::IsItemClicked(0) && ImGui::IsMouseClicked(0) && !io.KeyCtrl)
+					{
+						strcpy(m_Impl->m_InputTextBuffer, m_Impl->m_SelectedEntry.Name.c_str());
+					}
+					if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0))
+					{
+						m_Impl->m_SelectedEntry = m_Impl->m_CurrentDirEntries[de].second;
+						if (m_Impl->m_Mode == FileExplorerMode::OpenProject)
+						{
+							m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+							memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+							this->Deactivate();
+						}
+						else if (m_Impl->m_Mode == FileExplorerMode::OpenVideoFile)
+						{
+							m_Impl->OpenVideoFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+							memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+							this->Deactivate();
+						}
 					}
 				}
+				m_Impl->m_CurrentDirEntries[de].first = false;
 			}
 		}
 		ImGui::EndChild();
@@ -159,22 +209,32 @@ void FileExplorerView::Render()
 		{
 			if (ImGui::Button("Open"))
 			{
-
+				m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+				this->Deactivate();
 			}
 		}
 		else if (m_Impl->m_Mode == FileExplorerMode::OpenVideoFile)
 		{
 			if (ImGui::Button("Open"))
 			{
-
+				m_Impl->OpenVideoFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+				this->Deactivate();
 			}
 		}
 		else if (m_Impl->m_Mode == FileExplorerMode::SaveProject)
 		{
 			if (ImGui::Button("Save"))
 			{
-
+				this->Deactivate();
 			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel"))
+		{
+			memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+			this->Deactivate();
 		}
 	}
 	ImGui::End();
