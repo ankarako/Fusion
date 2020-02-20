@@ -48,11 +48,6 @@ struct FileExplorerModel::Impl
 		TCHAR DriveBuffer[k_DriveBufferLength];
 		memset(DriveBuffer, 0, k_DriveBufferLength * sizeof(TCHAR));
 		DWORD res = GetLogicalDriveStrings(drive_buf_len, DriveBuffer);
-		//if (res)
-		//{
-		//	std::string msg = "Cannot get the hardware drives from the platform: " + std::to_string(res);
-		//	throw std::exception(msg.c_str());
-		//}
 		TCHAR* pcd = DriveBuffer;
 		while (*pcd)
 		{
@@ -78,10 +73,20 @@ struct FileExplorerModel::Impl
 	DirEntry ConvertToEntry(const std::string& entry)
 	{
 		std::experimental::filesystem::path p(entry);
+		DirEntry::Type type;
+		if (std::experimental::filesystem::is_directory(p))
+		{
+			type = DirEntry::Type::Folder;
+		}
+		else
+		{
+			type = DirEntry::Type::File;
+		}
+
 		DirEntry dentry{
 			p.filename().generic_string(),
 			p.generic_string(),
-			(std::experimental::filesystem::is_directory(p) ? DirEntry::Type::Folder : DirEntry::Type::File)
+			type	
 		};
 		return dentry;
 	}
@@ -143,9 +148,9 @@ void FileExplorerModel::Init() noexcept
 		}
 	}
 	in_ini_fs.close();
+	m_Impl->GetSystemDrives();
 	m_Impl->GetCurrentDirectoryEntries();
 	m_Impl->GetCurrentDirHierarchy();
-	m_Impl->GetSystemDrives();
 }
 ///	\brief destroy the file explorer
 void FileExplorerModel::Destroy() noexcept
