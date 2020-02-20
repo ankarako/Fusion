@@ -102,8 +102,6 @@ void FileExplorerView::Render()
 	ImGui::Begin("File explorer");
 	{
 		/// display current directory
-		/*ImGui::Text(m_Impl->m_CurrentDirectory.c_str());
-		ImGui::Separator();*/
 		if (ImGui::Button(ICON_MD_ARROW_UPWARD "##moveup"))
 		{
 			if (m_Impl->m_CurrentDirHierarchy->size() > 1)
@@ -156,18 +154,15 @@ void FileExplorerView::Render()
 					if (ImGui::Selectable(label.c_str(), &m_Impl->m_CurrentDirEntries[de].first))
 					{
 						m_Impl->m_SelectedEntry = m_Impl->m_CurrentDirEntries[de].second;
+						m_Impl->m_CurrentDirEntries[de].first = false;
+						strcpy_s(m_Impl->m_InputTextBuffer, m_Impl->m_SelectedEntry.Name.c_str());
 					}
 					if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0))
 					{
 						m_Impl->OnMoveIntoClickedSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
 						memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 					}
-					if (ImGui::IsItemClicked(0) && ImGui::IsMouseClicked(0))
-					{
-						strcpy(m_Impl->m_InputTextBuffer, m_Impl->m_SelectedEntry.Name.c_str());
-					}
 				}
-				m_Impl->m_CurrentDirEntries[de].first = false;
 			}
 			for (int de = 0; de < m_Impl->m_CurrentDirEntries.size(); de++)
 			{
@@ -177,9 +172,7 @@ void FileExplorerView::Render()
 					if (ImGui::Selectable(label.c_str(), &m_Impl->m_CurrentDirEntries[de].first))
 					{
 						m_Impl->m_SelectedEntry = m_Impl->m_CurrentDirEntries[de].second;
-					}
-					if (ImGui::IsItemClicked(0) && ImGui::IsMouseClicked(0) && !io.KeyCtrl)
-					{
+						m_Impl->m_CurrentDirEntries[de].first = false;
 						strcpy(m_Impl->m_InputTextBuffer, m_Impl->m_SelectedEntry.Name.c_str());
 					}
 					if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0))
@@ -199,7 +192,6 @@ void FileExplorerView::Render()
 						}
 					}
 				}
-				m_Impl->m_CurrentDirEntries[de].first = false;
 			}
 		}
 		ImGui::EndChild();

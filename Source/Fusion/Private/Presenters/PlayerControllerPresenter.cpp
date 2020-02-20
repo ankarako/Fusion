@@ -42,6 +42,7 @@ void PlayerControllerPresenter::Init()
 		[this](auto filepath) 
 	{
 		m_Impl->m_Model->LoadFile(filepath);
+		m_Impl->m_View->Activate();
 	}, [this](std::exception_ptr ex_ptr) 
 	{
 		try {
@@ -53,6 +54,7 @@ void PlayerControllerPresenter::Init()
 		catch (std::exception& ex)
 		{
 			LOG_ERROR << ex.what();
+			m_Impl->m_Model->Destroy();
 		}
 	});
 
@@ -79,7 +81,5 @@ void PlayerControllerPresenter::Init()
 	{
 		//m_Impl->m_Model->Se
 	});
-
-	m_Impl->m_View->Activate();
 }
 }	///	!namespace fusion

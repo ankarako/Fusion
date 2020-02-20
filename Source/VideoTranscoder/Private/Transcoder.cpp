@@ -8,40 +8,11 @@ Transcoder::Transcoder() { }
 /// Destruction
 Transcoder::~Transcoder()
 {
-	if (m_AVFormatContext)
-	{
-		avformat_close_input(&m_AVFormatContext);
-		avformat_free_context(m_AVFormatContext);
-	}
-	if (m_CurrentVideoPacket)
-	{
-		av_packet_free(&m_CurrentVideoPacket);
-	}
-	if (m_CurrentAudioPacket)
-	{
-		av_packet_free(&m_CurrentAudioPacket);
-	}
-	if (m_CurrentVideoFrame)
-	{
-		av_frame_free(&m_CurrentVideoFrame);
-	}
-	if (m_CurrentAudioFrame)
-	{
-		av_frame_free(&m_CurrentAudioFrame);
-	}
-	if (m_VCodecContext)
-	{
-		avcodec_free_context(&m_VCodecContext);
-	}
-	if (m_ACodecContext)
-	{
-		avcodec_free_context(&m_ACodecContext);
-	}
-	
+	Destroy();
 }
 ///	\brief Initialize the transcoding context
 ///	Allocates an av format context
-void Transcoder::Initialize()
+void Transcoder::InitializeContext()
 { 
 	m_AVFormatContext = avformat_alloc_context();
 	if (!m_AVFormatContext)
@@ -137,7 +108,7 @@ void Transcoder::LoadFile(const std::string& filepath)
 	}
 }
 ///
-void Transcoder::InitializeDecoder()
+void Transcoder::InitializeDecoderContext()
 {
 	if (avcodec_open2(m_VCodecContext, m_VCodec, NULL) < 0)
 	{
@@ -149,37 +120,67 @@ void Transcoder::InitializeDecoder()
 		std::string msg = "Failed to open audio codec.";
 		throw std::exception(msg.c_str());
 	}
-	m_CurrentVideoFrame = av_frame_alloc();
-	if (!m_CurrentVideoFrame)
+	///
+	m_TempVideoFrame = av_frame_alloc();
+	if (!m_TempVideoFrame)
 	{
 		std::string msg = "Failed to allocate frame for decoding.";
 		throw std::exception(msg.c_str());
 	}
-	m_CurrentVideoPacket = av_packet_alloc();
-	if (!m_CurrentVideoPacket)
+	///
+	m_TempVideoPacket = av_packet_alloc();
+	if (!m_TempVideoPacket)
 	{
 		std::string msg = "Failed to allocate packet for decoding.";
 		throw std::exception(msg.c_str());
 	}
+	/// Create Buffers for Video and audio frames
+	m_CurrentVideoFrame 
+		= fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(fu::Dims{ m_VCodecContext->width, m_VCodecContext->height, 1});
+	/*m_CurrentAudioFrame
+		= fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(fu::Dims{ m_VCodecContext->width, m_VCodecContext->height, 1 });*/
+
+}
+///
+void Transcoder::InitializeSwScaleContext()
+{
+	m_SwsContext = sws_getContext(
+		m_VCodecContext->width,
+		m_VCodecContext->height,
+		m_VCodecContext->pix_fmt,
+		m_VCodecContext->width,
+		m_VCodecContext->height,
+		AV_PIX_FMT_0RGB32,
+		SWS_BILINEAR,
+		NULL,
+		NULL,
+		NULL
+	);
 }
 ///
 void Transcoder::DecoderStep()
 {
+	int frameFinished = false;
+	av_init_packet(m_TempVideoPacket);
 	for (int i = 0; i < m_StreamCount; i++)
 	{
 		if (i == m_VideoStreamIndex)
 		{
-			if (av_read_frame(m_AVFormatContext, m_CurrentVideoPacket) >= 0)
+			while (av_read_frame(m_AVFormatContext, m_TempVideoPacket) >= 0)
 			{
-				int resp = DecodePacket(m_CurrentVideoPacket, m_VCodecContext, m_CurrentVideoFrame);
+				DecodePacket(m_TempVideoPacket, m_VCodecContext, m_TempVideoFrame);
+				if (frameFinished)
+				{
+					AVPicture pic;
+				}
 				
 			}
 		}
 		else if (i == m_AudioStreamIndex)
 		{
-			if (av_read_frame(m_AVFormatContext, m_CurrentAudioPacket) >= 0)
+			if (av_read_frame(m_AVFormatContext, m_TempAudioPacket) >= 0)
 			{
-				int resp = DecodePacket(m_CurrentAudioPacket, m_ACodecContext, m_CurrentAudioFrame);
+				int resp = DecodePacket(m_TempAudioPacket, m_ACodecContext, m_TempAudioFrame);
 			}
 		}
 	}
@@ -194,7 +195,7 @@ int Transcoder::DecodePacket(AVPacket* packet, AVCodecContext* codecCtx, AVFrame
 		char buf[64];
 		av_strerror(response, buf, sizeof(buf));
 		std::string msg = "Failed to send packet to codec context. Error: " + std::string(buf);
-		throw std::exception(msg.c_str());
+		//LOG_ERROR << msg;
 	}
 	while (response >= 0)
 	{
@@ -202,6 +203,10 @@ int Transcoder::DecodePacket(AVPacket* packet, AVCodecContext* codecCtx, AVFrame
 		response = avcodec_receive_frame(codecCtx, frame);
 		if (response == AVERROR(EAGAIN) || response == AVERROR_EOF)
 		{
+			char buf[64];
+			av_strerror(response, buf, sizeof(buf));
+			std::string msg = "Failed to send packet to codec context. Error: " + std::string(buf);
+			//LOG_WARNING << msg;
 			break;
 		}
 		else if (response < 0)
@@ -215,12 +220,63 @@ int Transcoder::DecodePacket(AVPacket* packet, AVCodecContext* codecCtx, AVFrame
 		{
 			LOG_DEBUG << "Frame    : " << codecCtx->frame_number;
 			LOG_DEBUG << "Type     : " << av_get_picture_type_char(frame->pict_type);
+			LOG_DEBUG << "Format   : " << frame->format;
 			LOG_DEBUG << "Size     : " << frame->pkt_size;
 			LOG_DEBUG << "Pts      : " << frame->pts;
 			LOG_DEBUG << "Key Frame: " << frame->key_frame;
 			LOG_DEBUG << "Pic Num. : " << frame->coded_picture_number;
+			LOG_WARNING << frame->data;
+			LOG_WARNING << frame->linesize;
+			memcpy(m_CurrentVideoFrame.Data(), frame->data, m_CurrentVideoFrame.GetByteSize());
 		}
 	}
-	return response;
+	return 0;
+}
+/// get current video frame buffer
+const Transcoder::vframe_buffer_t& Transcoder::GetCurrentVideoFrame() const
+{
+	fu::Dims dims{ 1, 0, 0 };
+	vframe_buffer_t frame_buffer = fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(dims);
+	return frame_buffer;
+}
+/// get curren audio frame buffer
+const Transcoder::aframe_buffer_t& Transcoder::GetCurrentAudioFrame() const
+{
+	fu::Dims dims{ 1, 0, 0 };
+	vframe_buffer_t frame_buffer = fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(dims);
+	return frame_buffer;
+}
+
+void Transcoder::Destroy()
+{
+	if (m_AVFormatContext)
+	{
+		avformat_close_input(&m_AVFormatContext);
+		avformat_free_context(m_AVFormatContext);
+	}
+	if (&m_TempVideoPacket)
+	{
+		av_packet_free(&m_TempVideoPacket);
+	}
+	if (m_TempAudioPacket)
+	{
+		av_packet_free(&m_TempAudioPacket);
+	}
+	if (m_TempVideoFrame)
+	{
+		av_frame_free(&m_TempVideoFrame);
+	}
+	if (m_TempAudioFrame)
+	{
+		av_frame_free(&m_TempAudioFrame);
+	}
+	if (m_VCodecContext)
+	{
+		avcodec_free_context(&m_VCodecContext);
+	}
+	if (m_ACodecContext)
+	{
+		avcodec_free_context(&m_ACodecContext);
+	}
 }
 }
