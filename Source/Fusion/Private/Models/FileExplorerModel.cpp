@@ -28,7 +28,8 @@ struct FileExplorerModel::Impl
 	rxcpp::subjects::subject<dir_entry_array>		CurrentDirEntriesFlowOutSubj;
 	rxcpp::subjects::subject<dir_entry_array>		CurrentDirHierarchyFlowOutSubj;
 	rxcpp::subjects::subject<unsigned int>			DriveCountFlowOutSubj;
-	rxcpp::subjects::subject<drive_letter_array>	DriveLetterFlowOutSubj;
+	rxcpp::subjects::subject<drive_letter_array>	DriveLettersFlowOutSubj;
+	rxcpp::subjects::subject<std::string>			CurrentSelectedDriveFlowOutSubj;
 	/// Contruction
 	Impl()
 	{
@@ -59,7 +60,7 @@ struct FileExplorerModel::Impl
 			m_DriveLetters->emplace_back(d);
 			pcd = &pcd[_tcslen(pcd) + 1];
 		}
-		DriveLetterFlowOutSubj.get_subscriber().on_next(m_DriveLetters);
+		DriveLettersFlowOutSubj.get_subscriber().on_next(m_DriveLetters);
 		DriveCountFlowOutSubj.get_subscriber().on_next(m_DriveLetters->size());
 #endif
 	}
@@ -100,6 +101,7 @@ struct FileExplorerModel::Impl
 					if (drive == parentName)
 					{
 						m_CurrentDrive = drive;
+						CurrentSelectedDriveFlowOutSubj.get_subscriber().on_next(m_CurrentDrive);
 					}
 				}
 				tmp = tmp.parent_path();
@@ -152,6 +154,10 @@ void FileExplorerModel::Destroy() noexcept
 	out_ini_fs << m_Impl->m_CurrentDirectory;
 	out_ini_fs.close();
 }
+rxcpp::observable<std::string> FileExplorerModel::CurrentSelectedDriveFlowOut()
+{
+	return m_Impl->CurrentSelectedDriveFlowOutSubj.get_observable().as_dynamic();
+}
 ///	\brief move one directory up
 void FileExplorerModel::MoveUp() noexcept
 {
@@ -197,7 +203,7 @@ rxcpp::observable<unsigned int> fusion::FileExplorerModel::DriveCountFlowOut()
 ///	\return a vector with the harware letters
 rxcpp::observable<FileExplorerModel::drive_letter_array> fusion::FileExplorerModel::DriveLettersFlowOut()
 {
-	return m_Impl->DriveLetterFlowOutSubj.get_observable().as_dynamic();
+	return m_Impl->DriveLettersFlowOutSubj.get_observable().as_dynamic();
 }
 rxcpp::observable<FileExplorerModel::dir_entry_array> fusion::FileExplorerModel::CurrentDirHierarchyFlowOut()
 {

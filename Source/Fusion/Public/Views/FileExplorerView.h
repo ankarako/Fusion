@@ -35,14 +35,19 @@ public:
 	void Render() override;
 	
 	void SetMode(FileExplorerMode mode);
-	rxcpp::observer<std::string> CurrentDirectoryFlowIn();
-	rxcpp::observer<dir_entry_array> CurrentDirEntriesFlowIn();
-	rxcpp::observer<dir_entry_array> CurrentDirHierarchyIn();
-	rxcpp::observer<unsigned int> DriveCountFlowIn();
+	/// Inputs
+	rxcpp::observer<std::string>		CurrentDirectoryFlowIn();
+	rxcpp::observer<dir_entry_array>	CurrentDirEntriesFlowIn();
+	rxcpp::observer<dir_entry_array>	CurrentDirHierarchyIn();
+	rxcpp::observer<unsigned int>		DriveCountFlowIn();
 	rxcpp::observer<drive_letter_array> DriveLettersFlowIn();
-	rxcpp::observable<std::string> OpenProjectFileFlowOut();
-	rxcpp::observable<std::string> SaveProjectFileFlowOut();
-	rxcpp::observable<std::string> OpenVideoFileFlowOut();
+	rxcpp::observer<std::string>		CurrentSelectedDriveFlowIn();
+	///	Outputs
+	rxcpp::observable<std::string>		OpenProjectFileFlowOut();
+	rxcpp::observable<std::string>		SaveProjectFileFlowOut();
+	rxcpp::observable<std::string>		OpenVideoFileFlowOut();
+	rxcpp::observable<void*>			OnMoveUpButtonClicked();
+	rxcpp::observable<std::string>		OnMoveIntoDirectory();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
