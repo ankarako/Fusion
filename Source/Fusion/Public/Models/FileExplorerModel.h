@@ -44,6 +44,9 @@ public:
 	///	\brief Get the hardware drive letters
 	///	\return a vector with the harware letters
 	rxcpp::observable<drive_letter_array> DriveLettersFlowOut();
+	///	\brief get the current selected drive
+	///	\return the current drive
+	rxcpp::observable<std::string> CurrentSelectedDriveFlowOut();
 	///	\brief move to the parent directory
 	void MoveUp() noexcept;
 	///	\brief move into a directory
