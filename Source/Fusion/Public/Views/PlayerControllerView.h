@@ -16,6 +16,12 @@ public:
 	PlayerControllerView(fman_ptr_t fman);
 	///	widget rendering
 	void Render() override;
+
+	rxcpp::observable<void*>	OnSeekBackwardButtonClicked();
+	rxcpp::observable<void*>	OnPlayButtonClicked();
+	rxcpp::observable<void*>	OnStopButtonClicked();
+	rxcpp::observable<void*>	OnSeekForwardButtonClicked();
+	rxcpp::observer<int>		FrameIdFlowIn();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
