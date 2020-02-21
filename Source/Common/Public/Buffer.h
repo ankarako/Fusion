@@ -61,6 +61,10 @@ struct Dims
 	int Width{ 0 };
 	int Height{ 0 };
 	int Depth{ 0 };
+	/// Construction
+	Dims(int w, int h, int d)
+		: Width(w), Height(h), Depth(d)
+	{ }
 };
 ///	\class Buffer
 ///	\brief a buffer of memory that lives on a device
@@ -79,7 +83,7 @@ public:
 	Buffer() = default;
 	///	\brief disallow public construction
 	///	\note construction only through create method
-	Buffer(Constructor priv, Dims dims) 
+	Buffer(Constructor, Dims dims) 
 		: m_Dims(dims)
 	{ 
 		size_t bytes = dims.Width * dims.Height * dims.Depth * sizeof(ElmtType);
