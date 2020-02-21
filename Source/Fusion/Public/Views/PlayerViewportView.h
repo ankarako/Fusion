@@ -18,7 +18,10 @@ public:
 	PlayerViewportView(fman_ptr_t fman);
 	///	widget render
 	void Render() override;
-private:
+	/// output events
+	rxcpp::observable<float>	OnViewportWidthChanged();
+	rxcpp::observable<float>	OnViewportHeightChanged();
+private:	
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class PlayerViewportView

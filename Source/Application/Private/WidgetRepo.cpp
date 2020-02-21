@@ -43,6 +43,7 @@ void WidgetRepo::Render()
 {
 	std::vector<widget_ptr_t> ws = m_Impl->m_Widgets;
 	for (auto w : ws)
-		w->Render();
+		if (w->IsActive())
+			w->Render();
 }
 }	///	!namespace app
