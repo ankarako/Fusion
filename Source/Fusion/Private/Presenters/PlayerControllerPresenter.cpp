@@ -79,7 +79,9 @@ void PlayerControllerPresenter::Init()
 	m_Impl->m_View->OnSeekForwardButtonClicked().subscribe(
 		[this](auto _) 
 	{
-		//m_Impl->m_Model->Se
+		
 	});
+
+	m_Impl->m_View->Deactivate();
 }
 }	///	!namespace fusion

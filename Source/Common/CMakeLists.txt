@@ -60,3 +60,13 @@ target_include_directories(FusionCommon PUBLIC "Public")
 target_include_directories(FusionCommon PUBLIC "${3rdPartyPath}/NVIDIA/OptiX6.5/include")
 target_link_libraries(FusionCommon ${3rdPartyPath}/NVIDIA/OptiX6.5/lib64/optix.6.5.0.lib)
 target_link_libraries(FusionCommon ${3rdPartyPath}/NVIDIA/OptiX6.5/lib64/optixu.6.5.0.lib)
+# and CUDA
+find_package(CUDA)
+target_link_libraries(FusionCommon "${CUDA_LIBRARIES}")
+target_include_directories(FusionCommon PUBLIC "${CUDA_INCLUDE_DIRS}")
+
+# find_package(Qt5 COMPONENTS Core REQUIRED)
+# target_link_libraries(FusionCommon Qt5::Core)
+## depends on open frameworks
+# add_subdirectory("${3rdPartyPath}/openFrameworks/addons/ofxCMake/project" oframeworks)
+# target_link_libraries(FusionCommon oframeworks)
