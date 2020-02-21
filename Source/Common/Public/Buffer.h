@@ -62,6 +62,8 @@ struct Dims
 	int Height{ 0 };
 	int Depth{ 0 };
 	/// Construction
+	Dims() { }
+	///
 	Dims(int w, int h, int d)
 		: Width(w), Height(h), Depth(d)
 	{ }
@@ -80,7 +82,7 @@ public:
 	/// Construction
 	///	\brief default constructor
 	///	does nothind
-	Buffer() = default;
+	Buffer() { };
 	///	\brief disallow public construction
 	///	\note construction only through create method
 	Buffer(Constructor, Dims dims) 
@@ -160,6 +162,11 @@ public:
 	void Download(Buffer<ElmtType, OtherProc>& otherStorage) 
 	{
 
+	}
+
+	void Deallocate()
+	{
+		m_Storage.Deallocate<Proc>();
 	}
 private:
 	BufferStorage m_Storage;

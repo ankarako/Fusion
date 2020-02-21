@@ -6,6 +6,7 @@
 #include <Destroyable.h>
 #include <spimpl.h>
 #include <string>
+#include <vector_types.h>
 #include <rxcpp/rx.hpp>
 
 namespace fusion {
@@ -14,7 +15,7 @@ namespace fusion {
 class PlayerModel : public app::Initializable, public app::Destroyable
 {
 public:
-	using vframe_buffer_t = fu::Buffer<float, fu::BufferStorageProc::CPU>;
+	using vframe_buffer_t = fu::Buffer<float3, fu::BufferStorageProc::CPU>;
 	using aframe_buffer_t = fu::Buffer<float, fu::BufferStorageProc::CPU>;
 	///	Construction
 	PlayerModel();
@@ -44,6 +45,8 @@ public:
 	///	\brief set frame rate
 	///	\param	fps	the frame rate to set
 	void SetFrameRate(int fps);
+	///	\brief set video width
+	///	\brief set video height
 	///	\brief get the current frame
 	///	\return the current frame
 	rxcpp::observable<vframe_buffer_t> VideoFrameFlowOut();

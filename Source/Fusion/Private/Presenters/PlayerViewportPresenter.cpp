@@ -33,6 +33,12 @@ void PlayerViewportPresenter::Init()
 		m_Impl->m_Wrepo->UnregisterWidget(m_Impl->m_View);
 	});
 
+	m_Impl->m_View->OnViewportWidthChanged().subscribe(
+		[this](float newWidth) 
+	{
+		//m_Impl->m_Model->
+	});
+
 	m_Impl->m_View->Activate();
 }
 }	///	!namespace fusion
