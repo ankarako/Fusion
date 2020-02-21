@@ -135,8 +135,9 @@ void Transcoder::InitializeDecoderContext()
 		throw std::exception(msg.c_str());
 	}
 	/// Create Buffers for Video and audio frames
+	fu::Dims dims(m_VCodecContext->width, m_VCodecContext->height, 1);
 	m_CurrentVideoFrame 
-		= fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(fu::Dims{ m_VCodecContext->width, m_VCodecContext->height, 1});
+		= fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(dims);
 	/*m_CurrentAudioFrame
 		= fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(fu::Dims{ m_VCodecContext->width, m_VCodecContext->height, 1 });*/
 
@@ -160,7 +161,6 @@ void Transcoder::InitializeSwScaleContext()
 ///
 void Transcoder::DecoderStep()
 {
-	int frameFinished = false;
 	av_init_packet(m_TempVideoPacket);
 	for (int i = 0; i < m_StreamCount; i++)
 	{
@@ -169,10 +169,10 @@ void Transcoder::DecoderStep()
 			while (av_read_frame(m_AVFormatContext, m_TempVideoPacket) >= 0)
 			{
 				DecodePacket(m_TempVideoPacket, m_VCodecContext, m_TempVideoFrame);
-				if (frameFinished)
-				{
-					AVPicture pic;
-				}
+				//if (frameFinished)
+				//{
+				//	AVPicture pic;
+				//}
 				
 			}
 		}
@@ -235,14 +235,14 @@ int Transcoder::DecodePacket(AVPacket* packet, AVCodecContext* codecCtx, AVFrame
 /// get current video frame buffer
 const Transcoder::vframe_buffer_t& Transcoder::GetCurrentVideoFrame() const
 {
-	fu::Dims dims{ 1, 0, 0 };
+	fu::Dims dims( 1, 0, 0 );
 	vframe_buffer_t frame_buffer = fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(dims);
 	return frame_buffer;
 }
 /// get curren audio frame buffer
 const Transcoder::aframe_buffer_t& Transcoder::GetCurrentAudioFrame() const
 {
-	fu::Dims dims{ 1, 0, 0 };
+	fu::Dims dims(1, 0, 0 );
 	vframe_buffer_t frame_buffer = fu::Buffer<float, fu::BufferStorageProc::CPU>::Create(dims);
 	return frame_buffer;
 }
