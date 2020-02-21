@@ -4,7 +4,7 @@
 #include <Buffer.h>
 #include <memory>
 #include <string>
-
+#include <vector_types.h>
 
 #include <ffmpegcpp.h>
 #include <CodecDeducer.h>
@@ -15,8 +15,9 @@ namespace video {
 class Transcoder
 {
 public:
-	using vframe_buffer_t = fu::Buffer<float, fu::BufferStorageProc::CPU>;
+	using vframe_buffer_t = fu::Buffer<float3, fu::BufferStorageProc::CPU>;
 	using aframe_buffer_t = fu::Buffer<float, fu::BufferStorageProc::CPU>;
+	using debug_frame_buffer_t = fu::Buffer<unsigned char, fu::BufferStorageProc::CPU>;
 	Transcoder();
 	~Transcoder();
 	void InitializeContext();
@@ -24,6 +25,7 @@ public:
 	void InitializeSwScaleContext();
 	void LoadFile(const std::string& filepath);
 	void DecoderStep();
+	void SetVideoScale(uint2 scale);
 	/// get video frame
 	const vframe_buffer_t& GetCurrentVideoFrame() const;
 	///	get audio frame
@@ -31,6 +33,7 @@ public:
 	void Destroy();
 private:
 	int DecodePacket(AVPacket* packet, AVCodecContext* codecCtx, AVFrame* frame);
+	void CopyFrameData2VBuffer(AVFrame* frame);
 private:
 	AVFormatContext*	m_AVFormatContext{ nullptr };
 	int					m_StreamCount{ 0 };
@@ -53,6 +56,8 @@ private:
 
 	vframe_buffer_t		m_CurrentVideoFrame;
 	aframe_buffer_t		m_CurrentAudioFrame;
+	debug_frame_buffer_t	m_DebugVideoFrame;
+	uint2				m_DimScale;
 };	///	!class Trancoder
 }	///	!namespace video
 #endif	///	!__VIDEOTRANSCODER_PUBLIC_TRANSCODER_H__

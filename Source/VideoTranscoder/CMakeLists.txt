@@ -71,6 +71,5 @@ target_include_directories(VideoTranscoder PRIVATE "${3rdPartyPath}/plog/include
 #########
 # Common
 #########
-cmake_policy(SET CMP0079 NEW)
 add_subdirectory("../Common" FusionCommon)
 target_link_libraries(VideoTranscoder FusionCommon)

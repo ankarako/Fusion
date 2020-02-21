@@ -61,6 +61,12 @@ struct Dims
 	int Width{ 0 };
 	int Height{ 0 };
 	int Depth{ 0 };
+	/// Construction
+	Dims() { }
+	///
+	Dims(int w, int h, int d)
+		: Width(w), Height(h), Depth(d)
+	{ }
 };
 ///	\class Buffer
 ///	\brief a buffer of memory that lives on a device
@@ -76,10 +82,10 @@ public:
 	/// Construction
 	///	\brief default constructor
 	///	does nothind
-	Buffer() = default;
+	Buffer() { };
 	///	\brief disallow public construction
 	///	\note construction only through create method
-	Buffer(Constructor priv, Dims dims) 
+	Buffer(Constructor, Dims dims) 
 		: m_Dims(dims)
 	{ 
 		size_t bytes = dims.Width * dims.Height * dims.Depth * sizeof(ElmtType);
@@ -156,6 +162,11 @@ public:
 	void Download(Buffer<ElmtType, OtherProc>& otherStorage) 
 	{
 
+	}
+
+	void Deallocate()
+	{
+		m_Storage.Deallocate<Proc>();
 	}
 private:
 	BufferStorage m_Storage;
