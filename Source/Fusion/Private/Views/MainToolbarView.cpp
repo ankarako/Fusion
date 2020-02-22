@@ -2,6 +2,7 @@
 #include <FontManager.h>
 #include <imgui.h>
 
+namespace fu {
 namespace fusion {
 ///	\struct Impl
 ///	\brief MainToolbarView implementation
@@ -80,5 +81,6 @@ rxcpp::observable<void*> fusion::MainToolbarView::OnFileMenu_SaveProjectClicked(
 rxcpp::observable<void*> fusion::MainToolbarView::OnFileMenu_OpenVideoFileClicked()
 {
 	return m_Impl->FileMenu_OpenVideoFileClickedSubj.get_observable().as_dynamic();
+}
 }
 }

@@ -3,6 +3,7 @@
 #include <FontManager.h>
 #include <FontDef.h>
 
+namespace fu {
 namespace fusion {
 struct FileExplorerView::Impl
 {
@@ -293,3 +294,4 @@ rxcpp::observer<std::string> fusion::FileExplorerView::CurrentSelectedDriveFlowI
 	return m_Impl->CurrentSelectedDriveFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 }	///	!namespace fusion
+}	///	!namespace fu

@@ -9,6 +9,7 @@
 #include <vector>
 #include <rxcpp/rx.hpp>
 
+namespace fu {
 namespace fusion {
 ///	\class FileExplorerModel
 ///	\brief File explorer logic
@@ -19,8 +20,8 @@ namespace fusion {
 class FileExplorerModel : public app::Initializable, public app::Destroyable
 {
 public:
-	using drive_letter_array	= std::shared_ptr<std::vector<std::string>>;
-	using dir_entry_array		= std::shared_ptr<std::vector<DirEntry>>;
+	using drive_letter_array = std::shared_ptr<std::vector<std::string>>;
+	using dir_entry_array = std::shared_ptr<std::vector<DirEntry>>;
 	/// Construction
 	FileExplorerModel();
 	///	\brief Initialization
@@ -58,4 +59,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class FileExplorerModel
 }	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_MODELS_FILEEXPLORERMODEL_H__

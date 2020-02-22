@@ -9,15 +9,17 @@
 namespace app {
 class WidgetRepo;
 }
-
+namespace fu {
+namespace trans {
+class DecodingContext;
+}
 namespace fusion {
-class PlayerModel;
 class PlayerViewportView;
 
 class PlayerViewportPresenter : public app::Initializable
 {
 public:
-	using model_ptr_t = std::shared_ptr<PlayerModel>;
+	using model_ptr_t = std::shared_ptr<trans::DecodingContext>;
 	using view_ptr_t = std::shared_ptr<PlayerViewportView>;
 	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
 	
@@ -28,4 +30,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class PlayerViewportPresenter
 }	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_PRESENTERS_PLAYERVIEWPORTPRESENTER_H__

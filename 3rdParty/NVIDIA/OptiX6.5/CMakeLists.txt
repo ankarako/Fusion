@@ -10,7 +10,7 @@ project (
 
 add_library(Optix_Shared "bin64/optix.6.5.0.dll")
 set_target_properties(Optix_Shared PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(Optix_Shared "lib64/optix.6.5.0.lib")
+target_link_libraries(Optix_Shared )
 target_include_directories(Optix_Shared PUBLIC "include")
 set_target_properties(Optix_Shared PROPERTIES FOLDER "3rdParty/OptiX6.5")
 

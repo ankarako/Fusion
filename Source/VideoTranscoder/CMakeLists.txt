@@ -67,9 +67,16 @@ target_link_libraries(VideoTranscoder ${3rdPartyPath}/ffmpeg-cpp/lib/x64/Release
 #########
 # plog
 #######
-target_include_directories(VideoTranscoder PRIVATE "${3rdPartyPath}/plog/include")
+target_include_directories(VideoTranscoder PUBLIC "${3rdPartyPath}/plog/include")
 #########
 # Common
 #########
 add_subdirectory("../Common" FusionCommon)
 target_link_libraries(VideoTranscoder FusionCommon)
+########
+# RxCpp
+########
+# only the include directory suffices
+target_include_directories(VideoTranscoder PUBLIC "${3rdPartyPath}/rxcpp/Rx/v2/src")
+
+### Copy binary files to output directory

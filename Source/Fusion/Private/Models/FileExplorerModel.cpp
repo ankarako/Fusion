@@ -10,7 +10,7 @@
 	#include <tchar.h>
 	//#include <wchar.h>
 #endif
-
+namespace fu {
 namespace fusion {
 ///	\struct Impl
 ///	\brief File explorer model implmentation
@@ -86,7 +86,7 @@ struct FileExplorerModel::Impl
 		DirEntry dentry{
 			p.filename().generic_string(),
 			p.generic_string(),
-			type	
+			type
 		};
 		return dentry;
 	}
@@ -166,7 +166,7 @@ rxcpp::observable<std::string> FileExplorerModel::CurrentSelectedDriveFlowOut()
 ///	\brief move one directory up
 void FileExplorerModel::MoveUp() noexcept
 {
-	m_Impl->m_CurrentDirectory = 
+	m_Impl->m_CurrentDirectory =
 		std::experimental::filesystem::path(m_Impl->m_CurrentDirectory).parent_path().generic_string();
 	m_Impl->GetCurrentDirectoryEntries();
 	m_Impl->GetCurrentDirHierarchy();
@@ -215,3 +215,4 @@ rxcpp::observable<FileExplorerModel::dir_entry_array> fusion::FileExplorerModel:
 	return m_Impl->CurrentDirHierarchyFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
+}	///	!namesoace fu

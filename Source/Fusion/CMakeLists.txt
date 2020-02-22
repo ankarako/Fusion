@@ -37,7 +37,7 @@ PrintList("${FusionFreeHdrFiles}" "Gathered Fusion free header files")
 # Gather free source files
 ###########################
 file (GLOB FusionFreeSrcFiles "Private/*.cpp")
-GroupSource("${FusionFreeSrcFiles}" "Public")
+GroupSource("${FusionFreeSrcFiles}" "Private")
 PrintList("${FusionFreeSrcFiles}" "Gathered Fusion free source files")
 #########################
 # Gather DI header files
@@ -141,6 +141,7 @@ add_executable(
 )
 #### set properties
 set_target_properties(Fusion PROPERTIES FOLDER "Fusion360")
+set_property(TARGET Fusion PROPERTY CXX_STANDARD 17)
 # set include directory
 target_include_directories(Fusion PUBLIC "Public")
 ###############
@@ -181,6 +182,32 @@ target_link_libraries(Fusion VideoTranscoder)
 # STB
 #####
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/stb")
+################
+# cpp-task flow
+################
+add_subdirectory("${3rdPartyPath}/cpp-taskflow" cpp_taskflow)
+target_include_directories(Fusion PRIVATE "${3rdPartyPath}/cpp-taskflow")
+# target_link_libraries(Fusion composition)
+# target_link_libraries(Fusion condition)
+# target_link_libraries(Fusion observer)
+# target_link_libraries(Fusion paraller_for)
+# target_link_libraries(Fusion reduce)
+# target_link_libraries(Fusion run)
+# target_link_libraries(Fusion simple)
+# target_link_libraries(Fusion subflow)
+# target_link_libraries(Fusion visualization)
+# set taskflow deps to 3rdparty folder
+set_target_properties(composition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(condition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(observer PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(parallel_for PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(reduce PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(run PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(simple PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(subflow PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(visualization PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# add_subdirectory("../Common" FusionCommon)
+# target_link_libraries(Fusion INTERFACE_LINK_OPTIONS FusionCommon)
 #### copy resources
 # we use configure_file() instead file() because it creates a 
 # file-level dependency

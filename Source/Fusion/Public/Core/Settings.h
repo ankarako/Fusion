@@ -8,6 +8,7 @@
 
 #include <string>
 
+namespace fu {
 namespace fusion {
 ///	\enum WriterType
 ///	\brief used for specializing settings classes
@@ -47,4 +48,5 @@ public:
 	virtual rxcpp::observable<void*> OnSettingsSaved() { return rxcpp::observable<void*>(); }
 };	///	!class Settings
 }	///	!namespace fusion
+}	///	namespace fu
 #endif	///	!__FUSION_PUBLIC_CORE_SETTNGS_H__

@@ -14,6 +14,7 @@
 
 #include <plog/Log.h>
 
+namespace fu {
 namespace fusion {
 ///	\struct Impl
 ///	\brief SettingsRepo Implementation
@@ -55,9 +56,9 @@ void SettingsRepo::RegisterSettings(settings_ptr_t s)
 void SettingsRepo::UnregisterSettings(settings_ptr_t s)
 {
 	m_Impl->m_Settings.erase(
-		std::remove_if(m_Impl->m_Settings.begin(), m_Impl->m_Settings.end(), [s](auto x) { 
-			return x == s;
-		}), m_Impl->m_Settings.end());
+		std::remove_if(m_Impl->m_Settings.begin(), m_Impl->m_Settings.end(), [s](auto x) {
+		return x == s;
+	}), m_Impl->m_Settings.end());
 }
 
 void SettingsRepo::Save(const std::string& filepath)
@@ -107,3 +108,4 @@ rxcpp::observable<void*> SettingsRepo::OnSettingsLoaded()
 }
 
 }	///	!namespace fusion
+}	///	!namespace fu

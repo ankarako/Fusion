@@ -9,6 +9,7 @@
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/writer.h>
 
+namespace fu {
 namespace fusion {
 
 void LoggerSettings::Save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& writer)
@@ -61,3 +62,4 @@ void LoggerSettings::Load(const std::string& filepath)
 	in_fs.close();
 }
 }	///	!namespace fusion
+}	///	!namespace fu

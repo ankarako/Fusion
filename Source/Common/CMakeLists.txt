@@ -64,7 +64,11 @@ target_link_libraries(FusionCommon ${3rdPartyPath}/NVIDIA/OptiX6.5/lib64/optixu.
 find_package(CUDA)
 target_link_libraries(FusionCommon "${CUDA_LIBRARIES}")
 target_include_directories(FusionCommon PUBLIC "${CUDA_INCLUDE_DIRS}")
-
+#######
+# entt
+#######
+# header only
+target_include_directories(FusionCommon PUBLIC "${3rdPartyPath}/entt/src")
 # find_package(Qt5 COMPONENTS Core REQUIRED)
 # target_link_libraries(FusionCommon Qt5::Core)
 ## depends on open frameworks

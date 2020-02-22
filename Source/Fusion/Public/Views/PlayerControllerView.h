@@ -7,6 +7,7 @@
 namespace app {
 class FontManager;
 }
+namespace fu {
 namespace fusion {
 class PlayerControllerView : public app::Widget
 {
@@ -27,4 +28,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class PlayerControllerView
 }	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_VIEWS_PLAYERCONTROLLERVIEW_H__

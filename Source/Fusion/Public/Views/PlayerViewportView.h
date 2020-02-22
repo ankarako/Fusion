@@ -8,6 +8,7 @@ namespace app {
 class FontManager;
 }
 
+namespace fu {
 namespace fusion {
 ///	\class PlayerViewportView
 class PlayerViewportView : public app::Widget
@@ -26,4 +27,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class PlayerViewportView
 }	///	!namespace fusion
+}
 #endif	///	!__FUSION_PUBLIC_VIEWS_PLAYERVIEWPORTVIEW_H__

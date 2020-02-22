@@ -1,8 +1,9 @@
 #include <Presenters/PlayerViewportPresenter.h>
-#include <Models/PlayerModel.h>
 #include <Views/PlayerViewportView.h>
+#include <DecodingContext.h>
 #include <WidgetRepo.h>
 
+namespace fu {
 namespace fusion {
 struct PlayerViewportPresenter::Impl
 {
@@ -10,7 +11,7 @@ struct PlayerViewportPresenter::Impl
 	view_ptr_t	m_View;
 	wrepo_ptr_t m_Wrepo;
 
-	Impl(model_ptr_t model, view_ptr_t view, wrepo_ptr_t wrepo) 
+	Impl(model_ptr_t model, view_ptr_t view, wrepo_ptr_t wrepo)
 		: m_Model(model), m_View(view), m_Wrepo(wrepo)
 	{ }
 };
@@ -34,7 +35,7 @@ void PlayerViewportPresenter::Init()
 	});
 
 	m_Impl->m_View->OnViewportWidthChanged().subscribe(
-		[this](float newWidth) 
+		[this](float newWidth)
 	{
 		//m_Impl->m_Model->
 	});
@@ -42,3 +43,4 @@ void PlayerViewportPresenter::Init()
 	m_Impl->m_View->Activate();
 }
 }	///	!namespace fusion
+}	///	!namespace fu

@@ -5,9 +5,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+namespace fu {
 namespace fusion {
 namespace ui {
 bool LoadTextureFromFile(const char* filepath, GLuint* outTexture, int* outWidth, int* outHeight);
 }	///	!namespace ui
 }	///	!namespace fusion
+}	///	!namesapce fu
 #endif	///	!__FUSION_PUBLIC_CORE_UI_LOADTEXTUREFROMFILE_H__

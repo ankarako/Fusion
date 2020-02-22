@@ -3,6 +3,7 @@
 #include <Views/FileExplorerView.h>
 #include <WidgetRepo.h>
 
+namespace fu {
 namespace fusion {
 struct FileExplorerPresenter::Impl
 {
@@ -65,3 +66,4 @@ void FileExplorerPresenter::Init()
 	});
 }
 }	///	!namespace fusion
+}	///	!namespace fu

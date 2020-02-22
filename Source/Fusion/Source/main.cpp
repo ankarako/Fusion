@@ -8,12 +8,12 @@ int main(int argc, char* argv[])
 {
 	try 
 	{
-		auto injector = boost::di::make_injector(fusion::di::AppDiModule());
+		auto injector = boost::di::make_injector(fu::fusion::di::AppDiModule());
 		injector.create<app::Application>().Run();
 	}
 	catch (const std::exception& ex)
 	{
-		LOG_ERROR << "Failed to create application. Error: " << ex.what();
+		std::cout << "Failed to create application. Error: " << ex.what();
 		return std::getchar();
 	}
 	return 0;

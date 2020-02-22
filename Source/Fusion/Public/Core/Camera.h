@@ -4,6 +4,7 @@
 #include <optix.h>
 #include <optixu/optixpp_namespace.h>
 
+namespace fu {
 namespace fusion {
 
 enum class CameraShaderType
@@ -26,4 +27,5 @@ private:
 
 
 }	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_CORE_CAMERA_H__

@@ -13,6 +13,7 @@ namespace app {
 class FontManager;
 }
 
+namespace fu {
 namespace fusion {
 enum class FileExplorerMode
 {
@@ -52,5 +53,6 @@ private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class FileExplorerVierw
+}
 }
 #endif	///	!__FUSION_PUBLIC_VIEWS_FILEEXPLORERVIEW_H__
