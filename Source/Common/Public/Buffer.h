@@ -1,176 +1,117 @@
 #ifndef	__COMMON_PUBLIC_BUFFER_H__
 #define __COMMON_PUBLIC_BUFFER_H__
 
+#include <NoCopyAssign.h>
+#include <Dims.h>
+#include <memory>
 #include <vector>
 
 namespace fu {
 ///	\enum BufferStorageProc
 ///	\brief the device memory that the buffer lives
-enum class BufferStorageProc
+enum class BufferStorageDevice
 {
 	CPU,
 	GPU,
+	Invalid
 };
-///	\struct BufferStorage
-///	\brief a simple memory range on a device specified by start address and byte size
-struct BufferStorage
-{
-	///	allocation
-	template <BufferStorageProc Proc>
-	void Allocate(size_t byteSize) { }
-
-	template <>
-	void Allocate<BufferStorageProc::CPU>(size_t sz)
-	{
-		Data = malloc(sz);
-		if (Data != nullptr)
-			Size = sz;
-	}
-
-	template <>
-	void Allocate<BufferStorageProc::GPU>(size_t sz)
-	{
-
-	}
-	///	deallocation
-	template <BufferStorageProc Proc>
-	void Deallocate() { }
-
-	template <>
-	void Deallocate<BufferStorageProc::CPU>()
-	{
-		if (Data != nullptr)
-		{
-			free(Data);
-			Size = 0;
-		}
-	}
-
-	template <>
-	void Deallocate<BufferStorageProc::GPU>()
-	{
-
-	}
-	void* 	Data = nullptr;
-	size_t 	Size = 0;
-};
-///	\struct Dims
-///	\brief the dimensions of the buffer
-struct Dims
-{
-	int Width{ 0 };
-	int Height{ 0 };
-	int Depth{ 0 };
-	/// Construction
-	Dims() { }
-	///
-	Dims(int w, int h, int d)
-		: Width(w), Height(h), Depth(d)
-	{ }
-};
-///	\class Buffer
+///	\class BufferObject
 ///	\brief a buffer of memory that lives on a device
+///	\warning: please do not use these objects. use factory methods instead
 ///	\tparam	ElmtType	the buffer's data type
 ///	\tparam	BufferStorageProc	the device that the buffer's data live on
-template <typename ElmtType, BufferStorageProc Proc>
-class Buffer
+template <typename DataType, BufferStorageDevice Proc>
+class BufferObject { };
+///	\typedef Buffer
+///	\brief a reference counted buffer object
+///	\note:	please use this object instead of the actual BufferObjects;
+template <typename DataType, BufferStorageDevice Proc>
+using Buffer = std::shared_ptr<BufferObject<DataType, Proc>>;
+///	\brief factory method for creating buffers
+///	\class Buffer
+///	\brief CPU specializtion
+template <typename DataType>
+class BufferObject<DataType, BufferStorageDevice::CPU>
 {
 private:
-	/// for disallowing public construction
-	struct Constructor { };
+	NoCopyAssignMove(BufferObject);
+	///	make construction no possible
+	struct ctor { };
+	///	\typedef DataBuffer
+	using DataStorage = std::vector<DataType>;
+	///	\typedef Data
+	///	\brief the pointer type of the data
+	using DataPtr = std::shared_ptr<DataStorage>;
 public:
-	/// Construction
+	static constexpr BufferStorageDevice Device = BufferStorageDevice::CPU;
+	///	Construction
 	///	\brief default constructor
-	///	does nothind
-	Buffer() { };
-	///	\brief disallow public construction
-	///	\note construction only through create method
-	Buffer(Constructor, Dims dims) 
-		: m_Dims(dims)
-	{ 
-		size_t bytes = dims.Width * dims.Height * dims.Depth * sizeof(ElmtType);
-		m_Storage.Allocate<Proc>(bytes);
-	}
-	///	destruction
-	~Buffer()
+	///	initializes data
+	BufferObject()
+		: m_Data(nullptr), m_ByteSize(0)
+	{ }
+	///	\brief construction from dimensions
+	///	\note:	normal construction only possible from factory methods
+	BufferObject(ctor, Dims inDims)
+		: m_Data(std::make_shared<std::vector<DataType>>(inDims.Width * inDims.Height * inDims.Depth))
+		, m_Dims(inDims)
+	{ }
+	///	\brief create a data buffer from specified dimensions
+	static Buffer<DataType, Device> Create(Dims dims)
 	{
-		//m_Storage.Deallocate<Proc>();
+		return std::make_shared<BufferObject<DataType, Device>>(ctor{}, dims);
 	}
-	///	\brief create a buffer from given dimensions
-	///	\param	dims	the dimensions of the buffer
-	///	\return a new buffer of the given dimensions
-	static Buffer Create(Dims dims)
+	///	Access
+	///	\brief get the number of elements in the buffer
+	///	\return the total number of elements in the buffer
+	size_t Count() const
 	{
-		Buffer buf(Constructor{}, dims);
-		return buf;
-	}
-	///	\brief create a buffer from specified dimensions and data
-	///	\param	dims	the buffer's dimensions
-	///	\param	data	the data to copy into the buffer
-	static Buffer Create(Dims dims, ElmtType const * const Data)
-	{
-		
-		
-	}
-	///	\brief check if the buffer is valid
-	///	(i.e. for nullptr)
-	///	\return true if the buffer is allocated
-	bool IsValid() const
-	{
-		return m_Storage.Data != nullptr;
-	}
-	///	\brief check if the buffer is emp
-	///	\return true if the buffer is empty, false otherwise
-	bool Empty() const
-	{
-		return m_Storage.Size != 0;
-	}
-	///	\brief get the byte size of the buffer
-	///	\return the byte size of the buffer
-	size_t GetByteSize() const 
-	{ 
-		return m_Storage.Size; 
+		return m_Dims.Width * m_Dims.Height * m_Dims.Depth;
 	}
 	///	\brief get the dimensions of the buffer
 	///	\return the dimensions of the buffer
-	Dims GetDims() const 
-	{ 
-		return m_Dims; 
-	}
-	///	\brief get a pointer at the start address of the data
-	///	\return the memory address of the first element in the data
-	const ElmtType* Data() const
+	Dims Dimensions() const
 	{
-		return (ElmtType*)m_Storage.Data;
+		return m_Dims;
 	}
-	///	\brief get a pointer at the start address of the data
-	///	\return the memory address of the first element in the data
-	ElmtType* Data()
+	///	\brief get the byte size of the buffer
+	///	\return the byte size of the buffer
+	size_t ByteSize() const
 	{
-		return (ElmtType*)m_Storage.Data;
+		return m_Dims.Width * m_Dims.Height * m_Dims.Depth * sizeof(DataType);
 	}
-	///	\brief upload the buffer's data to another device buffer
-	///	\param	outBuffer the buffer to copy this buffer's data
-	template <BufferStorageProc OtherProc>
-	void Upload(Buffer<ElmtType, OtherProc>& outBuffer) 
-	{ 
-	
-	}
-	///	\brief download the buffer's data from another device's buffer
-	///	\param	outBuffer the buffer to copy this buffer's data
-	template <BufferStorageProc OtherProc>
-	void Download(Buffer<ElmtType, OtherProc>& otherStorage) 
+	///	\brief get a pointer to the start address of the data
+	///	\return a pointer to the data
+	const DataType* Data() const
 	{
-
+		return m_Data->data();
 	}
-
-	void Deallocate()
+	/// Modification
+	///	\brief get a pointer to the start address of the data
+	///	\return a pointer to the data
+	DataType* const Data()
 	{
-		m_Storage.Deallocate<Proc>();
+		return m_Data->data();
 	}
 private:
-	BufferStorage m_Storage;
-	Dims m_Dims;
-};
+	DataPtr	m_Data;
+	Dims	m_Dims;	
+};	///	!class Buffer
+///	\brief factory method
+///	create buffer objects using this method
+template <typename DataType, BufferStorageDevice Proc>
+static Buffer<DataType, Proc> CreateBuffer(Dims dims) 
+{ 
+	using bufobj = BufferObject<DataType, Proc>;
+	return bufobj::Create(dims);
+}
+///	\brief buffer factory cpu specialization
+///	Use this to create buffers, the owner of the buffer is the one who used this
+template <typename DataType>
+static Buffer<DataType, BufferStorageDevice::CPU> CreateBuffer(Dims dims)
+{
+	using bufobj = BufferObject<DataType, BufferStorageDevice::CPU>;
+	return bufobj::Create(dims);
+}
 }	///	!namespace fu
 #endif	///	__COMMON_PUBLIC_BUFFER_H__

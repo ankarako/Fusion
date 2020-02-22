@@ -10,6 +10,7 @@
 #include <memory>
 #include <rxcpp/rx.hpp>
 
+namespace fu {
 namespace fusion {
 ///	\class SettingsRepo
 ///	\brief a simple settings repository that holds settings
@@ -41,4 +42,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class SettingsRepo
 }	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_CORE_SETTINGSREPO_H__

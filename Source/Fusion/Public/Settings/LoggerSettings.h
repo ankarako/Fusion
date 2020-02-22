@@ -5,6 +5,7 @@
 
 #include <string.h>
 
+namespace fu {
 namespace fusion {
 ///
 class LoggerSettings : public Settings<WriterType::PrettyWriter>, public Settings<WriterType::File>
@@ -18,4 +19,5 @@ public:
 	void Load(const std::string& filepath) override;	
 };	///	!struct LoggerSettings
 }	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_SETTINGS_LOGGERSETTINGS_H__

@@ -1,6 +1,8 @@
 #include <Views/PlayerViewportView.h>
 #include <FontManager.h>
 #include <imgui.h>
+
+namespace fu {
 namespace fusion {
 ///	\struct Impl
 ///	\brief player viewport widget implementation
@@ -54,3 +56,4 @@ rxcpp::observable<float> PlayerViewportView::OnViewportHeightChanged()
 	return m_Impl->OnViewportHeightChangedSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
+}	///	!namespace fu

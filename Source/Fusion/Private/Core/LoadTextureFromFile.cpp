@@ -1,5 +1,6 @@
 #include <Core/UI/LoadTextureFromFile.h>
 
+namespace fu {
 namespace fusion {
 namespace ui {
 bool LoadTextureFromFile(const char* filepath, GLuint* outTexture, int* outWidth, int* outHeight)
@@ -33,3 +34,4 @@ bool LoadTextureFromFile(const char* filepath, GLuint* outTexture, int* outWidth
 }
 }	///	!namespace ui
 }	///	!namespace fusion
+}	///	!namespace fu

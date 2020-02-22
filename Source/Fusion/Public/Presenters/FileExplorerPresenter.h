@@ -7,6 +7,7 @@
 namespace app {
 class WidgetRepo;
 }	///	!namespace app
+namespace fu {
 namespace fusion {
 ///
 class FileExplorerModel;
@@ -27,4 +28,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class FileExplorerPresenter
 }	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_PRESENTERS_FILEEXPLORERPRESENTER_H__

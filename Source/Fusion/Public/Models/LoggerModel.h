@@ -4,6 +4,7 @@
 #include <Initializable.h>
 #include <spimpl.h>
 
+namespace fu {
 namespace fusion {
 ///
 class SettingsRepo;
@@ -22,4 +23,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class LoggerModel
 }	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_MODELS_LOGGER_MODEL_H__

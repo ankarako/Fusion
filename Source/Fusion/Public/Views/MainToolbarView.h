@@ -7,7 +7,7 @@
 namespace app {
 class FontManager;
 }
-
+namespace fu {
 namespace fusion {
 ///	\class MAinToolbarView
 ///	\brief view for the main toolbar
@@ -29,4 +29,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class MainToolbarView
 }	///	!namespace fusion
+}
 #endif	///	!__FUSION_PUBLIC_VIEWS_MAINTOOLBARVIEW_H__

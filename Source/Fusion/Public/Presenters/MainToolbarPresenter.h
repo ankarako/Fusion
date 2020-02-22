@@ -7,10 +7,11 @@
 namespace app {
 class WidgetRepo;	
 }
-
+namespace fu {
+namespace trans {
+class DecodingContext;
+}
 namespace fusion {
-///
-class PlayerModel;
 ///
 class MainToolbarView;
 ///
@@ -21,16 +22,17 @@ class MainToolbarPresenter	: public app::Initializable
 {
 public:
 	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
-	using player_model_ptr_t = std::shared_ptr<PlayerModel>;
+	using vdec_model_ptr_t = std::shared_ptr<trans::DecodingContext>;
 	using view_ptr_t = std::shared_ptr<MainToolbarView>;
 	using fexp_view_ptr_t = std::shared_ptr<FileExplorerView>;
 	/// Construction
-	MainToolbarPresenter(player_model_ptr_t player_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo);
+	MainToolbarPresenter(vdec_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo);
 	/// \brief Initialization
 	void Init() override;
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class MainTollbarPresenter
-}	///	!namespace 
+}	///	!namespace fusion
+}	///	!namespace fu
 #endif	///	!__FUSION_PUBLIC_PRESENTERS_MAINTOOLBARPRESENTER_H__

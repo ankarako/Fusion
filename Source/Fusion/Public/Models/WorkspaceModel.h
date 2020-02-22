@@ -3,6 +3,7 @@
 
 #include <spimpl.h>
 
+namespace fu {
 namespace fusion {
 ///	
 class SettingsRepo;
@@ -17,4 +18,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class WorkSpaceModel
 }	///	!namespace fusion
+)	///	!namesapce fu
 #endif	///	!__FUSION_PUBLIC_MODELS_WORKSPACEMODEL_H__

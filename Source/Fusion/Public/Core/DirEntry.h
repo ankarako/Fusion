@@ -3,6 +3,7 @@
 
 #include <string>
 
+namespace fu {
 namespace fusion {
 ///	\struct DirEntry
 ///	\brief a directory entry
@@ -20,4 +21,5 @@ struct DirEntry
 	Type EntryType;
 };	///	!struct DirEntry
 }	///	!namespace fusion
+}	///	namesapce fu
 #endif	///	!__FUSION_PUBLIC_CORE_DIRENTRY_H__

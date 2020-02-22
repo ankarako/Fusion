@@ -3,6 +3,7 @@
 #include <FontDef.h>
 #include <imgui.h>
 
+namespace fu {
 namespace fusion {
 ///	\struct Impl
 ///	\brief PlayerControllerView implementation
@@ -86,3 +87,4 @@ rxcpp::observer<int> fusion::PlayerControllerView::FrameIdFlowIn()
 	return m_Impl->m_FrameIdFlowIn.get_subscriber().get_observer().as_dynamic();
 }
 }	///	!namespace fusion
+}

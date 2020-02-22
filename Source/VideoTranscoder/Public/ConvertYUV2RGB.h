@@ -5,7 +5,7 @@
 #include <vector_types.h>
 #include <vector_functions.h>
 
-namespace video {
+namespace trans {
 ///	\brief convert yuv values to rgb
 ///	\param	y	the y value
 ///	\param	u	the u value
@@ -40,5 +40,5 @@ float4 ConvertYUV2RGBA(float y, float u, float v)
 	float a = 1.0f;
 	return make_float4(r, g, b, a);
 }
-}	///	!namespace video
+}	///	!namespace trans
 #endif	///	!__VIDEOTRANSCODER_PUBLIV_CONVERTYUV2RGB_H__

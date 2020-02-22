@@ -11,6 +11,7 @@
 #include <iostream>
 #include <sstream>
 
+namespace fu {
 namespace fusion {
 
 ///	\struct Impl
@@ -43,3 +44,4 @@ void LoggerModel::Init()
 	plog::init(plog::debug, m_Impl->m_ConsoleAppender.get()).addAppender(m_Impl->m_FileAppender.get());
 }
 }	///	!namespace fusion
+}	///	!namespace fu
