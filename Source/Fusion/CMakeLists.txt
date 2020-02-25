@@ -1,0 +1,223 @@
+cmake_minimum_required(VERSION 3.12)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+# cmake modules path
+set(ModulesPathRelative "../../cmake")
+# get absolute path to modules directory
+get_filename_component(ModulesPath "${ModulesPathRelative}" ABSOLUTE)
+message(STATUS "Current cmake modules path: ${ModulesPath}")
+# set cmake module path to SBF's cmake modules directory
+set(CMAKE_MODULE_PATH "${ModulesPath}")
+# 3rdParty Directory
+set(3rdPartyPathRelative "../../3rdParty")
+#get absolute path
+get_filename_component(3rdPartyPath "${3rdPartyPathRelative}" ABSOLUTE)
+message(STATUS "Current 3rd party path: ${3rdPartyPath}")
+# Compiler module
+include(GetSystemCompilerId)
+# GroupSource module
+include(GroupSource)
+# PrintList
+include(PrintList)
+# SBFCommon Project declaration
+message(STATUS "Creating cmake project...")
+project(
+    FusionProject
+    VERSION 1.0.0
+    DESCRIPTION "Fusion360 Application"
+    LANGUAGES CXX
+)
+###########################
+# Gather free header files
+###########################
+file (GLOB FusionFreeHdrFiles "Public/*.h")
+GroupSource("${FusionFreeHdrFiles}" "Public")
+PrintList("${FusionFreeHdrFiles}" "Gathered Fusion free header files")
+###########################
+# Gather free source files
+###########################
+file (GLOB FusionFreeSrcFiles "Private/*.cpp")
+GroupSource("${FusionFreeSrcFiles}" "Private")
+PrintList("${FusionFreeSrcFiles}" "Gathered Fusion free source files")
+#########################
+# Gather DI header files
+#########################
+file (GLOB FusionDiHdrFiles "Public/di/*.h")
+GroupSource("${FusionDiHdrFiles}" "Public\\di")
+PrintList("${FusionDiHdrFiles}" "Gathered Fusion di header files")
+#############################
+# Gather models header files
+#############################
+file (GLOB FusionModelsHdrFiles "Public/Models/*.h")
+GroupSource("${FusionModelsHdrFiles}" "Public\\Models")
+PrintList("${FusionModelsHdrFiles}" "Gathered Model header files")
+#############################
+# Gather models source files
+#############################
+file (GLOB FusionModelsSrcFiles "Private/Models/*.cpp")
+GroupSource("${FusionModelsSrcFiles}" "Private\\Models")
+PrintList("${FusionModelsSrcFiles}" "Gathered Model source files")
+#############################
+# Gather presenters header files
+#############################
+file (GLOB FusionPresentersHdrFiles "Public/Presenters/*.h")
+GroupSource("${FusionPresentersHdrFiles}" "Public\\Presenters")
+PrintList("${FusionPresentersHdrFiles}" "Gathered Presenter header files")
+#############################
+# Gather presenters source files
+#############################
+file (GLOB FusionPresentersSrcFiles "Private/Presenters/*.cpp")
+GroupSource("${FusionPresentersSrcFiles}" "Private\\Presenters")
+PrintList("${FusionPresentersSrcFiles}" "Gathered PResenters source files")
+#############################
+# Gather Views header files
+#############################
+file (GLOB FusionViewsHdrFiles "Public/Views/*.h")
+GroupSource("${FusionViewsHdrFiles}" "Public\\Views")
+PrintList("${FusionViewsHdrFiles}" "Gathered View header files")
+#############################
+# Gather Views source files
+#############################
+file (GLOB FusionViewsSrcFiles "Private/Views/*.cpp")
+GroupSource("${FusionViewsSrcFiles}" "Private\\Views")
+PrintList("${FusionViewsSrcFiles}" "Gathered Views source files")
+#############################
+# Gather Core header files
+#############################
+file (GLOB FusionCoreHdrFiles "Public/Core/*.h")
+GroupSource("${FusionCoreHdrFiles}" "Public\\Core")
+PrintList("${FusionCoreHdrFiles}" "Gathered Core header files")
+#############################
+# Gather Core source files
+#############################
+file (GLOB FusionCoreSrcFiles "Private/Core/*.cpp")
+GroupSource("${FusionCoreSrcFiles}" "Private\\Core")
+PrintList("${FusionCoreSrcFiles}" "Gathered Core source files")
+#############################
+# Gather Core UI header files
+#############################
+file (GLOB FusionCoreUIHdrFiles "Public/Core/UI/*.h")
+GroupSource("${FusionCoreUIHdrFiles}" "Public\\Core\\UI")
+PrintList("${FusionCoreUIHdrFiles}" "Gathered Core header files")
+#############################
+# Gather Core source files
+#############################
+file (GLOB FusionCoreUISrcFiles "Private/Core/UI/*.cpp")
+GroupSource("${FusionCoreUISrcFiles}" "Private\\Core\\UI")
+PrintList("${FusionCoreUISrcFiles}" "Gathered Core source files")
+#############################
+# Gather Settings header files
+#############################
+file (GLOB FusionSettingsHdrFiles "Public/Settings/*.h")
+GroupSource("${FusionSettingsHdrFiles}" "Public\\Settings")
+PrintList("${FusionSettingsHdrFiles}" "Gathered Settings header files")
+#############################
+# Gather Settings source files
+#############################
+file (GLOB FusionSettingsSrcFiles "Private/Settings/*.cpp")
+GroupSource("${FusionSettingsSrcFiles}" "Private\\Settings")
+PrintList("${FusionSettingsSrcFiles}" "Gathered Settings source files")
+#################
+# Fusion Project
+#################
+add_executable(
+	Fusion
+	"Source/main.cpp"
+	"${FusionFreeHdrFiles}"
+	"${FusionFreeSrcFiles}"
+	"${FusionDiHdrFiles}"
+	"${FusionModelsHdrFiles}"
+	"${FusionModelsSrcFiles}"
+	"${FusionPresentersHdrFiles}"
+	"${FusionPresentersSrcFiles}"
+	"${FusionViewsHdrFiles}"
+	"${FusionViewsSrcFiles}"
+	"${FusionCoreHdrFiles}"
+	"${FusionCoreSrcFiles}"
+	"${FusionCoreUIHdrFiles}"
+	"${FusionCoreUISrcFiles}"
+	"${FusionSettingsHdrFiles}"
+	"${FusionSettingsSrcFiles}"
+)
+#### set properties
+set_target_properties(Fusion PROPERTIES FOLDER "Fusion360")
+set_property(TARGET Fusion PROPERTY CXX_STANDARD 17)
+# set include directory
+target_include_directories(Fusion PUBLIC "Public")
+###############
+# Dependencies
+###############
+# di
+# adding the include directory suffices
+target_include_directories(Fusion PUBLIC "${3rdPartyPath}/boost-di/include")
+# Application module
+add_subdirectory("../Application" ApplicationModule)
+target_link_libraries(Fusion FusionApplication)
+# depends on spimpl
+# we add only the include directory
+target_include_directories(Fusion PRIVATE "${3rdPartyPath}/spimpl")
+########
+# RxCpp
+########
+# only the include directory suffices
+target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rxcpp/Rx/v2/src")
+#######
+# PLog
+#######
+# adding the include diretory only suffices
+target_include_directories(Fusion PRIVATE "${3rdPartyPath}/plog/include")
+############
+# RapidJson
+############
+# add_subdirectory("${3rdPartyPath}/rapidjson" rapidjson)
+target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rapidjson/include")
+# set_target_properties(travis_doc PROPERTIES FOLDER "3rdParty")
+##################
+# VideoTranscoder
+##################
+add_subdirectory("../VideoTranscoder" VideoTranscoder)
+target_link_libraries(Fusion VideoTranscoder)
+# target_link_libraries(Fusion FusionCommon)
+######
+# STB
+#####
+target_include_directories(Fusion PUBLIC "${3rdPartyPath}/stb")
+################
+# cpp-task flow
+################
+add_subdirectory("${3rdPartyPath}/cpp-taskflow" cpp_taskflow)
+target_include_directories(Fusion PRIVATE "${3rdPartyPath}/cpp-taskflow")
+# target_link_libraries(Fusion composition)
+# target_link_libraries(Fusion condition)
+# target_link_libraries(Fusion observer)
+# target_link_libraries(Fusion paraller_for)
+# target_link_libraries(Fusion reduce)
+# target_link_libraries(Fusion run)
+# target_link_libraries(Fusion simple)
+# target_link_libraries(Fusion subflow)
+# target_link_libraries(Fusion visualization)
+# set taskflow deps to 3rdparty folder
+set_target_properties(composition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(condition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(observer PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(parallel_for PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(reduce PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(run PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(simple PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(subflow PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+set_target_properties(visualization PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# add_subdirectory("../Common" FusionCommon)
+# target_link_libraries(Fusion INTERFACE_LINK_OPTIONS FusionCommon)
+#### copy resources
+# we use configure_file() instead file() because it creates a 
+# file-level dependency
+# \see: https://stackoverflow.com/questions/34799916/copy-file-from-source-directory-to-binary-directory-using-cmake
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/calibri.ttf" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/calibri.ttf" COPYONLY)
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/fa-regular-400.ttf" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/fa-regular-400.ttf" COPYONLY)
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf" 
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/MaterialIcons-Regular.ttf" COPYONLY)
