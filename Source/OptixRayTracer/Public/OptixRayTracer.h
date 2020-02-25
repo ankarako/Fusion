@@ -3,21 +3,16 @@
 
 #include <vector_types.h>
 #include <vector_functions.h>
+#include <optix.h>
+#include <optixu/optixpp_namespace.h>
 
 namespace ray {
-///	\class RayTracer
-///	\brief a ray tracing context
-class RayTracer
+///	\struct RayTracerState
+///	\brief the ray tracer's state
+struct RayTracerState
 {
-public:
-	void Initialize(uint2 size);
-	void Launch();
-	void SetViewportSize(uint2 size);
-	void AddLight();
-	void SetEnvironmentMap();
-	void SetCamera();
-private:
+	optix::Context Context;
 	
-};	///	!class RayTracer
+};	///	!struct RayTracerState
 }	///	!namespace ray
 #endif	///	!__OPTIXRAYTRACER_PUBLIC_OPTIXRAYTRACER_H__
