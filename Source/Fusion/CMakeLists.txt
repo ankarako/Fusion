@@ -182,11 +182,52 @@ target_link_libraries(Fusion VideoTranscoder)
 # STB
 #####
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/stb")
-################
+##################################
+# add openFrameworks dependencies
+##################################
+# openFrameworks Include directory
+set(OPEN_FRAMEWORKS_LIBS_DIR CACHE STRING "Open Frameworks libs Directory")
+#######
+# boost
+#######
+target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/include")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/lib/vs/x64/libboost_filesystem-vc141-mt-1_65.lib")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/lib/vs/x64/libboost_filesystem-vc141-mt-gd-1_65.lib")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/lib/vs/x64/libboost_system-vc141-mt-1_65.lib")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/lib/vs/x64/libboost_system-vc141-mt-gd-1_65.lib")
+########
+# cairo
+########
+target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/include")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/lib/vs/x64/cairo-static.lib")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/lib/vs/x64/libpng.lib")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/lib/vs/x64/pixman-1.lib")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/lib/vs/x64/zlib.lib")
+########
+# curl
+#######
+target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/curl/include")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/curl/lib/vs/x64/libcurl.lib")
+#########
+# fmodex
+#########
+target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/fmodex/include")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/fmodex/lib/vs/x64/fmodex64_vc.lib")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/fmodex/lib/vs/x64/fmodexL64_vc.lib")
+############
+# FreeImage
+############
+target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/FreeImage/include")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/FreeImage/lib/vs/x64/FreeImage.lib")
+###########
+# freetype
+###########
+target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/freetype/include")
+target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/FreeImage/lib/vs/x64/FreeImage.lib")
 # cpp-task flow
 ################
-add_subdirectory("${3rdPartyPath}/cpp-taskflow" cpp_taskflow)
-target_include_directories(Fusion PRIVATE "${3rdPartyPath}/cpp-taskflow")
+# add_subdirectory("${3rdPartyPath}/cpp-taskflow" cpp_taskflow)
+# target_include_directories(Fusion PRIVATE "${3rdPartyPath}/cpp-taskflow")
 # target_link_libraries(Fusion composition)
 # target_link_libraries(Fusion condition)
 # target_link_libraries(Fusion observer)
@@ -197,15 +238,15 @@ target_include_directories(Fusion PRIVATE "${3rdPartyPath}/cpp-taskflow")
 # target_link_libraries(Fusion subflow)
 # target_link_libraries(Fusion visualization)
 # set taskflow deps to 3rdparty folder
-set_target_properties(composition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-set_target_properties(condition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-set_target_properties(observer PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-set_target_properties(parallel_for PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-set_target_properties(reduce PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-set_target_properties(run PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-set_target_properties(simple PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-set_target_properties(subflow PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-set_target_properties(visualization PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(composition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(condition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(observer PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(parallel_for PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(reduce PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(run PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(simple PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(subflow PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
+# set_target_properties(visualization PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
 # add_subdirectory("../Common" FusionCommon)
 # target_link_libraries(Fusion INTERFACE_LINK_OPTIONS FusionCommon)
 #### copy resources
