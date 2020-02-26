@@ -1,6 +1,5 @@
 #include <Presenters/MainToolbarPresenter.h>
 #include <WidgetRepo.h>
-#include <DecodingContext.h>
 #include <Views/MainToolbarView.h>
 #include <Views/FileExplorerView.h>
 
@@ -13,14 +12,14 @@ struct MainToolbarPresenter::Impl
 	view_ptr_t			m_View;
 	fexp_view_ptr_t		m_FexpView;
 	wrepo_ptr_t			m_Wrepo;
-	vdec_model_ptr_t	m_DecodingContext;
+	player_model_ptr_t	m_PlayerModel;
 
-	Impl(vdec_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo)
-		: m_View(view), m_FexpView(fexp_view), m_Wrepo(wrepo), m_DecodingContext(decoder_model)
+	Impl(player_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo)
+		: m_View(view), m_FexpView(fexp_view), m_Wrepo(wrepo), m_PlayerModel(decoder_model)
 	{ }
 };	///	!struct Impl
 ///	Construction
-MainToolbarPresenter::MainToolbarPresenter(vdec_model_ptr_t dec_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo)
+MainToolbarPresenter::MainToolbarPresenter(player_model_ptr_t dec_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo)
 	: m_Impl(spimpl::make_unique_impl<Impl>(dec_model, view, fexp_view, wrepo))
 { }
 ///	\brief Initialization
