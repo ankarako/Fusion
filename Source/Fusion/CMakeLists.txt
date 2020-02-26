@@ -206,3 +206,4 @@ configure_file(
 configure_file(
 	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf" 
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/MaterialIcons-Regular.ttf" COPYONLY)
+###
