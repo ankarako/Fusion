@@ -21,6 +21,10 @@ include(GroupSource)
 include(PrintList)
 # SBFCommon Project declaration
 message(STATUS "Creating cmake project...")
+message(STATUS "============================")
+message(STATUS " Fusion Application Library")
+message(STATUS "============================")
+message(STATUS "Author: Perukas")
 project(
     FusionApplicationProject
     VERSION 1.0.0

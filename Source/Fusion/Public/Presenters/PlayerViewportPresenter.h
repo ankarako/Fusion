@@ -10,16 +10,15 @@ namespace app {
 class WidgetRepo;
 }
 namespace fu {
-namespace trans {
-class DecodingContext;
-}
 namespace fusion {
+
 class PlayerViewportView;
+class PlayerModel;
 
 class PlayerViewportPresenter : public app::Initializable
 {
 public:
-	using model_ptr_t = std::shared_ptr<trans::DecodingContext>;
+	using model_ptr_t = std::shared_ptr<PlayerModel>;
 	using view_ptr_t = std::shared_ptr<PlayerViewportView>;
 	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
 	
