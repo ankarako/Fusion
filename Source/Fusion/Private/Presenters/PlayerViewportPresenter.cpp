@@ -1,6 +1,5 @@
 #include <Presenters/PlayerViewportPresenter.h>
 #include <Views/PlayerViewportView.h>
-#include <DecodingContext.h>
 #include <WidgetRepo.h>
 
 namespace fu {
@@ -37,7 +36,7 @@ void PlayerViewportPresenter::Init()
 	m_Impl->m_View->OnViewportWidthChanged().subscribe(
 		[this](float newWidth)
 	{
-		//m_Impl->m_Model->
+		
 	});
 
 	m_Impl->m_View->Activate();

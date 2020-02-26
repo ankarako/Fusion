@@ -21,6 +21,10 @@ include(GroupSource)
 include(PrintList)
 # SBFCommon Project declaration
 message(STATUS "Creating cmake project...")
+message(STATUS "============================")
+message(STATUS "    Fusion360 Application")
+message(STATUS "============================")
+message(STATUS "Author: Perukas")
 project(
     FusionProject
     VERSION 1.0.0
@@ -120,6 +124,7 @@ PrintList("${FusionSettingsSrcFiles}" "Gathered Settings source files")
 #################
 # Fusion Project
 #################
+
 add_executable(
 	Fusion
 	"Source/main.cpp"
@@ -150,105 +155,44 @@ target_include_directories(Fusion PUBLIC "Public")
 # di
 # adding the include directory suffices
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/boost-di/include")
+message(STATUS "Added boost-di dependency...")
 # Application module
-add_subdirectory("../Application" ApplicationModule)
+add_subdirectory("../Application" FusionApplication)
 target_link_libraries(Fusion FusionApplication)
+message(STATUS "Added FusionApplication dependency...")
 # depends on spimpl
 # we add only the include directory
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/spimpl")
+message(STATUS "Added spimpl dependency...")
 ########
 # RxCpp
 ########
 # only the include directory suffices
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rxcpp/Rx/v2/src")
+message(STATUS "Added rxcpp dependency...")
 #######
 # PLog
 #######
 # adding the include diretory only suffices
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/plog/include")
+message(STATUS "Added plog dependency...")
 ############
 # RapidJson
 ############
-# add_subdirectory("${3rdPartyPath}/rapidjson" rapidjson)
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rapidjson/include")
-# set_target_properties(travis_doc PROPERTIES FOLDER "3rdParty")
-##################
-# VideoTranscoder
-##################
-add_subdirectory("../VideoTranscoder" VideoTranscoder)
-target_link_libraries(Fusion VideoTranscoder)
+message(STATUS "Added rapidjson dependency...")
 # target_link_libraries(Fusion FusionCommon)
 ######
 # STB
 #####
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/stb")
-##################################
-# add openFrameworks dependencies
-##################################
-# openFrameworks Include directory
-set(OPEN_FRAMEWORKS_LIBS_DIR CACHE STRING "Open Frameworks libs Directory")
-#######
-# boost
-#######
-target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/include")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/lib/vs/x64/libboost_filesystem-vc141-mt-1_65.lib")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/lib/vs/x64/libboost_filesystem-vc141-mt-gd-1_65.lib")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/lib/vs/x64/libboost_system-vc141-mt-1_65.lib")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/boost/lib/vs/x64/libboost_system-vc141-mt-gd-1_65.lib")
-########
-# cairo
-########
-target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/include")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/lib/vs/x64/cairo-static.lib")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/lib/vs/x64/libpng.lib")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/lib/vs/x64/pixman-1.lib")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/cairo/lib/vs/x64/zlib.lib")
-########
-# curl
-#######
-target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/curl/include")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/curl/lib/vs/x64/libcurl.lib")
-#########
-# fmodex
-#########
-target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/fmodex/include")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/fmodex/lib/vs/x64/fmodex64_vc.lib")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/fmodex/lib/vs/x64/fmodexL64_vc.lib")
-############
-# FreeImage
-############
-target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/FreeImage/include")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/FreeImage/lib/vs/x64/FreeImage.lib")
-###########
-# freetype
-###########
-target_include_directories(Fusion PUBLIC "${OPEN_FRAMEWORKS_LIBS_DIR}/freetype/include")
-target_link_libraries(Fusion "${OPEN_FRAMEWORKS_LIBS_DIR}/FreeImage/lib/vs/x64/FreeImage.lib")
-# cpp-task flow
-################
-# add_subdirectory("${3rdPartyPath}/cpp-taskflow" cpp_taskflow)
-# target_include_directories(Fusion PRIVATE "${3rdPartyPath}/cpp-taskflow")
-# target_link_libraries(Fusion composition)
-# target_link_libraries(Fusion condition)
-# target_link_libraries(Fusion observer)
-# target_link_libraries(Fusion paraller_for)
-# target_link_libraries(Fusion reduce)
-# target_link_libraries(Fusion run)
-# target_link_libraries(Fusion simple)
-# target_link_libraries(Fusion subflow)
-# target_link_libraries(Fusion visualization)
-# set taskflow deps to 3rdparty folder
-# set_target_properties(composition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# set_target_properties(condition PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# set_target_properties(observer PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# set_target_properties(parallel_for PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# set_target_properties(reduce PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# set_target_properties(run PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# set_target_properties(simple PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# set_target_properties(subflow PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# set_target_properties(visualization PROPERTIES FOLDER "3rdParty/cpp-taskflow/examples")
-# add_subdirectory("../Common" FusionCommon)
-# target_link_libraries(Fusion INTERFACE_LINK_OPTIONS FusionCommon)
+message(STATUS "Added stb dependency...")
+###################
+# FusionTranscoder
+###################
+add_subdirectory("../VideoTranscoder" FusionTranscoder)
+target_link_libraries(Fusion FusionTranscoder)
+message(STATUS "Added FusionTranscoder dependency...")
 #### copy resources
 # we use configure_file() instead file() because it creates a 
 # file-level dependency

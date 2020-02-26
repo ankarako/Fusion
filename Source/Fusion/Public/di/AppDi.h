@@ -20,6 +20,7 @@
 /// Models
 #include <Models/LoggerModel.h>
 #include <Models/FileExplorerModel.h>
+#include <Models/PlayerModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -30,10 +31,7 @@
 #include <Views/PlayerViewportView.h>
 #include <Views/FileExplorerView.h>
 #include <Views/MainToolbarView.h>
-/// Other
-#include <DecodingContext.h>
-/// Task managing
-#include <taskflow/taskflow.hpp>
+
 namespace fu {
 namespace fusion {
 namespace di {
@@ -51,14 +49,16 @@ namespace di {
 			FileExplorerView,
 			FileExplorerPresenter,
 			FileExplorerModel,
-			MainToolbarPresenter
+			MainToolbarPresenter,
+			PlayerModel
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow
 			>(),
 			boost::di::bind<app::Destroyable * []>().to<
 			app::AppWindow,
-			FileExplorerModel
+			FileExplorerModel,
+			PlayerModel
 			>(),
 			boost::di::bind<app::Renderable>().to<
 			app::WidgetRepo
