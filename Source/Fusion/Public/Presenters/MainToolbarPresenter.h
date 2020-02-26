@@ -8,25 +8,22 @@ namespace app {
 class WidgetRepo;	
 }
 namespace fu {
-namespace trans {
-class DecodingContext;
-}
 namespace fusion {
 ///
 class MainToolbarView;
-///
 class FileExplorerView;
+class PlayerModel;
 ///	\class MainToolbarPresenter
 ///	\brief responsible for interacting with the main toolbar
 class MainToolbarPresenter	: public app::Initializable
 {
 public:
 	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
-	using vdec_model_ptr_t = std::shared_ptr<trans::DecodingContext>;
+	using player_model_ptr_t = std::shared_ptr<PlayerModel>;
 	using view_ptr_t = std::shared_ptr<MainToolbarView>;
 	using fexp_view_ptr_t = std::shared_ptr<FileExplorerView>;
 	/// Construction
-	MainToolbarPresenter(vdec_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo);
+	MainToolbarPresenter(player_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo);
 	/// \brief Initialization
 	void Init() override;
 private:

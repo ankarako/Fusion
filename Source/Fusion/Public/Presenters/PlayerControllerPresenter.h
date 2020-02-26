@@ -5,19 +5,15 @@
 #include <Destroyable.h>
 #include <memory>
 #include <spimpl.h>
-#include <taskflow/taskflow.hpp>
 
 namespace app {
 class WidgetRepo;
 }	///	!namespace app
 namespace fu {
-namespace trans {
-///	\class DecodingContext
-class DecodingContext;
-}	///	!namespace trans
 namespace fusion {
 ///
 class PlayerControllerView;
+class PlayerModel;
 class FileExplorerView;
 
 ///	\class PlayerControllerPresenter
@@ -25,10 +21,8 @@ class FileExplorerView;
 class PlayerControllerPresenter : public app::Initializable, public app::Destroyable
 {
 public:
-	///	\typedef executor_ptr_t
-	using executor_ptr_t = std::shared_ptr<tf::Executor>;
 	///	\typedef
-	using model_ptr_t = std::shared_ptr<trans::DecodingContext>;
+	using model_ptr_t = std::shared_ptr<PlayerModel>;
 	///	\typedef
 	using view_ptr_t = std::shared_ptr<PlayerControllerView>;
 	///	\typedef
@@ -41,8 +35,7 @@ public:
 		model_ptr_t model, 
 		view_ptr_t view, 
 		fexp_view_ptr_t fexp_view, 
-		wrepo_ptr_t wrepo, 
-		executor_ptr_t exec);
+		wrepo_ptr_t wrepo);
 	///	\brief initialize the presenter
 	///	makes aubscriptions
 	void Init() override;
