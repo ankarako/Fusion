@@ -1,4 +1,5 @@
 #include <Transcoder.h>
+#include <DebugMsg.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 	#include <Windows.h>
@@ -37,14 +38,38 @@ void LogError(HRESULT hr)
 ///	\brief Decoding Context implementation
 struct DecodingContextObj
 {
+	/// Source data
+	///	the decofing context is thread-safe by using a creitical section
+	///	synchronization mechanism
+	CComAutoCriticalSection		m_CriticalSection;
+	///	media source
 	CComPtr<IMFMediaSource>		m_MediaSource;
+	///	decoding topology
 	CComPtr<IMFTopology>		m_Topology;
+	///	audio source node in the topology
+	///	warning: not an actual source if not explicitly set, otherwise
+	///	just a node in the topology
 	CComPtr<IMFTopologyNode>	m_LastAudioNode;
+	///	video source node in the topology
+	///	warning: not an actual source if not explicitly set, otherwise
+	///	just a node in the topology
 	CComPtr<IMFTopologyNode>	m_LastVideoNode;
+	///	audio stream sink node
+	///	warning: not an actual sink node if not explicitly set
+	///	otherwise just a simple node in the topology
 	CComPtr<IMFTopologyNode>	m_AudioStreamSinkNode;
+	///	video stream sink node
+	///	warning: not an actual sink node if not explicitly set
+	///	otherwise just a simple node in the topology
 	CComPtr<IMFTopologyNode>	m_VideoStreamSinkNode;
+	///	flag to signify that the decoding context has an audio stream
 	bool m_HasAudioStream;
+	///	flag to signify that the decoding context has a video stream
 	bool m_HasVideoStream;
+	/// the audio decoder MFTransform
+	CComPtr<IMFTransform>		m_AudioDecoder;
+	/// the video decoder MFTransform
+	CComPtr<IMFTransform>		m_VideoDecoder;
 };
 namespace dec {
 ///	\brief create a context
@@ -53,6 +78,40 @@ DecodingContext CreateContext()
 {
 	HRESULT hr = MFStartup(MF_VERSION);
 	return std::make_shared<DecodingContextObj>();
+}
+///	\brief destroy the decoding context
+void DestroyContext(DecodingContext context)
+{
+	// TODO:
+}
+///	\brief get the decoder category of the specified decoder major type
+///	\param	majorType	the source's major type (audio, video, cc)
+///	\param[out]	Category	a pointer to a GUID to fill with the appropriate decoder GUID
+///	\return S_OK if successful codec retrieval, S_FALSE otherwise
+HRESULT GetDecoderMajorCategory(const GUID& majorType, GUID* outCategory)
+{
+	if (majorType == MFMediaType_Audio)
+	{
+		*outCategory = MFT_CATEGORY_AUDIO_DECODER;
+	}
+	else if (majorType == MFMediaType_Video)
+	{
+		*outCategory = MFT_CATEGORY_VIDEO_DECODER;
+	}
+	else
+	{
+		return S_FALSE;
+	}
+	return S_OK;
+}
+///	\brief find the appropriate decoder for a stream
+///	\note: if the stream is not compressed, outCLSID received the value GUID_NULL
+///	\param	StreamDesc	the stream's descriptor
+///	\param[out] pitCLSID	a pointer to a CLSID object to fill with the appropriate decoder type for the given stream
+///	\return S_OK if successful codec retrieval, S_FALSE otherwise
+HRESULT FindDecoderForStream(IMFStreamDescriptor* StreamDesc, CLSID* outCLSID)
+{
+
 }
 ///	\brief load a meadia file
 ///	\param	filepath	the incoming file's path
@@ -99,12 +158,98 @@ bool LoadSource(DecodingContext context, const std::wstring& filepath)
 		LogError(hr);
 		return false;
 	}
-
+	/// find the streams in the media file
 	for (int i = 0; i < sdCount; i++)
 	{
+		if (hr = spPrDesc->SelectStream(i) != S_OK)
+		{
+			LogError(hr);
+		}
+		CComPtr<IMFStreamDescriptor> spStreamDesc;
+		BOOL selected;
+		if (hr = spPrDesc->GetStreamDescriptorByIndex(i, &selected, &spStreamDesc) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
+		/// Each source node needs to be set up eith MF_TOPNODE_SOURCE
+		///	MF_TOPNODE_PRESENTATION_DESCRIPTOR, and MF_TOPPNODE_STREAM_DESCRIPTOR
+		/// for the MF pipeline to unambiguously identify what stream is 
+		/// associated with the topology
+		CComPtr<IMFTopologyNode> spSourceStreamNode;
+		if (hr = MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, &spSourceStreamNode) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
+		if (hr = spSourceStreamNode->SetUnknown(MF_TOPONODE_SOURCE, context->m_MediaSource) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
+		if (hr = spSourceStreamNode->SetUnknown(MF_TOPONODE_PRESENTATION_DESCRIPTOR, spPrDesc) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
+		if (hr = spSourceStreamNode->SetUnknown(MF_TOPONODE_STREAM_DESCRIPTOR, spStreamDesc) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
+		if (hr = context->m_Topology->AddNode(spSourceStreamNode) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
 
+		CComPtr<IMFMediaTypeHandler> spMediaTypeHandler;
+		if (hr = spStreamDesc->GetMediaTypeHandler(&spMediaTypeHandler) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
+
+		CComPtr<IMFMediaType> spMediaType;
+		if (hr = spMediaTypeHandler->GetCurrentMediaType(&spMediaType) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
+		
+		GUID gidMajorType;
+		if (hr = spMediaType->GetMajorType(&gidMajorType) != S_OK)
+		{
+			LogError(hr);
+			return false;
+		}
+
+		if (gidMajorType == MFMediaType_Video)
+		{
+			context->m_LastVideoNode = spSourceStreamNode;
+			context->m_HasVideoStream = true;
+		}
+		else if (gidMajorType == MFMediaType_Audio)
+		{
+			context->m_LastAudioNode = spSourceStreamNode;
+			context->m_HasAudioStream = true;
+		}
 	}
+	/// Get the source's metadata and codecs for creating the decoding context's
+	///	decoder MF Transforms
+	
 	return true;
+}
+IUnknown* Transform2IUnknown()
+{
+
+}
+///	\brief add a video transform to the decoding context
+///	\param	Transform	the transform to add
+///	\return true if the transform was added successfully, false otherwise
+bool AddTransform()
+{
+
 }
 }	///	!namespace dec
 ///	\struct TranscodingContext
