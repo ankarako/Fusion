@@ -16,25 +16,17 @@ namespace dec {
 ///	\brief create a context
 ///	allocates a decodding object pointer
 DecodingContext CreateContext();
+///	\brief destroy the decoding context
+void DestroyContext(DecodingContext context);
 ///	\brief load a meadia file
 ///	\param	filepath	the incoming file's path
 ///	\return true if the file was loaded successfully, false otherwise
 bool LoadSource(DecodingContext context, const std::wstring& filepath);
+///	\brief add a video transform to the decoding context
+///	\param	Transform	the transform to add
+///	\return true if the transform was added successfully, false otherwise
+bool AddTransform();
 }	///	!namespace dec
-/////	\struct TranscodingContext
-/////	\brief transcoding context state (opaque to the user)
-//struct TranscodingContextObj;
-//
-/////	\typedef TranscodingContext
-/////	\brief a reference counted TranscodingContext
-//using TranscodingContext = std::shared_ptr<TranscodingContextObj>;
-/////	\brief create a TranscodingContext
-/////	\param	version	the version of the context to create
-/////	\return true if the context was created successfully, false otherwise
-//DecodingContext CreateDecodingContext();
-/////	\brief shutdown a decoding context
-/////	Releases the Windows Media Foundation context
-//void DestroyDecodingContext(DecodingContext context);
 }	///	!namespace trans
 }	///	!namespace fu
 #endif	///	!__VIDEOTRANSCODER_PUBLIC_TRANSCODER_H__

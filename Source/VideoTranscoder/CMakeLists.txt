@@ -59,6 +59,11 @@ set_target_properties(FusionTranscoder PROPERTIES FOLDER "Fusion360")
 target_link_libraries(FusionTranscoder "MFPlat.lib")
 target_link_libraries(FusionTranscoder "MF.lib")
 target_link_libraries(FusionTranscoder "MFuuid.lib")
+#########
+# Common
+#########
+add_subdirectory("../Common" Common)
+target_link_libraries(FusionTranscoder Common)
 #######
 # PLog
 #######
