@@ -68,13 +68,13 @@ void PlayerControllerPresenter::Init()
 		m_Impl->m_Model->Start();
 	});
 	/// pause event task
-	m_Impl->m_View->OnPauseButtonClicked()/*.observe_on(rxcpp::observe_on_new_thread())*/.subscribe(
+	m_Impl->m_View->OnPauseButtonClicked().subscribe(
 		[this](auto _) 
 	{
 		m_Impl->m_Model->Pause();
 	});
 	/// stop event task
-	m_Impl->m_View->OnStopButtonClicked()/*.observe_on(rxcpp::observe_on_new_thread())*/.subscribe(
+	m_Impl->m_View->OnStopButtonClicked().subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_Model->Stop();

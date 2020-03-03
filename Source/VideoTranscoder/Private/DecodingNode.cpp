@@ -63,7 +63,8 @@ void DecodingNodeObj::LoadFile(const std::string& filepath)
 ///	\brief release the underlying decoding context
 void DecodingNodeObj::Release()
 {
-	m_Impl->m_Decoder->release();
+	if (m_Impl->m_Decoder->isOpened())
+		m_Impl->m_Decoder->release();
 }
 ///	\brief get the frame rate of the loaded video
 ///	\return the frame rate of the loaded video

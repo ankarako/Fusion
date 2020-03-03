@@ -30,6 +30,12 @@ struct PlayerModel::Impl
 	rxcpp::subjects::subject<size_t>	m_CurrentFrameIdFlowOutSubj;
 	/// current frame count
 	rxcpp::subjects::subject<size_t>	m_FrameCountFlowOutSubj;
+	///	playback start time for correct frame rate
+	std::chrono::time_point<std::chrono::high_resolution_clock> m_Start;
+	///	frame rate (actually frame period)
+	std::chrono::milliseconds			m_FramePeriod;
+	///	frame period tolerance for frame rate checking
+	std::chrono::milliseconds			m_FramePeriodTolerance{ 20 };
 	/// Construction
 	/// \brief default constructor
 	///	does nothing
@@ -53,7 +59,7 @@ void PlayerModel::Init()
 ///	Closes the MFSession
 void PlayerModel::Destroy()
 {
-	
+	m_Impl->m_DecodingNode->Release();
 }
 ///	\brief load a media file
 ///	\param	filepath	the path of the file to load
@@ -62,25 +68,32 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	///	brief load 
 	m_Impl->m_DecodingNode->LoadFile(filepath);
 	size_t frameCount = m_Impl->m_DecodingNode->GetFrameCount();
+	double fps = m_Impl->m_DecodingNode->GetFrameRate();
+	double periodSecs = 1.0 / fps;
+	m_Impl->m_FramePeriod = 
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs));
 	m_Impl->m_FrameCountFlowOutSubj.get_subscriber().on_next(frameCount);
 }
 ///	\brief start playback
 void PlayerModel::Start()
 {
-	double fps = m_Impl->m_DecodingNode->GetFrameRate();
-	double period = 1 / fps; ///	period in seconds
-	/// convert to chrono nanoseconds
-	auto periodNano = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(period));
-	auto playbackObs = rxcpp::observable<>::interval(periodNano, rxcpp::synchronize_new_thread());
-
+	auto playbackObs = rxcpp::observable<>::interval(m_Impl->m_FramePeriod, rxcpp::synchronize_new_thread());
+	m_Impl->m_Start = std::chrono::high_resolution_clock::now();
 	m_Impl->m_PlaybackLifetime.add(
 		playbackObs.subscribe([this](auto _)
 	{
-		int curPos = m_Impl->m_DecodingNode->GetCurrentFramePosition();
-		m_Impl->m_DecodingNode->GenerateFrame();
-		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(curPos);
-		curPos++;
-		m_Impl->m_DecodingNode->SetCurrentFramePos(curPos);
+		auto playbackNow = std::chrono::high_resolution_clock::now();
+		std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(playbackNow - m_Impl->m_Start);
+		/*if (diff >= m_Impl->m_FramePeriod - m_Impl->m_FramePeriodTolerance)
+		{*/
+			LOG_DEBUG << "Playback: " << diff.count();
+			int curPos = m_Impl->m_DecodingNode->GetCurrentFramePosition();
+			m_Impl->m_DecodingNode->GenerateFrame();
+			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(curPos);
+			curPos++;
+			m_Impl->m_DecodingNode->SetCurrentFramePos(curPos);
+			m_Impl->m_Start = std::chrono::high_resolution_clock::now();
+		//}
 	}));
 }
 ///	\brief pause playback
