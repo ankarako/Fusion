@@ -70,3 +70,21 @@ target_link_libraries(FusionTranscoder Common)
 # adding the include diretory only suffices
 target_include_directories(FusionTranscoder PRIVATE "${3rdPartyPath}/plog/include")
 message(STATUS "Added plog dependency...")
+#########
+# OpenCV
+#########
+# unfortunately the video transcoder depends on opencv
+set(OPENCV_INCLUDE_DIR CACHE STRING "OpenCV include directory")
+set(OPENCV_LIBRARIES_DIR CACHE STRING "OpenCV libraries directory")
+target_include_directories(FusionTranscoder PRIVATE "${OPENCV_INCLUDE_DIR}")
+target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world343d.lib")
+target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world343.lib")
+
+########
+# Rxcpp
+#######
+target_include_directories(FusionTranscoder PRIVATE "${3rdPartyPath}/rxcpp/Rx/v2/src")
+########
+# Spimpl
+#######
+target_include_directories(FusionTranscoder PRIVATE "${3rdPartyPath}/spimpl")

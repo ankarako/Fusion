@@ -57,6 +57,7 @@ void PlayerControllerPresenter::Init()
 		[this](auto filepath)
 	{
 		m_Impl->m_Model->LoadFile(filepath);
+		m_Impl->m_View->Activate();
 	});
 	///	seek back event task
 	m_Impl->m_View->OnSeekBackwardButtonClicked().subscribe(
@@ -65,16 +66,22 @@ void PlayerControllerPresenter::Init()
 		
 	});
 	/// play event task
-	m_Impl->m_View->OnPlayButtonClicked().subscribe(
+	m_Impl->m_View->OnPlayButtonClicked().observe_on(rxcpp::observe_on_new_thread()).subscribe(
 		[this](auto _)
 	{
-
+		m_Impl->m_Model->Start();
+	});
+	/// pause event task
+	m_Impl->m_View->OnPauseButtonClicked().subscribe(
+		[this](auto _) 
+	{
+		m_Impl->m_Model->Pause();
 	});
 	/// stop event task
 	m_Impl->m_View->OnStopButtonClicked().subscribe(
 		[this](auto _)
 	{
-		
+		m_Impl->m_Model->Stop();
 	});
 	/// seek forward event task
 	m_Impl->m_View->OnSeekForwardButtonClicked().subscribe(
@@ -83,6 +90,17 @@ void PlayerControllerPresenter::Init()
 
 	});
 
+	m_Impl->m_Model->FrameCountFlowOut().subscribe(
+		[this](size_t count) 
+	{
+		m_Impl->m_View->SetMaxSliderValue(count);
+	});
+
+	m_Impl->m_Model->CurrentFrameIdFlowOut().subscribe(
+		[this](size_t pos) 
+	{
+		m_Impl->m_View->SetSliderValue(pos);
+	});
 	m_Impl->m_View->Deactivate();
 }
 ///	\brief destroy the presenter
