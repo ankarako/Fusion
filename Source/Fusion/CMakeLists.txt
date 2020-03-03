@@ -193,6 +193,12 @@ message(STATUS "Added stb dependency...")
 add_subdirectory("../VideoTranscoder" FusionTranscoder)
 target_link_libraries(Fusion FusionTranscoder)
 message(STATUS "Added FusionTranscoder dependency...")
+##################
+# OptixRayTracer
+#################
+add_subdirectory("../OptixRayTracer" OptixRayTracer)
+target_link_libraries(Fusion OptixRayTracer)
+message(STATUS "Added OptixRayTracer dependency")
 #### copy resources
 # we use configure_file() instead file() because it creates a 
 # file-level dependency
