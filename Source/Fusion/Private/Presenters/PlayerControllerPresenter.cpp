@@ -2,9 +2,9 @@
 #include <Views/PlayerControllerView.h>
 #include <Views/FileExplorerView.h>
 #include <Models/PlayerModel.h>
-#include <Core/SimpleTask.h>
 #include <WidgetRepo.h>
 #include <plog/Log.h>
+#include <rxcpp/rx-scheduler.hpp>
 
 namespace fu {
 namespace fusion {
@@ -16,10 +16,6 @@ struct PlayerControllerPresenter::Impl
 	view_ptr_t		m_View;
 	fexp_view_ptr_t	m_FexpView;
 	wrepo_ptr_t		m_WidgetRepo;
-	SimpleTask		m_ActivateWidgetTask;
-	SimpleTask		m_DeactivateWidgetTask;
-	SimpleTask		m_LoadFileTask;
-	
 	
 	///	Construction
 	Impl(model_ptr_t model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo)
@@ -72,13 +68,13 @@ void PlayerControllerPresenter::Init()
 		m_Impl->m_Model->Start();
 	});
 	/// pause event task
-	m_Impl->m_View->OnPauseButtonClicked().subscribe(
+	m_Impl->m_View->OnPauseButtonClicked()/*.observe_on(rxcpp::observe_on_new_thread())*/.subscribe(
 		[this](auto _) 
 	{
 		m_Impl->m_Model->Pause();
 	});
 	/// stop event task
-	m_Impl->m_View->OnStopButtonClicked().subscribe(
+	m_Impl->m_View->OnStopButtonClicked()/*.observe_on(rxcpp::observe_on_new_thread())*/.subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_Model->Stop();
