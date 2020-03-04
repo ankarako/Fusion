@@ -11,9 +11,9 @@ namespace rt {
 ///	\brief holds optix group and acceleration structure
 struct MeshInstanceCompObj
 {
-	optix::Acceleration	Acceleration;
-	optix::Group			Group;
-	optix::GeometryGroup	GGroup;
+	optix::Transform		Transform;
+	optix::Acceleration		Acceleration;
+	optix::GeometryGroup	GGroup;	
 	optix::GeometryInstance GInstance;
 };	///	!struct MeshInstanceCompObj
 ///	\typedef MeshInstanceComp

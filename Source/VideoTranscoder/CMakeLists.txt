@@ -76,10 +76,14 @@ message(STATUS "Added plog dependency...")
 # unfortunately the video transcoder depends on opencv
 set(OPENCV_INCLUDE_DIR CACHE STRING "OpenCV include directory")
 set(OPENCV_LIBRARIES_DIR CACHE STRING "OpenCV libraries directory")
+# replace backslashes
+STRING(REGEX REPLACE "\\\\" "/" OPENCV_INCLUDE_DIR "${OPENCV_INCLUDE_DIR}")
+STRING(REGEX REPLACE "\\\\" "/" OPENCV_LIBRARIES_DIR "${OPENCV_LIBRARIES_DIR}")
+message(STATUS "Selected OpenCV include directory: ${OPENCV_INCLUDE_DIR}")
+message(STATUS "Selected OpenCV libraries directory: ${OPENCV_LIBRARIES_DIR}")
 target_include_directories(FusionTranscoder PRIVATE "${OPENCV_INCLUDE_DIR}")
-target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world343d.lib")
-target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world343.lib")
-
+target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420d.lib")
+target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420.lib")
 ########
 # Rxcpp
 #######
