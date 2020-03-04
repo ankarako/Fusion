@@ -20,37 +20,6 @@ class BufferObj { };
 ///	Please use this instead of directly BufferObjs
 template <typename ElementType, Device Dev>
 using Buffer = std::shared_ptr<BufferObj<ElementType, Dev>>;
-namespace detail {
-	///	\struct BufferObjDeleter
-	///	\brief a deleter for buffer objects
-	template <typename ElementType, Device Dev = Device::Unknown>
-	struct BufferObjDeleter 
-	{ 
-		//static_assert(false, "Unknown Device BufferObjDeleter is not implemented.");
-	};
-	///	\struct BufferObjDeleter
-	///	\brief CPU specialization
-	template <typename ElementType>
-	struct BufferObjDeleter<ElementType, Device::CPU>
-	{
-		void operator()(BufferObj<ElementType, Device::CPU>* ptr) const
-		{
-			if (ptr->m_Data != nullptr)
-				delete[] ptr->m_Data;
-		}
-	};	///	!struct BufferObjDeleter
-	///	\struct BufferObjDeleter
-	///	\brief GPU specialization
-	template <typename ElementType>
-	struct BufferObjDeleter<ElementType, Device::GPU>
-	{
-		void operator()(BufferObj<ElementType, Device::GPU>* ptr) const
-		{
-			if (ptr->m_Data != nullptr)
-				cudaFree((void*)ptr->m_Data);
-		}
-	};	///	!struct BufferObjDeleter
-}	///	!namespace detail
 ///	\class Buffer
 ///	\brief CPU specialization
 template <typename ElementType>
@@ -60,9 +29,6 @@ private:
 	/// Construction and creation
 	///	buffers can only be created via factory method
 	struct Constructor { };
-	///	friend deleter class
-	friend detail::BufferObjDeleter<ElementType, Device::CPU>;
-	friend Buffer<ElementType, Device::CPU> CreateBuffer(size_t count);
 public:
 	NoCopyAssignMove(BufferObj);
 	///	\typedef element_t	
@@ -76,10 +42,6 @@ public:
 	BufferObj(Constructor, size_t elementCount)
 		: m_Data(std::make_shared<buffer_t>(elementCount)), m_Count(elementCount)
 	{ }
-	///	\brief construction only through factory method
-	BufferObj(Constructor, ElementType* data, size_t elementCount)
-		: m_Data(data), m_Count(elementCount)
-	{ }
 	///	\brief create a buffer from the specified element count
 	///	\param	elementCount	the number of elements that this buffer will contain
 	///	\return a reference counted buffer object
@@ -87,17 +49,6 @@ public:
 	{
 		return std::make_shared<BufferObj<ElementType, Device::CPU>>(Constructor{}, elementCount);
 	}
-	///	\brief create a buffer from the specified pointer and element count
-	///	\param	data			the starting address of the data
-	///	\param	elementCount	the number of elements in the data
-	///	\return a reference counted buffer object
-	//static buffer_t Create(ElementType* data, size_t elementCount)
-	//{
-	//	return std::make_shared<BufferObj<ElementType, Device::CPU>>(
-	//		new BufferObj(Constructor{}, data, elementCount),
-	//		detail::BufferObjDeleter<ElementType, Device::CPU>()
-	//		);
-	//}
 	///	\brief get the number of elements in the buffer
 	///	\return the number of elements in the buffer
 	size_t Count() const
@@ -120,7 +71,7 @@ public:
 	///	\return the buffer's data start address
 	const ElementType* Data() const
 	{
-		return m_Data;
+		return m_Data->data();
 	}
 	///	\brief get the start address of the buffer
 	///	\return the buffer's data start address
@@ -234,6 +185,41 @@ BufferGPU<ElementType> CreateBufferGPU(size_t count)
 {
 	using buf_obj_t = BufferObj<ElementType, Device::GPU>;
 	return buf_obj_t::Create(count);
+}
+///=============
+///	Buffer Copy
+///=============
+/// Copy CPU -> CPU
+///	\brief copy a source cpu buffer to another destination cpu buffer
+///	\param	dest	the destination buffer
+///	\param	src		tje spirce buffer
+///	\return true if the copy was successful, false otherwise
+template <typename ElementType>
+static void BufferCopy(BufferCPU<ElementType>& dest, const BufferCPU<ElementType>& src)
+{
+	/// check that the buffers have the same size
+	size_t srcsz = src->ByteSize();
+	size_t destsz = dest->ByteSize();
+	DebugAssertMsg(destsz == srcsz, "Failed to copy buffers. The buffers do not have the same size");
+	/*auto it = std::copy(src->Data(), src->Data() + src->Count(), dest->Data());
+	size_t iter_diff = std::distance((ElementType*)src->Data(), it);*/
+	memcpy(dest->Data(), src->Data(), srcsz);
+	/*return  iter_diff == src->Count();*/
+}
+/// Copy CPU -> GPU
+///	\brief copy a source cpu buffer to a destination gpu buffer
+///	\param	src		the source cpu bufer to copy
+///	\param	dest	the destination gpu buffer
+///	\return true if the copy was successful, false otherwise
+template <typename ElementType>
+static void BufferCopy(BufferGPU<ElementType>& dest, const BufferCPU<ElementType>& src)
+{
+	/// check that the buffers have the same size
+	size_t srcsz = src->ByteSize();
+	size_t destsz = dest->ByteSize();
+	DebugAssertMsg(destsz == srcsz, "Failed to copy buffers. The buffers do not have the same size");
+	cudaError_t res = cudaMemcpy((void*)dest->Data(), (void*)src->Data(), srcsz, cudaMemcpyHostToDevice);
+	DebugAssert(res == CUDA_SUCCESS);
 }
 }	///	!namespace fu
 #endif	///	!__COMMON_PUBLIC_BUFFER_H__
