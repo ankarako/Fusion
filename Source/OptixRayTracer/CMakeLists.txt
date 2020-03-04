@@ -87,20 +87,17 @@ target_include_directories(OptixRayTracer PUBLIC "Public")
 ###############
 # Dependencies
 ###############
-#######
-# CUDA
-#######
-find_package(CUDA REQUIRED)
-target_include_directories(OptixRayTracer PUBLIC "${CUDA_INCLUDE_DIRS}")
-target_link_libraries(OptixRayTracer "${CUDA_LIBRARIES}")
-message(STATUS "include: ${CUDA_INCLUDE_DIRS}")
-message(STATUS "link: ${CUDA_LIBRARIES}")
 ########
 # Optix
 ########
 set(OPTIX_INCLUDE_DIR CACHE STRING "Optix (6.5) include directory")
 set(OPTIX_LIBRARIES_DIR CACHE STRING "Optix (6.5) libraries directory")
+# replace backslashes
+STRING(REGEX REPLACE "\\\\" "/" OPTIX_INCLUDE_DIR "${OPTIX_INCLUDE_DIR}")
+STRING(REGEX REPLACE "\\\\" "/" OPTIX_LIBRARIES_DIR "${OPTIX_LIBRARIES_DIR}")
 target_include_directories(OptixRayTracer PUBLIC "${OPTIX_INCLUDE_DIR}")
 target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optix.6.5.0.lib")
 target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optixu.6.5.0.lib")
+message(STATUS "Selected Optix include directory: ${OPTIX_INCLUDE_DIR}")
+message(STATUS "Selected Optix libraries directory: ${OPTIX_LIBRARIES_DIR}")
 message(STATUS "Added Optix dependency")

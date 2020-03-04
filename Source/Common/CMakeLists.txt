@@ -69,3 +69,11 @@ target_include_directories(Common PUBLIC "Public")
 ########
 # include suffices
 target_include_directories(Common PRIVATE "${3rdPartyPath}/plog/include")
+#######
+# CUDA
+#######
+find_package(CUDA REQUIRED)
+target_include_directories(Common PUBLIC "${CUDA_INCLUDE_DIRS}")
+target_link_libraries(Common "${CUDA_LIBRARIES}")
+message(STATUS "Selected CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+message(STATUS "Selected CUDA libraries directory: ${CUDA_LIBRARIES}")

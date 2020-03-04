@@ -11,9 +11,17 @@ namespace rt {
 class CreateContextSystem
 {
 public:
-	static void CreateContext(ContextComp ctxComp)
+	/// \brief Create the ownd context of the specified component
+	///	\param	ctxComp	the optix context component to create
+	static void CreateContext(ContextComp& ctxComp)
 	{
 		ctxComp->Context = optix::Context::create();
+	}
+	///	\brief destroy an optix context component
+	///	Destroys the optix context handle of the specified component
+	static void DestroyContext(ContextComp& ctxComp)
+	{
+		ctxComp->Context->destroy();
 	}
 };	///	!class OptixCreateContextSystem
 }	///	!namespace rt
