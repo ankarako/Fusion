@@ -14,6 +14,8 @@ struct EnvMapCompObj
 	optix::TextureSampler 	TextureSampler;
 	optix::Program			MissProgram;
 	optix::Buffer			TextureBuffer;
+	size_t					Width;
+	size_t					Height;
 };	///	!struct EnvMapCompObj
 ///	\typedef EnvMapComp
 ///	\brief a reference counted EnvMapCompObj

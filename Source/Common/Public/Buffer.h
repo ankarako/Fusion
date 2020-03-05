@@ -6,6 +6,7 @@
 #include <Device.h>
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include <vector_types.h>
 #include <memory>
 #include <vector>
 
@@ -201,10 +202,7 @@ static void BufferCopy(BufferCPU<ElementType>& dest, const BufferCPU<ElementType
 	size_t srcsz = src->ByteSize();
 	size_t destsz = dest->ByteSize();
 	DebugAssertMsg(destsz == srcsz, "Failed to copy buffers. The buffers do not have the same size");
-	/*auto it = std::copy(src->Data(), src->Data() + src->Count(), dest->Data());
-	size_t iter_diff = std::distance((ElementType*)src->Data(), it);*/
 	memcpy(dest->Data(), src->Data(), srcsz);
-	/*return  iter_diff == src->Count();*/
 }
 /// Copy CPU -> GPU
 ///	\brief copy a source cpu buffer to a destination gpu buffer

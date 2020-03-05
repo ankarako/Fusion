@@ -17,6 +17,10 @@ struct RaygenProgCompObj
 	optix::float3	Eye{ 0.0f, 0.0f, 0.0f };
 	optix::float3	Up{ 0.0f, 0.0f, 0.0f };
 	optix::float3	Lookat{ 0.0f, 0.0f, 0.0f };
+	int		ViewWidth{ 0 };
+	int		ViewHeight{ 0 };
+	float	AspectRatio{ 0.0f };
+	optix::Buffer	OutputBuffer;
 };	///	!OptixPinholeRaygenProgCompObj
 ///	\typedef OptixPinholeRaygenProgComp
 ///	\brief a reference counted OptixPinholeRaygenProgCompObj

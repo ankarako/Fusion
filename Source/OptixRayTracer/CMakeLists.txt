@@ -19,6 +19,12 @@ include(GetSystemCompilerId)
 include(GroupSource)
 # PrintList
 include(PrintList)
+# StripFilePathFromList
+include(StripPathFromList)
+# AppenFilenamesInDir
+include(AppendFilenamesInDir)
+# copy files from list
+include(CopyFilesFromLists)
 # SBFCommon Project declaration
 message(STATUS "============================")
 message(STATUS "  OptixRayTracer Library")
@@ -101,3 +107,32 @@ target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optixu.6.5.0.lib")
 message(STATUS "Selected Optix include directory: ${OPTIX_INCLUDE_DIR}")
 message(STATUS "Selected Optix libraries directory: ${OPTIX_LIBRARIES_DIR}")
 message(STATUS "Added Optix dependency")
+#######
+# CUDA
+#######
+find_package(CUDA REQUIRED)
+target_include_directories(OptixRayTracer PUBLIC "${CUDA_INCLUDE_DIRS}")
+target_link_libraries(OptixRayTracer "${CUDA_LIBRARIES}")
+message(STATUS "Selected CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+message(STATUS "Selected CUDA libraries directory: ${CUDA_LIBRARIES}")
+#######
+# PLOG
+#######
+target_include_directories(OptixRayTracer PRIVATE "${3rdPartyPath}/plog/include")
+##########################
+# Copy files to resources
+##########################
+# copy ray tracing cuda header files
+# this is needed for the runtime ptx compiler
+# we use configure since we only need to copy the files
+# gather the cuda header files
+file(GLOB OptixRayTracerProgramHdrFiles "Public/Programs/*.cuh")
+PrintList("${OptixRayTracerProgramHdrFiles}" "Gathered program header files")
+
+StripPathFromList("${OptixRayTracerProgramHdrFiles}" OptixRayTracerProgramHdrFilenames)
+AppendFilenamesInDir("${CMAKE_CURRENT_BINARY_DIR}/Resources/Programs" "${OptixRayTracerProgramHdrFilenames}" OptixRayTracerProgramHdrFilesOutputCopyPath)
+
+PrintList("${OptixRayTracerProgramHdrFiles}" "Gathered program header filenames")
+PrintList("${OptixRayTracerProgramHdrFilesOutputCopyPath}" "programe header files will be copied to")
+# copy the files to Resources directory
+# CopyFilesFromLists("${OptixRayTracerProgramHdrFiles}" "${OptixRayTracerProgramHdrFilesOutputCopyPath}")

@@ -26,16 +26,22 @@ struct PlayerModel::Impl
 	rxcpp::observable<long>			m_PlaybackObs;
 	/// playback subscription
 	rxcpp::composite_subscription	m_PlaybackLifetime;
-	/// current frame id output
-	rxcpp::subjects::subject<size_t>	m_CurrentFrameIdFlowOutSubj;
-	/// current frame count
-	rxcpp::subjects::subject<size_t>	m_FrameCountFlowOutSubj;
 	///	playback start time for correct frame rate
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_Start;
 	///	frame rate (actually frame period)
 	std::chrono::milliseconds			m_FramePeriod;
 	///	frame period tolerance for frame rate checking
 	std::chrono::milliseconds			m_FramePeriodTolerance{ 20 };
+	/// current frame id output
+	rxcpp::subjects::subject<size_t>	m_CurrentFrameIdFlowOutSubj;
+	/// current frame count
+	rxcpp::subjects::subject<size_t>	m_FrameCountFlowOutSubj;
+	///	frame width output
+	rxcpp::subjects::subject<int>		m_FrameWidthFlowOutSubj;
+	///	frame height output
+	rxcpp::subjects::subject<int>		m_FrameHeightFlowOutSubj;
+	/// frame size output
+	rxcpp::subjects::subject<uint2>	m_FrameSizeFlowOutSubj;
 	/// Construction
 	/// \brief default constructor
 	///	does nothing
@@ -73,6 +79,9 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	m_Impl->m_FramePeriod = 
 		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs));
 	m_Impl->m_FrameCountFlowOutSubj.get_subscriber().on_next(frameCount);
+	m_Impl->m_FrameWidthFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrameWidth());
+	m_Impl->m_FrameHeightFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrameHeight());
+	m_Impl->m_FrameSizeFlowOutSubj.get_subscriber().on_next(make_uint2(m_Impl->m_DecodingNode->GetFrameWidth(), m_Impl->m_DecodingNode->GetFrameHeight()));
 }
 ///	\brief start playback
 void PlayerModel::Start()
@@ -118,6 +127,26 @@ rxcpp::observable<size_t> fu::fusion::PlayerModel::CurrentFrameIdFlowOut()
 rxcpp::observable<size_t> fu::fusion::PlayerModel::FrameCountFlowOut()
 {
 	return m_Impl->m_FrameCountFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<PlayerModel::frame_t> fu::fusion::PlayerModel::CurrentFrameFlowOut()
+{
+	return m_Impl->m_DecodingNode->FrameFlowOut();
+}
+
+rxcpp::observable<int> fu::fusion::PlayerModel::FrameWidthFlowOut()
+{
+	return m_Impl->m_FrameWidthFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<int> fu::fusion::PlayerModel::FrameHeightFlowOut()
+{
+	return m_Impl->m_FrameHeightFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<uint2> fu::fusion::PlayerModel::FrameSizeFlowOut()
+{
+	return m_Impl->m_FrameSizeFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

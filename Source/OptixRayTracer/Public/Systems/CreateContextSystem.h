@@ -13,9 +13,12 @@ class CreateContextSystem
 public:
 	/// \brief Create the ownd context of the specified component
 	///	\param	ctxComp	the optix context component to create
-	static void CreateContext(ContextComp& ctxComp)
+	static void CreateContext(ContextComp& ctxComp, unsigned int entryPointCount, unsigned int rayTypeCount)
 	{
 		ctxComp->Context = optix::Context::create();
+		ctxComp->Context->setEntryPointCount(entryPointCount);
+		ctxComp->Context->setRayTypeCount(rayTypeCount);
+		ctxComp->Context["scene_epsilon"]->setFloat(1.0e-3);
 	}
 	///	\brief destroy an optix context component
 	///	Destroys the optix context handle of the specified component
