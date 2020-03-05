@@ -3,6 +3,7 @@
 
 #include <Initializable.h>
 #include <Destroyable.h>
+#include <Buffer.h>
 #include <spimpl.h>
 #include <string>
 #include <rxcpp/rx.hpp>
@@ -14,6 +15,7 @@ namespace fusion {
 class PlayerModel	: public app::Initializable, public app::Destroyable
 {
 public:
+	using frame_t = BufferCPU<uchar4>;
 	///	Construction
 	///	\brief default contstructor
 	///	does not depend on anything (yet)
@@ -37,6 +39,14 @@ public:
 	rxcpp::observable<size_t> CurrentFrameIdFlowOut();
 	///	\brief frame duration output
 	rxcpp::observable<size_t> FrameCountFlowOut();
+	///	\brief frame buffer output
+	rxcpp::observable<frame_t> CurrentFrameFlowOut();
+	///	\brief frame width output event
+	rxcpp::observable<int>	FrameWidthFlowOut();
+	///	\brief frame height output event
+	rxcpp::observable<int>	FrameHeightFlowOut();
+	///	\brief frame size flow out
+	rxcpp::observable<uint2> FrameSizeFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

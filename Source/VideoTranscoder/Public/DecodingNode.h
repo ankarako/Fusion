@@ -19,7 +19,7 @@ public:
 	///	\typedef frame_t
 	///	\brief the frame object type
 	///	a decoding node's frame type is the same as the underlying librarie's type (for now)
-	using frame_t = Buffer<float, Device::CPU>;
+	using frame_t = BufferCPU<uchar4>;
 	/// Construction
 	///	\brief Default constructor
 	///	does nothing. The decoding node initializes its members

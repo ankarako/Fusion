@@ -19,6 +19,7 @@ include(GetSystemCompilerId)
 include(GroupSource)
 # PrintList
 include(PrintList)
+
 # SBFCommon Project declaration
 message(STATUS "Creating cmake project...")
 message(STATUS "============================")
@@ -149,6 +150,7 @@ set_target_properties(Fusion PROPERTIES FOLDER "Fusion360")
 set_property(TARGET Fusion PROPERTY CXX_STANDARD 17)
 # set include directory
 target_include_directories(Fusion PUBLIC "Public")
+add_definitions(-DNOMINMAX)
 ###############
 # Dependencies
 ###############
@@ -199,6 +201,28 @@ message(STATUS "Added FusionTranscoder dependency...")
 add_subdirectory("../OptixRayTracer" OptixRayTracer)
 target_link_libraries(Fusion OptixRayTracer)
 message(STATUS "Added OptixRayTracer dependency")
+########
+# Optix
+########
+# set(OPTIX_INCLUDE_DIR CACHE STRING "Optix (6.5) include directory")
+# set(OPTIX_LIBRARIES_DIR CACHE STRING "Optix (6.5) libraries directory")
+# # replace backslashes
+# STRING(REGEX REPLACE "\\\\" "/" OPTIX_INCLUDE_DIR "${OPTIX_INCLUDE_DIR}")
+# STRING(REGEX REPLACE "\\\\" "/" OPTIX_LIBRARIES_DIR "${OPTIX_LIBRARIES_DIR}")
+# target_include_directories(OptixRayTracer PUBLIC "${OPTIX_INCLUDE_DIR}")
+# target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optix.6.5.0.lib")
+# target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optixu.6.5.0.lib")
+# message(STATUS "Selected Optix include directory: ${OPTIX_INCLUDE_DIR}")
+# message(STATUS "Selected Optix libraries directory: ${OPTIX_LIBRARIES_DIR}")
+# message(STATUS "Added Optix dependency")
+#######
+# CUDA
+#######
+find_package(CUDA REQUIRED)
+target_include_directories(Fusion PUBLIC "${CUDA_INCLUDE_DIRS}")
+target_link_libraries(Fusion "${CUDA_LIBRARIES}")
+message(STATUS "Selected CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+message(STATUS "Selected CUDA libraries directory: ${CUDA_LIBRARIES}")
 #### copy resources
 # we use configure_file() instead file() because it creates a 
 # file-level dependency
@@ -213,3 +237,5 @@ configure_file(
 	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf" 
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/MaterialIcons-Regular.ttf" COPYONLY)
 ###
+# create the new directories for the files
+# copy optix cuda program files

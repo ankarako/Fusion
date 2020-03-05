@@ -1,9 +1,11 @@
 #include <DecodingNode.h>
+#include <FuAssert.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/videoio.hpp>
+
 
 namespace fu {
 namespace trans {
@@ -16,13 +18,18 @@ struct DecodingNodeObj::Impl
 	/// TODO: maybe redundant
 	std::string m_LoadedFile{ " " };
 	///	current frfame buffer
-	Buffer<float, Device::CPU>	m_CurrentFrameBuffer;
+	BufferCPU<uchar4>	m_CurrentFrameBuffer;
+	/// keep the cv::Mat frame too so we don't have 
+	///	to allocate new frames for each loaded frame
+	cv::Mat				m_CurrentFrameNative;
 	///	the current frame position
-	size_t						m_CurrentFramePosition{ 0 };
+	size_t				m_CurrentFramePosition{ 0 };
 	///	frame width
 	size_t		m_FrameWidth{ 0 };
 	///	frame height
 	size_t		m_FrameHeight{ 0 };
+	/// frame size in bytes
+	size_t		m_FrameByteSize{ 0 };
 	///	the video's duration in frames
 	size_t		m_FrameCount{ 0 };
 	///	frame rate
@@ -57,6 +64,15 @@ void DecodingNodeObj::LoadFile(const std::string& filepath)
 		m_Impl->m_FrameHeight = m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_HEIGHT);
 		m_Impl->m_FrameCount = m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_COUNT);
 		m_Impl->m_FrameRate = m_Impl->m_Decoder->get(cv::CAP_PROP_FPS);
+		/// output frame byte size
+		m_Impl->m_FrameByteSize = m_Impl->m_FrameWidth * m_Impl->m_FrameHeight * sizeof(uchar4);
+		/// initialize the buffer according to the frame's dims
+		m_Impl->m_CurrentFrameBuffer = CreateBufferCPU<uchar4>(m_Impl->m_FrameHeight * m_Impl->m_FrameWidth);
+		m_Impl->m_CurrentFrameNative = cv::Mat(m_Impl->m_FrameHeight, m_Impl->m_FrameWidth, CV_8UC4);
+		///	get the byte size of the native frame
+		size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+		/// check that our frame and the native have the same byte size
+		DebugAssertMsg(bsize == m_Impl->m_CurrentFrameBuffer->ByteSize(), "Decoded native frame type has different byte size.");
 	}
 }
 ///	\brief release the underlying decoding context
@@ -81,7 +97,7 @@ size_t DecodingNodeObj::GetFrameWidth() const
 ///	\return the frame height of the loaded video
 size_t DecodingNodeObj::GetFrameHeight() const
 {
-	return m_Impl->m_FrameWidth;
+	return m_Impl->m_FrameHeight;
 }
 ///	\brief get the current frame Position
 ///	\return the current frame position
@@ -111,8 +127,21 @@ void DecodingNodeObj::GenerateFrame()
 {
 	if (m_Impl->m_Decoder->isOpened() && m_Impl->m_CurrentFramePosition < m_Impl->m_FrameCount)
 	{
-		cv::Mat curFrame;
-		m_Impl->m_Decoder->operator>>(curFrame);
+		
+		m_Impl->m_Decoder->operator>>(m_Impl->m_CurrentFrameNative);
+		cv::Mat converted;
+		cv::cvtColor(m_Impl->m_CurrentFrameNative, converted, cv::COLOR_RGB2RGBA, 4);
+		/// copy frame data to buffer
+		/// get the byte size of the native frame
+		///	get the byte size of the native frame
+		size_t bsize = converted.total() * converted.elemSize();
+		size_t fbsize = m_Impl->m_CurrentFrameBuffer->ByteSize();
+		/// check that our frame and the native have the same byte size
+		DebugAssertMsg(bsize == m_Impl->m_CurrentFrameBuffer->ByteSize(), "Decoded native frame type has different byte size.");
+		/// copy native frame data to our buffer
+		std::memcpy(m_Impl->m_CurrentFrameBuffer->Data(), converted.data, m_Impl->m_FrameByteSize);
+		/// notify subscriber's about the current frame
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameBuffer);
 	}
 	/// make buffer from frame
 	/// send frame
