@@ -3,10 +3,11 @@
 #include <imgui.h>
 #include <FontDef.h>
 
+namespace fu {
 namespace app {
 ///	\struct Impl
 ///	\brief FontManager implementation
-struct FontManager::Impl 
+struct FontManager::Impl
 {
 	std::map<FontManager::FontType, ImFont*> m_FontMap;
 };	///	!struct Impl
@@ -26,7 +27,7 @@ void FontManager::Init()
 	font = io.Fonts->AddFontFromFileTTF("../Resources/Fonts/calibri.ttf", 14.0f);
 	m_Impl->m_FontMap[FontType::Regular] = font;
 	/// MD icons
-	static const ImWchar iconsRange[] = { ICON_MIN_MD, ICON_MAX_MD};
+	static const ImWchar iconsRange[] = { ICON_MIN_MD, ICON_MAX_MD };
 	ImFontConfig iconsConfig;
 	iconsConfig.MergeMode = true;
 	iconsConfig.PixelSnapH = true;
@@ -41,3 +42,4 @@ ImFont* FontManager::GetFont(const FontType name) const
 	return m_Impl->m_FontMap.at(name);
 }
 }	///	!namespace app
+}	///	!namespace fu

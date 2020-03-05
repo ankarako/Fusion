@@ -3,6 +3,7 @@
 
 #include <rxcpp/rx.hpp>
 
+namespace fu {
 namespace app {
 ///	\class Activatable
 ///	\brief simple Activate/deactivate interface
@@ -50,4 +51,5 @@ private:
 	bool	m_Active{ false };
 };	///	!class Activatable
 }	///	!namespace app
+}	///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_ACTIVATABLE_H__

@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
 	try 
 	{
 		auto injector = boost::di::make_injector(fu::fusion::di::AppDiModule());
-		injector.create<app::Application>().Run();
+		injector.create<fu::app::Application>().Run();
 	}
 	catch (const std::exception& ex)
 	{

@@ -1,5 +1,6 @@
 #include <InputManager.h>
 
+namespace fu {
 namespace app {
 namespace input {
 ///	\struct Impl
@@ -85,3 +86,4 @@ rxcpp::observable<MouseScroll> 	InputManager::OnMouseScroll()
 }
 }	///	!namespace input
 }	///	!namespace app
+}	///	!namespace fu

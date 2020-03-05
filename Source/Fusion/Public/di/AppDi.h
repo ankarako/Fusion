@@ -11,6 +11,7 @@
 #include <FontManager.h>
 /// Core
 #include <Core/SettingsRepo.h>
+#include <Core/Coordination.h>
 ///	implementations
 #include <AppWindow.h>
 #include <ImGuiWindow.h>
@@ -40,6 +41,7 @@ namespace di {
 	auto AppDiModule = []() {
 		/// injector
 		auto Injector = boost::di::make_injector(
+			boost::di::bind<app::ObsCoordination>().to<Coordination>().in(boost::di::singleton),
 			boost::di::bind<app::Initializable * []>().to<
 			app::AppWindow,
 			app::FontManager,

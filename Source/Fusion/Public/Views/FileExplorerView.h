@@ -9,11 +9,10 @@
 #include <string>
 #include <rxcpp/rx.hpp> 
 
+namespace fu {
 namespace app {
 class FontManager;
 }
-
-namespace fu {
 namespace fusion {
 enum class FileExplorerMode
 {

@@ -3,6 +3,7 @@
 
 #include <spimpl.h>
 
+namespace fu {
 namespace app {
 ///	\class ImGuiOpenGLRenderer
 ///	\brief window renderer for imgui
@@ -22,4 +23,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class ImGuiOpenGLRenderer
 }	///	!namespace app
+}	///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_IMGUIOPENGLRENDERER_H__

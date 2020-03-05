@@ -7,19 +7,20 @@
 #include <rxcpp/rx.hpp>
 #include <spimpl.h>
 
+namespace fu {
 namespace app {
 class FontManager;
 }
-
-namespace fu {
 namespace fusion {
+class Coordination;
 ///	\class PlayerViewportView
 class PlayerViewportView : public app::Widget, public app::Initializable
 {
 public:
+	using coord_ptr_t = std::shared_ptr<Coordination>;
 	using fman_ptr_t = std::shared_ptr<app::FontManager>;
 	/// Construction
-	PlayerViewportView(fman_ptr_t fman);
+	PlayerViewportView(fman_ptr_t fman, coord_ptr_t coord);
 	/// brief initialize the widget
 	void Init() override;
 	///	widget render

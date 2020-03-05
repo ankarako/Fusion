@@ -6,10 +6,10 @@
 #include <memory>
 #include <spimpl.h>
 
+namespace fu {
 namespace app {
 class WidgetRepo;
 }
-namespace fu {
 namespace fusion {
 
 class PlayerViewportView;

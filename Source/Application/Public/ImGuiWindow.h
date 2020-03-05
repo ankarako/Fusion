@@ -8,9 +8,10 @@
 
 struct GLFWwindow;
 
+namespace fu {
 namespace app {
 namespace input {
-class InputManager;
+	class InputManager;
 }	///	!namespace input
 class WindowFlags;
 class Renderable;
@@ -43,4 +44,5 @@ private:
 	///
 };	///	!class ImGuiWindow
 }	///	!namespace app
+}	///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_IMGUIWINDOW_H__

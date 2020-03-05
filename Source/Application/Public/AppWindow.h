@@ -7,6 +7,7 @@
 
 #include <spimpl.h>
 
+namespace fu {
 namespace app {
 ///
 class ImGuiWindow;
@@ -26,4 +27,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class AppWindow
 }	///	!namespace app
+} ///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_APPWINDOW_H__
