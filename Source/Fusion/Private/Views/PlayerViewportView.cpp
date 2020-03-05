@@ -1,4 +1,5 @@
 #include <Views/PlayerViewportView.h>
+#include <Core/Coordination.h>
 #include <Buffer.h>
 #include <FontManager.h>
 #include <imgui.h>
@@ -12,6 +13,8 @@ struct PlayerViewportView::Impl
 {
 	/// font manager
 	fman_ptr_t	m_FontManager;
+	///
+	coord_ptr_t	m_Coord;
 	/// viewport size
 	ImVec2		m_WindowSize{ 0.0f, 0.0f };
 	/// gl texture width
@@ -33,13 +36,14 @@ struct PlayerViewportView::Impl
 	///	height changed event
 	rxcpp::subjects::subject<float> OnViewportHeightChangedSubj;
 	/// Construction
-	Impl(fman_ptr_t fman)
+	Impl(fman_ptr_t fman, coord_ptr_t coord)
 		: m_FontManager(fman)
+		, m_Coord(coord)
 	{ }
 };	///	!struct Impl
 ///	Construction
-PlayerViewportView::PlayerViewportView(fman_ptr_t fman)
-	: app::Widget("Player Viewport"), m_Impl(spimpl::make_unique_impl<Impl>(fman))
+PlayerViewportView::PlayerViewportView(fman_ptr_t fman, coord_ptr_t coord)
+	: app::Widget("Player Viewport"), m_Impl(spimpl::make_unique_impl<Impl>(fman, coord))
 { }
 /// \brief initialize the widget
 void PlayerViewportView::Init()
@@ -58,7 +62,7 @@ void PlayerViewportView::Init()
 	});
 	/// both width height task, create g; texture where we can save our
 	/// frame for displaying it with imgui
-	m_Impl->m_FrameWidthFlowInSubj.get_observable()
+	m_Impl->m_FrameWidthFlowInSubj.get_observable().observe_on(m_Impl->m_Coord->UICoordination())
 		.with_latest_from(m_Impl->m_FrameHeightFlowinSubj.get_observable())
 		.subscribe([this](auto wh) 
 	{
@@ -71,14 +75,19 @@ void PlayerViewportView::Init()
 		/// set min filter
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		/// for no input fill a buffer with zeros and copy this one to the gpu
+		BufferCPU<uchar4> blackBuf = CreateBufferCPU<uchar4>(m_Impl->m_DisplayTextureWidth * m_Impl->m_DisplayTextureHeight);
+		std::memset(blackBuf->Data(), 1, blackBuf->ByteSize());
+		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Impl->m_DisplayTextureWidth, m_Impl->m_DisplayTextureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)blackBuf->Data());
 	});
 	/// frame flow in task
-	m_Impl->m_FrameFlowInSubj.get_observable().observe_on(rxcpp::observe_on_event_loop())
+	m_Impl->m_FrameFlowInSubj.get_observable().observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe([this](BufferCPU<uchar4> frame) 
 	{
 		glBindTexture(GL_TEXTURE_2D, m_Impl->m_DisplayTexture);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Impl->m_DisplayTextureWidth, m_Impl->m_DisplayTextureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, frame->Data());
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Impl->m_DisplayTextureWidth, m_Impl->m_DisplayTextureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)frame->Data());
 	});
 	/// create an initial texture with the current 
 	/// frame flow in task

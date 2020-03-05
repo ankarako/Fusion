@@ -4,10 +4,10 @@
 #include <Widget.h>
 #include <spimpl.h>
 
+namespace fu {
 namespace app {
 class FontManager;
 }
-namespace fu {
 namespace fusion {
 class PlayerControllerView : public app::Widget
 {

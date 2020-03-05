@@ -6,6 +6,7 @@
 
 struct ImFont;
 
+namespace fu {
 namespace app {
 ///	\class FontManager
 ///	\brief Controls font loading etc
@@ -37,4 +38,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class FontManager
 }	///	!namespace app
+}	///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_FINTMANAGER_H__
