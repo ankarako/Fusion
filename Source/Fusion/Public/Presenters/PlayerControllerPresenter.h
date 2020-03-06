@@ -6,21 +6,22 @@
 #include <memory>
 #include <spimpl.h>
 
+namespace fu {
 namespace app {
 class WidgetRepo;
 }	///	!namespace app
-namespace fu {
 namespace fusion {
 ///
 class PlayerControllerView;
 class PlayerModel;
 class FileExplorerView;
-
+class Coordination;
 ///	\class PlayerControllerPresenter
 ///	\brief presenter for controlling playeback
 class PlayerControllerPresenter : public app::Initializable, public app::Destroyable
 {
 public:
+	using coord_ptr_t = std::shared_ptr<Coordination>;
 	///	\typedef
 	using model_ptr_t = std::shared_ptr<PlayerModel>;
 	///	\typedef
@@ -35,7 +36,8 @@ public:
 		model_ptr_t model, 
 		view_ptr_t view, 
 		fexp_view_ptr_t fexp_view, 
-		wrepo_ptr_t wrepo);
+		wrepo_ptr_t wrepo,
+		coord_ptr_t coord);
 	///	\brief initialize the presenter
 	///	makes aubscriptions
 	void Init() override;

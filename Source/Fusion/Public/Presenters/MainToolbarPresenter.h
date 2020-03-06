@@ -4,10 +4,10 @@
 #include <Initializable.h>
 #include <spimpl.h>
 
-namespace app {
-class WidgetRepo;	
-}
 namespace fu {
+namespace app {
+class WidgetRepo;
+}
 namespace fusion {
 ///
 class MainToolbarView;

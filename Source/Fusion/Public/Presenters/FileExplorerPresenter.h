@@ -4,10 +4,11 @@
 #include <Initializable.h>
 #include <spimpl.h>
 
+
+namespace fu {
 namespace app {
 class WidgetRepo;
 }	///	!namespace app
-namespace fu {
 namespace fusion {
 ///
 class FileExplorerModel;

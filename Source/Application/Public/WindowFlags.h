@@ -1,6 +1,7 @@
 #ifndef __APPLICATION_PUBLIC_WINDOWFLAGS_H__
 #define __APPLICATION_PUBLIC_WINDOWFLAGS_H__
 
+namespace fu {
 namespace app {
 ///	\class WindowFlags
 ///	\brief simple window functionalities and data
@@ -74,4 +75,5 @@ private:
 	int		m_WindowFrameBufferHeight{ 0 };
 };	///	!class WindowFlags
 }	///	!namespace app
+}	///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_WINDOWFLAGS_H__

@@ -1,5 +1,6 @@
 #include <Application.h>
 
+namespace fu {
 namespace app {
 ///	\struct impl
 ///	\brief Application implementation
@@ -12,7 +13,7 @@ struct Application::Impl
 	/// Construction
 	Impl(
 		winflags_ptr_t flags,
-		std::vector<init_ptr_t> initializables, 
+		std::vector<init_ptr_t> initializables,
 		std::vector<update_ptr_t> updateables,
 		std::vector<destroy_ptr_t> destroyables)
 		: m_WindowFlags(flags)
@@ -24,7 +25,7 @@ struct Application::Impl
 /// Construction
 Application::Application(
 	winflags_ptr_t	flags,
-	std::vector<init_ptr_t> initializables, 
+	std::vector<init_ptr_t> initializables,
 	std::vector<update_ptr_t> updateables,
 	std::vector<destroy_ptr_t> destroyables)
 	: m_Impl(spimpl::make_unique_impl<Impl>(flags, initializables, updateables, destroyables))
@@ -36,7 +37,7 @@ void Application::Run()
 	{
 		initializable->Init();
 	}
-	while(!m_Impl->m_WindowFlags->PollShutDownFlag())
+	while (!m_Impl->m_WindowFlags->PollShutDownFlag())
 	{
 		for (auto& updateable : m_Impl->m_Updateables)
 		{
@@ -49,3 +50,4 @@ void Application::Run()
 	}
 }
 }	///	!namespace app
+}	///	@namespace fu

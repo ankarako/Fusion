@@ -59,9 +59,36 @@ set_target_properties(FusionTranscoder PROPERTIES FOLDER "Fusion360")
 target_link_libraries(FusionTranscoder "MFPlat.lib")
 target_link_libraries(FusionTranscoder "MF.lib")
 target_link_libraries(FusionTranscoder "MFuuid.lib")
+#########
+# Common
+#########
+add_subdirectory("../Common" Common)
+target_link_libraries(FusionTranscoder Common)
 #######
 # PLog
 #######
 # adding the include diretory only suffices
 target_include_directories(FusionTranscoder PRIVATE "${3rdPartyPath}/plog/include")
 message(STATUS "Added plog dependency...")
+#########
+# OpenCV
+#########
+# unfortunately the video transcoder depends on opencv
+set(OPENCV_INCLUDE_DIR CACHE STRING "OpenCV include directory")
+set(OPENCV_LIBRARIES_DIR CACHE STRING "OpenCV libraries directory")
+# replace backslashes
+STRING(REGEX REPLACE "\\\\" "/" OPENCV_INCLUDE_DIR "${OPENCV_INCLUDE_DIR}")
+STRING(REGEX REPLACE "\\\\" "/" OPENCV_LIBRARIES_DIR "${OPENCV_LIBRARIES_DIR}")
+message(STATUS "Selected OpenCV include directory: ${OPENCV_INCLUDE_DIR}")
+message(STATUS "Selected OpenCV libraries directory: ${OPENCV_LIBRARIES_DIR}")
+target_include_directories(FusionTranscoder PRIVATE "${OPENCV_INCLUDE_DIR}")
+target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420d.lib")
+target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420.lib")
+########
+# Rxcpp
+#######
+target_include_directories(FusionTranscoder PRIVATE "${3rdPartyPath}/rxcpp/Rx/v2/src")
+########
+# Spimpl
+#######
+target_include_directories(FusionTranscoder PRIVATE "${3rdPartyPath}/spimpl")

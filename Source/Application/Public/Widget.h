@@ -6,6 +6,7 @@
 
 #include <string>
 
+namespace fu {
 namespace app {
 ///	\class Widget
 ///	\brief simple widget class
@@ -33,4 +34,5 @@ private:
 	std::string m_WidgetName;
 };	///	class widget
 }	///	!namespace app
+}	///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_WIDGET_H__
