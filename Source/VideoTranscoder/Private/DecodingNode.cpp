@@ -131,6 +131,7 @@ void DecodingNodeObj::GenerateFrame()
 		m_Impl->m_Decoder->operator>>(m_Impl->m_CurrentFrameNative);
 		cv::Mat converted;
 		cv::cvtColor(m_Impl->m_CurrentFrameNative, converted, cv::COLOR_RGB2RGBA, 4);
+		//cv::imwrite("frame.png", converted);
 		/// copy frame data to buffer
 		/// get the byte size of the native frame
 		///	get the byte size of the native frame
