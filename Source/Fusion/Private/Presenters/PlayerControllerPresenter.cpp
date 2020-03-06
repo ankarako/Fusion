@@ -66,7 +66,7 @@ void PlayerControllerPresenter::Init()
 		
 	});
 	/// play event task
-	m_Impl->m_View->OnPlayButtonClicked().observe_on(m_Impl->m_Coord->ModelCoordination()).subscribe(
+	m_Impl->m_View->OnPlayButtonClicked()/*.observe_on(m_Impl->m_Coord->UICoordination())*/.subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_Model->Start();

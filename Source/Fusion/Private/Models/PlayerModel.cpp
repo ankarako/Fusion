@@ -1,4 +1,5 @@
 #include <Models/PlayerModel.h>
+#include <Core/Coordination.h>
 #include <DecodingNode.h>
 #include <plog/Log.h>
 #include <rxcpp/rx-scheduler.hpp>
@@ -20,6 +21,7 @@ struct PlayerModel::Impl
 		Paused,
 		Stopped
 	};	///	!enum State
+	coord_ptr_t						m_Coord;
 	///	a decoding node used to decode video files
 	trans::DecodingNode				m_DecodingNode{ nullptr };
 	///
@@ -45,15 +47,15 @@ struct PlayerModel::Impl
 	/// Construction
 	/// \brief default constructor
 	///	does nothing
-	Impl() 
-		: m_DecodingNode(trans::CreateDecodingNode())
+	Impl(coord_ptr_t coord) 
+		: m_Coord(coord), m_DecodingNode(trans::CreateDecodingNode())
 	{ }
 };
 ///	Construction
 ///	\brief default constructor
 ///	Initializes implementation struct
-PlayerModel::PlayerModel()
-	: m_Impl(spimpl::make_unique_impl<Impl>())
+PlayerModel::PlayerModel(coord_ptr_t coord)
+	: m_Impl(spimpl::make_unique_impl<Impl>(coord))
 { }
 ///	\brief initialize the player
 ///	Initializes the owned transcoding context
@@ -86,23 +88,22 @@ void PlayerModel::LoadFile(const std::string& filepath)
 ///	\brief start playback
 void PlayerModel::Start()
 {
-	auto playbackObs = rxcpp::observable<>::interval(m_Impl->m_FramePeriod, rxcpp::synchronize_new_thread());
+	auto playbackObs = rxcpp::observable<>::interval(m_Impl->m_FramePeriod, /*m_Impl->m_Coord->ModelCoordination()*/rxcpp::synchronize_new_thread());
 	m_Impl->m_Start = std::chrono::high_resolution_clock::now();
 	m_Impl->m_PlaybackLifetime.add(
 		playbackObs.subscribe([this](auto _)
 	{
 		auto playbackNow = std::chrono::high_resolution_clock::now();
 		std::chrono::milliseconds diff = std::chrono::duration_cast<std::chrono::milliseconds>(playbackNow - m_Impl->m_Start);
-		/*if (diff >= m_Impl->m_FramePeriod - m_Impl->m_FramePeriodTolerance)
-		{*/
-			LOG_DEBUG << "Playback: " << diff.count();
-			int curPos = m_Impl->m_DecodingNode->GetCurrentFramePosition();
-			m_Impl->m_DecodingNode->GenerateFrame();
-			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(curPos);
-			curPos++;
-			m_Impl->m_DecodingNode->SetCurrentFramePos(curPos);
-			m_Impl->m_Start = std::chrono::high_resolution_clock::now();
-		//}
+
+		LOG_DEBUG << "Playback: " << diff.count();
+		int curPos = m_Impl->m_DecodingNode->GetCurrentFramePosition();
+		m_Impl->m_DecodingNode->GenerateFrame();
+		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(curPos);
+		curPos++;
+		m_Impl->m_DecodingNode->SetCurrentFramePos(curPos);
+		m_Impl->m_Start = std::chrono::high_resolution_clock::now();
+		
 	}));
 }
 ///	\brief pause playback
