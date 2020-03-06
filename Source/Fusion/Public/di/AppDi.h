@@ -11,6 +11,7 @@
 #include <FontManager.h>
 /// Core
 #include <Core/SettingsRepo.h>
+#include <Core/Coordination.h>
 ///	implementations
 #include <AppWindow.h>
 #include <ImGuiWindow.h>
@@ -21,6 +22,7 @@
 #include <Models/LoggerModel.h>
 #include <Models/FileExplorerModel.h>
 #include <Models/PlayerModel.h>
+#include <Models/VideoTracingModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -39,6 +41,7 @@ namespace di {
 	auto AppDiModule = []() {
 		/// injector
 		auto Injector = boost::di::make_injector(
+			boost::di::bind<app::ObsCoordination>().to<Coordination>().in(boost::di::singleton),
 			boost::di::bind<app::Initializable * []>().to<
 			app::AppWindow,
 			app::FontManager,
@@ -50,7 +53,9 @@ namespace di {
 			FileExplorerPresenter,
 			FileExplorerModel,
 			MainToolbarPresenter,
-			PlayerModel
+			PlayerModel,
+			VideoTracingModel,
+			PlayerViewportView
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow
@@ -58,7 +63,8 @@ namespace di {
 			boost::di::bind<app::Destroyable * []>().to<
 			app::AppWindow,
 			FileExplorerModel,
-			PlayerModel
+			PlayerModel,
+			VideoTracingModel
 			>(),
 			boost::di::bind<app::Renderable>().to<
 			app::WidgetRepo

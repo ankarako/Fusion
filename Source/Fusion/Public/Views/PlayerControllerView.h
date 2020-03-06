@@ -4,10 +4,10 @@
 #include <Widget.h>
 #include <spimpl.h>
 
+namespace fu {
 namespace app {
 class FontManager;
 }
-namespace fu {
 namespace fusion {
 class PlayerControllerView : public app::Widget
 {
@@ -17,9 +17,12 @@ public:
 	PlayerControllerView(fman_ptr_t fman);
 	///	widget rendering
 	void Render() override;
+	void SetSliderValue(int value);
+	void SetMaxSliderValue(int value);
 
 	rxcpp::observable<void*>	OnSeekBackwardButtonClicked();
 	rxcpp::observable<void*>	OnPlayButtonClicked();
+	rxcpp::observable<void*>	OnPauseButtonClicked();
 	rxcpp::observable<void*>	OnStopButtonClicked();
 	rxcpp::observable<void*>	OnSeekForwardButtonClicked();
 	rxcpp::observer<int>		FrameIdFlowIn();

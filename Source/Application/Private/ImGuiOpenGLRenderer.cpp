@@ -5,6 +5,7 @@
 #include <GL/gl3w.h>
 #include <GL/GL.h>
 
+namespace fu {
 namespace app {
 ///	\struct Impl
 ///	\brief ImGuiOpenGLRenderer Implementation
@@ -33,3 +34,4 @@ void ImGuiOpenGLRenderer::Render()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 }	///	!namespace app
+}	///	!namespace fu

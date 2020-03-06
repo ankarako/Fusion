@@ -11,6 +11,7 @@
 #include <vector>
 #include <memory>
 
+namespace fu {
 namespace app {
 ///	\class app
 ///	\brief 	a simple application that holds application components
@@ -33,7 +34,7 @@ public:
 	///	\brief construct from array of initializables, updateables and destroyables
 	Application(
 		winflags_ptr_t flags,
-		std::vector<init_ptr_t> initializables, 
+		std::vector<init_ptr_t> initializables,
 		std::vector<update_ptr_t> updateables,
 		std::vector<destroy_ptr_t> destroyables
 	);
@@ -44,4 +45,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class Application
 }	///	!namespace app
+}	///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_APPLICATION_H__

@@ -7,6 +7,7 @@
 #include <vector>
 #include <spimpl.h>
 
+namespace fu {
 namespace app {
 ///
 class Widget;
@@ -29,4 +30,5 @@ private:
 	spimpl::unique_impl_ptr<Impl> m_Impl;
 };	///	!class WidgetRepo
 }	///	!namespace app
+}	///	!anamesapce fu
 #endif	///	!__APPLICATION_PUBLIC_WIDGETREPO_H__

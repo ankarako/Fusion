@@ -1,6 +1,7 @@
 #include <AppWindow.h>
 #include <ImGuiWindow.h>
 
+namespace fu {
 namespace app {
 ///	\struct Impl
 ///	\brief AppWindow implementation
@@ -32,3 +33,4 @@ void AppWindow::Destroy()
 	m_Impl->m_Window.Destroy();
 }
 }	///	!namespace app
+}	///	!namespace fu

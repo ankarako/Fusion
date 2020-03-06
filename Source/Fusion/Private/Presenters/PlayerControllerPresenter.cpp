@@ -2,9 +2,10 @@
 #include <Views/PlayerControllerView.h>
 #include <Views/FileExplorerView.h>
 #include <Models/PlayerModel.h>
-#include <Core/SimpleTask.h>
+#include <Core/Coordination.h>
 #include <WidgetRepo.h>
 #include <plog/Log.h>
+#include <rxcpp/rx-scheduler.hpp>
 
 namespace fu {
 namespace fusion {
@@ -16,17 +17,15 @@ struct PlayerControllerPresenter::Impl
 	view_ptr_t		m_View;
 	fexp_view_ptr_t	m_FexpView;
 	wrepo_ptr_t		m_WidgetRepo;
-	SimpleTask		m_ActivateWidgetTask;
-	SimpleTask		m_DeactivateWidgetTask;
-	SimpleTask		m_LoadFileTask;
-	
+	coord_ptr_t		m_Coord;
 	
 	///	Construction
-	Impl(model_ptr_t model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo)
+	Impl(model_ptr_t model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo, coord_ptr_t coord)
 		: m_Model(model)
 		, m_View(view)
 		, m_FexpView(fexp_view)
 		, m_WidgetRepo(wrepo)
+		, m_Coord(coord)
 	{ }
 };	///	!struct Impl
 ///	Construction
@@ -34,8 +33,9 @@ PlayerControllerPresenter::PlayerControllerPresenter(
 	model_ptr_t model, 
 	view_ptr_t view, 
 	fexp_view_ptr_t fexp_view, 
-	wrepo_ptr_t wrepo)
-	: m_Impl(spimpl::make_unique_impl<Impl>(model, view, fexp_view, wrepo))
+	wrepo_ptr_t wrepo,
+	coord_ptr_t coord)
+	: m_Impl(spimpl::make_unique_impl<Impl>(model, view, fexp_view, wrepo, coord))
 { }
 ///	\brief Initialize the presenter
 void PlayerControllerPresenter::Init()
@@ -57,6 +57,7 @@ void PlayerControllerPresenter::Init()
 		[this](auto filepath)
 	{
 		m_Impl->m_Model->LoadFile(filepath);
+		m_Impl->m_View->Activate();
 	});
 	///	seek back event task
 	m_Impl->m_View->OnSeekBackwardButtonClicked().subscribe(
@@ -65,16 +66,22 @@ void PlayerControllerPresenter::Init()
 		
 	});
 	/// play event task
-	m_Impl->m_View->OnPlayButtonClicked().subscribe(
+	m_Impl->m_View->OnPlayButtonClicked()/*.observe_on(m_Impl->m_Coord->UICoordination())*/.subscribe(
 		[this](auto _)
 	{
-
+		m_Impl->m_Model->Start();
+	});
+	/// pause event task
+	m_Impl->m_View->OnPauseButtonClicked().subscribe(
+		[this](auto _) 
+	{
+		m_Impl->m_Model->Pause();
 	});
 	/// stop event task
 	m_Impl->m_View->OnStopButtonClicked().subscribe(
 		[this](auto _)
 	{
-		
+		m_Impl->m_Model->Stop();
 	});
 	/// seek forward event task
 	m_Impl->m_View->OnSeekForwardButtonClicked().subscribe(
@@ -83,6 +90,17 @@ void PlayerControllerPresenter::Init()
 
 	});
 
+	m_Impl->m_Model->FrameCountFlowOut().subscribe(
+		[this](size_t count) 
+	{
+		m_Impl->m_View->SetMaxSliderValue(count);
+	});
+
+	m_Impl->m_Model->CurrentFrameIdFlowOut().subscribe(
+		[this](size_t pos) 
+	{
+		m_Impl->m_View->SetSliderValue(pos);
+	});
 	m_Impl->m_View->Deactivate();
 }
 ///	\brief destroy the presenter

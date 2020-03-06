@@ -4,6 +4,7 @@
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
 
+namespace fu {
 namespace app {
 namespace input {
 ///	\struct MousePos
@@ -83,4 +84,5 @@ private:
 };	///	!class InputManager
 }	///	!namespace input
 }	///	!namespace app
+}	///	!namespace fu
 #endif	///	!__APPLICATION_PUBLIC_INPUTMANAGER_H__
