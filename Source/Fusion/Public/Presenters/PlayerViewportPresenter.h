@@ -15,17 +15,19 @@ namespace fusion {
 class PlayerViewportView;
 class PlayerModel;
 class VideoTracingModel;
+class Coordination;
 ///	\class PlayerViewportPresenter
 ///	\brief presents the video frames
 class PlayerViewportPresenter : public app::Initializable
 {
 public:
-	using model_ptr_t = std::shared_ptr<PlayerModel>;
-	using view_ptr_t = std::shared_ptr<PlayerViewportView>;
-	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
-	using tracer_model_ptr_t = std::shared_ptr<VideoTracingModel>;
+	using model_ptr_t			= std::shared_ptr<PlayerModel>;
+	using view_ptr_t			= std::shared_ptr<PlayerViewportView>;
+	using wrepo_ptr_t			= std::shared_ptr<app::WidgetRepo>;
+	using tracer_model_ptr_t	= std::shared_ptr<VideoTracingModel>;
+	using coord_ptr_t			= std::shared_ptr<Coordination>;
 	/// Construction
-	PlayerViewportPresenter(model_ptr_t model, view_ptr_t view, tracer_model_ptr_t tracer_model, wrepo_ptr_t wrepo);
+	PlayerViewportPresenter(model_ptr_t model, view_ptr_t view, tracer_model_ptr_t tracer_model, wrepo_ptr_t wrepo, coord_ptr_t coord);
 	void Init() override;
 private:
 	struct Impl;
