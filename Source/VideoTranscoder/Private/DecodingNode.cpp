@@ -128,7 +128,7 @@ void DecodingNodeObj::GenerateFrame()
 	if (m_Impl->m_Decoder->isOpened() && m_Impl->m_CurrentFramePosition < m_Impl->m_FrameCount)
 	{
 		
-		m_Impl->m_Decoder->operator>>(m_Impl->m_CurrentFrameNative);
+		m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative);
 		cv::Mat converted;
 		cv::cvtColor(m_Impl->m_CurrentFrameNative, converted, cv::COLOR_RGB2RGBA, 4);
 		/// get the byte size of the native frame

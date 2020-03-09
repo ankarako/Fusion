@@ -45,15 +45,14 @@ public:
 	///	\param	ctxComp	the context component
 	///	\param	width	the buffer's width
 	///	\param	height	the buffer's height
-	static void CreateBuffer(EnvMapComp& envComp, ContextComp& ctxComp, size_t width, size_t height)
+	static void CreateTextureBuffer(EnvMapComp& envComp, ContextComp& ctxComp, size_t width, size_t height)
 	{
 		envComp->TextureBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, width, height);
 		envComp->TextureSampler->setBuffer(0u, 0u, envComp->TextureBuffer);
 		envComp->Width = width;
 		envComp->Height = height;
-		envComp->MissProgram["EnvMapTextSampler"]->set(envComp->TextureSampler);
+		envComp->MissProgram["EnvMapTexSampler"]->set(envComp->TextureSampler);
 	}
-	
 	///	\brief set the texture of the texture sampler
 	///	\param	envComp	the environment map component
 	///	\param	texBuf	the texture buffer on the cpu
@@ -67,7 +66,7 @@ public:
 	}
 private:
 	static constexpr const char* k_EnvMapMissPtxFilepath = "Resources/Programs/EnvMapMiss.ptx";
-	static constexpr const char* k_EnvMapMissProgName = "EnvMapMiss";
+	static constexpr const char* k_EnvMapMissProgName	 = "EnvMapMiss";
 };	///	!class EnvMapSystem
 }	///	!namespace rt
 }	///	!namespace fu

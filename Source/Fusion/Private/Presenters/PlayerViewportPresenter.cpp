@@ -48,26 +48,33 @@ void PlayerViewportPresenter::Init()
 	///=========================
 	/// frame width subscription
 	///=========================
-	m_Impl->m_Model->FrameWidthFlowOut()
-		.subscribe(m_Impl->m_View->FrameWidthFlowIn());
+	/*m_Impl->m_Model->FrameWidthFlowOut()
+		.subscribe(m_Impl->m_View->FrameWidthFlowIn());*/
 	///==========================
 	/// frame height subscription
 	///===========================
-	m_Impl->m_Model->FrameHeightFlowOut()
-		.subscribe(m_Impl->m_View->FrameHeightFlowIn());
+	/*m_Impl->m_Model->FrameHeightFlowOut()
+		.subscribe(m_Impl->m_View->FrameHeightFlowIn());*/
 	///========================
 	/// frame size subscription
 	///========================
 	m_Impl->m_Model->FrameSizeFlowOut()
 		.subscribe(m_Impl->m_TracerModel->FrameSizeFlowIn());
+	m_Impl->m_Model->FrameSizeFlowOut()
+		.subscribe(m_Impl->m_View->FrameSizeFlowIn());
 	///============================
 	///	viewport width changed task
 	///============================
 	m_Impl->m_View->OnViewportWidthChanged().subscribe(
 		[this](float newWidth)
 	{
-		
+		/// TODO:
 	});
+	///==========================
+	///	PBO flow out subscription
+	///==========================
+	m_Impl->m_View->PixelBufferHandleFlowOut()
+		.subscribe(m_Impl->m_TracerModel->PboFlowIn());
 	///=================================
 	/// frame flow out from decoder task
 	///=================================
@@ -76,12 +83,7 @@ void PlayerViewportPresenter::Init()
 	///================================
 	/// frame flow out from tracer task
 	///================================
-	m_Impl->m_TracerModel->FrameFlowOut()
-		.map([this](auto& buf)
-	{
-		LOG_WARNING << "dufaq";
-		return buf;
-	})
+	m_Impl->m_TracerModel->FrameFlowOut().observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_View->FrameFlowIn());
 	m_Impl->m_View->Activate();
 }

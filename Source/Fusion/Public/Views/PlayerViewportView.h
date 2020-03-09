@@ -6,6 +6,7 @@
 #include <Widget.h>
 #include <rxcpp/rx.hpp>
 #include <spimpl.h>
+#include <GL/gl3w.h>
 
 namespace fu {
 namespace app {
@@ -32,9 +33,12 @@ public:
 	rxcpp::observer<int> FrameWidthFlowIn();
 	/// frame height input
 	rxcpp::observer<int> FrameHeightFlowIn();
+	///	frame size input
+	rxcpp::observer<uint2> FrameSizeFlowIn();
 	/// output events
 	rxcpp::observable<float>	OnViewportWidthChanged();
 	rxcpp::observable<float>	OnViewportHeightChanged();
+	rxcpp::observable<GLuint>	PixelBufferHandleFlowOut();
 private:	
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

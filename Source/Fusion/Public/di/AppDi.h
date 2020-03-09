@@ -12,6 +12,7 @@
 /// Core
 #include <Core/SettingsRepo.h>
 #include <Core/Coordination.h>
+#include <Core/UIRxDispatcher.h>
 ///	implementations
 #include <AppWindow.h>
 #include <ImGuiWindow.h>
@@ -58,7 +59,8 @@ namespace di {
 			PlayerViewportView
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
-			app::AppWindow
+			app::AppWindow,
+			UIRxDispatcher
 			>(),
 			boost::di::bind<app::Destroyable * []>().to<
 			app::AppWindow,

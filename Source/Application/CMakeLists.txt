@@ -86,3 +86,8 @@ target_include_directories(FusionApplication PRIVATE "${3rdPartyPath}/rxcpp/Rx/v
 #############
 # only the include dir suffices
 target_include_directories(FusionApplication PUBLIC "${3rdPartyPath}/IconFont")
+#######
+# plog
+#######
+# include dir suffices
+target_include_directories(FusionApplication PRIVATE "${3rdPartyPath}/plog/include")
