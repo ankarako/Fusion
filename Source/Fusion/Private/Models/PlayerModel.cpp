@@ -70,8 +70,8 @@ PlayerModel::PlayerModel(coord_ptr_t coord, srepo_ptr_t srepo)
 void PlayerModel::Init()
 {
 	/// tedious
-	m_Impl->m_DecodingNode->FrameFlowOut().observe_on(m_Impl->m_Coord->ModelCoordination()).subscribe(
-		[this](frame_t& frame)
+	m_Impl->m_DecodingNode->FrameFlowOut()
+		.subscribe([this](frame_t& frame)
 	{
 		m_Impl->m_FrameQueue.emplace_back(frame);
 	});
@@ -139,7 +139,6 @@ void PlayerModel::Start()
 			else
 			{
 				Stop();
-				m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
 			}
 		}
 	}));
@@ -147,7 +146,13 @@ void PlayerModel::Start()
 ///	\brief pause playback
 void PlayerModel::Pause()
 {
+	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	{
+
+	}
 	m_Impl->m_PlaybackLifetime.clear();
+	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
+	m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
 }
 ///	\brief stio playback
 void PlayerModel::Stop()

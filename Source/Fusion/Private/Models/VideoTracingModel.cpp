@@ -2,18 +2,19 @@
 #include <Components/ContextComp.h>
 #include <Components/EnvMapComp.h>
 #include <Components/RaygenProgComp.h>
+#include <Components/MeshInstanceComp.h>
 #include <Systems/CreateContextSystem.h>
 #include <Systems/EnvMapSystem.h>
 #include <Systems/RaygenSystem.h>
 #include <Systems/LaunchSystem.h>
+#include <Systems/MeshMappingSystem.h>
 #include <GL/gl3w.h>
 #include <plog/Log.h>
 
-// debug
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
-#include <opencv2/videoio.hpp>
+#include <opencv2/video.hpp>
 
 namespace fu {
 namespace fusion {
@@ -23,23 +24,24 @@ struct VideoTracingModel::Impl
 {
 	BufferCPU<uchar4> m_FrameBuffer;
 	///	ray tracing context component
-	rt::ContextComp	m_ContextComp;
+	rt::ContextComp			m_ContextComp;
 	///	ray tracing environemnt map component
 	///	(a miss program that can render 360 textures)
-	rt::EnvMapComp	m_EnvMapComp;
+	rt::EnvMapComp			m_EnvMapComp;
 	///	ray tracing ray generation component
 	///	can render 360 distorted views
-	rt::RaygenProgComp	m_360RaygenComp;
+	rt::RaygenProgComp		m_360RaygenComp;
 	///	ray tracing ray generation component
 	///	can render usual pinhole views
-	rt::RaygenProgComp	m_PinholeRaygen;
-	///	ray tracing conterxt's launch size
-	GLuint				m_PixelBufferHandle;
-	GLuint				m_TextureHandle;
-
+	rt::RaygenProgComp		m_PinholeRaygenComp;
+	/// mesh instance component
+	rt::MeshInstanceComp	m_MeshInstanceComp;
+	/// the context launch size
 	uint2 m_LaunchSize;
 	/// frame size flow in
 	rxcpp::subjects::subject<uint2>			m_FrameSizeFlowInSubj;
+	/// gl pixel buffer flow in
+	rxcpp::subjects::subject<GLuint>		m_PboFlowInSubj;
 	///frame output
 	rxcpp::subjects::subject<output_frame_t>	m_FrameFlowOutSubj;
 	///	frame input
@@ -68,40 +70,28 @@ void VideoTracingModel::Init()
 	rt::EnvMapSystem::CreateTexSampler(m_Impl->m_EnvMapComp, m_Impl->m_ContextComp);
 	/// create the ray generation component
 	m_Impl->m_360RaygenComp = rt::CreateRaygenProgComponent();
+	/// initialize the mesh instance component
+	m_Impl->m_MeshInstanceComp = rt::CreateMeshInstanceComponent();
+	rt::MeshMappingSystem::NullInitializeMeshInstance(m_Impl->m_MeshInstanceComp, m_Impl->m_ContextComp);
 	/// frame size flow int task
 	/// create the raygen program
 	m_Impl->m_FrameSizeFlowInSubj.get_observable()
 		.subscribe([this](uint2 size) 
 	{
 		m_Impl->m_LaunchSize = size;
-		//rt::RaygenSystem::Create360RaygenProg(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, size.x, size.y);
-		rt::EnvMapSystem::CreateBuffer(m_Impl->m_EnvMapComp, m_Impl->m_ContextComp, size.x, size.y);
-		/// when the frame size is in we have to  create our pixel buffer too
-		glGenBuffers(GL_PIXEL_UNPACK_BUFFER, &m_Impl->m_PixelBufferHandle);
-		if (m_Impl->m_PixelBufferHandle == 0)
-		{
-			LOG_ERROR << "Failed to generate pixel buffer.";
-		}
-		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_Impl->m_PixelBufferHandle);
-		glBufferData(GL_PIXEL_UNPACK_BUFFER, 
-			m_Impl->m_LaunchSize.x * m_Impl->m_LaunchSize.y * sizeof(unsigned char) * 4, nullptr, GL_STREAM_READ);
-		/// create our texture handle
-		glGenTextures(1, &m_Impl->m_TextureHandle);
-		if (m_Impl->m_TextureHandle == 0)
-		{
-			LOG_ERROR << "Failed to generate texture.";
-		}
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_Impl->m_TextureHandle);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		/// unbind texture
-		glBindTexture(GL_TEXTURE_2D, 0);
-		/// create output buffer
-		rt::RaygenSystem::Create360RaygenProgWithPBO(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, size, m_Impl->m_PixelBufferHandle);
+		rt::RaygenSystem::Create360RaygenProg(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, size.x, size.y);
+		rt::EnvMapSystem::CreateTextureBuffer(m_Impl->m_EnvMapComp, m_Impl->m_ContextComp, size.x, size.y);
+		rt::MeshMappingSystem::MapMeshInstanceToRaygen(m_Impl->m_MeshInstanceComp, m_Impl->m_360RaygenComp);
+		/// create our frame buffer
+		m_Impl->m_FrameBuffer = CreateBufferCPU<uchar4>(size.x * size.y);
 	});
+
+	m_Impl->m_PboFlowInSubj.get_observable()
+		.subscribe([this](GLuint pbohandle) 
+	{
+		//rt::RaygenSystem::Create360RaygenProgWithPBO(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, m_Impl->m_LaunchSize, pbohandle);
+	});
+	
 
 	m_Impl->m_FrameFlowinSubj.get_observable()
 		.subscribe([this](BufferCPU<uchar4>& frame) 
@@ -110,11 +100,12 @@ void VideoTracingModel::Init()
 		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
 		/// copy output buffer
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
-		/////////////////
+		/// save the frame for debugging
 		cv::Mat mat = cv::Mat::zeros(m_Impl->m_LaunchSize.y, m_Impl->m_LaunchSize.x, CV_8UC4);
-		cv::imwrite("framemme.png", mat);
+		std::memcpy(mat.data, m_Impl->m_FrameBuffer->Data(), m_Impl->m_FrameBuffer->ByteSize());
+		cv::imwrite("traced_frame.png", mat);
 		/// send frame to output
-		//m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
 }
 /// \brief destroy the model
@@ -137,6 +128,10 @@ rxcpp::observable<VideoTracingModel::output_frame_t> fu::fusion::VideoTracingMod
 rxcpp::observer<VideoTracingModel::input_frame_t> fu::fusion::VideoTracingModel::FrameFlowIn()
 {
 	return m_Impl->m_FrameFlowinSubj.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observer<GLuint> fu::fusion::VideoTracingModel::PboFlowIn()
+{
+	return m_Impl->m_PboFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

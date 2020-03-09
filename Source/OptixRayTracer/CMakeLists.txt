@@ -107,6 +107,7 @@ target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optixu.6.5.0.lib")
 message(STATUS "Selected Optix include directory: ${OPTIX_INCLUDE_DIR}")
 message(STATUS "Selected Optix libraries directory: ${OPTIX_LIBRARIES_DIR}")
 message(STATUS "Added Optix dependency")
+
 #######
 # CUDA
 #######

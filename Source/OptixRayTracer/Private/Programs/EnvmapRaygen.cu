@@ -28,5 +28,7 @@ RT_PROGRAM void EnvMapRaygen()
 	prd.Importance = 1.0f;
 	prd.Depth = 0;
 
+	rtTrace(top_object, ray, prd);
+
 	output_buffer[launch_index] = prd.Result;
 }

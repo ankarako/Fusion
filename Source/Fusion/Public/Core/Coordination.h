@@ -15,12 +15,12 @@ class Coordination final : app::ObsCoordination
 {
 public:
 	NoCopyAssign(Coordination);
-	///	\typedef UICoordinationType
+	/*///	\typedef UICoordinationType
 	///	\brief UICoordination callables should be scheduled on one thread only
 	typedef rxcpp::observe_on_one_worker	UICoordinationType;
 	///	\typedef ModelCoordinationType
 	///	\brief
-	typedef rxcpp::identity_one_worker		ModelCoordinationType;
+	typedef rxcpp::identity_one_worker		ModelCoordinationType;*/
 	/// Construction
 	explicit Coordination(rxcpp::schedulers::run_loop& rl);
 	/// 
