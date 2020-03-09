@@ -19,13 +19,8 @@ include(GetSystemCompilerId)
 include(GroupSource)
 # PrintList
 include(PrintList)
-
 # SBFCommon Project declaration
 message(STATUS "Creating cmake project...")
-message(STATUS "============================")
-message(STATUS "    Fusion360 Application")
-message(STATUS "============================")
-message(STATUS "Author: Perukas")
 project(
     FusionProject
     VERSION 1.0.0
@@ -122,22 +117,11 @@ PrintList("${FusionSettingsHdrFiles}" "Gathered Settings header files")
 file (GLOB FusionSettingsSrcFiles "Private/Settings/*.cpp")
 GroupSource("${FusionSettingsSrcFiles}" "Private\\Settings")
 PrintList("${FusionSettingsSrcFiles}" "Gathered Settings source files")
-#############################
-# Gather Renderers header files
-#############################
-file (GLOB FusionRenderersHdrFiles "Public/Renderers/*.h")
-GroupSource("${FusionRenderersHdrFiles}" "Public\\Renderers")
-PrintList("${FusionRenderersHdrFiles}" "Gathered Renderers header files")
-#############################
-# Gather Renderers source files
-#############################
-file (GLOB FusionRenderersSrcFiles "Private/Renderers/*.cpp")
-GroupSource("${FusionRenderersSrcFiles}" "Private\\Renderers")
-PrintList("${FusionRenderersSrcFiles}" "Gathered Renderers source files")
 #################
 # Fusion Project
 #################
-
+### optix need no min max on windows
+add_compile_options("-DNOMINMAX")
 add_executable(
 	Fusion
 	"Source/main.cpp"
@@ -156,87 +140,56 @@ add_executable(
 	"${FusionCoreUISrcFiles}"
 	"${FusionSettingsHdrFiles}"
 	"${FusionSettingsSrcFiles}"
-	"${FusionRenderersHdrFiles}"
-	"${FusionRenderersSrcFiles}"
 )
 #### set properties
 set_target_properties(Fusion PROPERTIES FOLDER "Fusion360")
 set_property(TARGET Fusion PROPERTY CXX_STANDARD 17)
 # set include directory
 target_include_directories(Fusion PUBLIC "Public")
-add_definitions(-DNOMINMAX)
 ###############
 # Dependencies
 ###############
 # di
 # adding the include directory suffices
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/boost-di/include")
-message(STATUS "Added boost-di dependency...")
 # Application module
-add_subdirectory("../Application" FusionApplication)
+add_subdirectory("../Application" ApplicationModule)
 target_link_libraries(Fusion FusionApplication)
-message(STATUS "Added FusionApplication dependency...")
 # depends on spimpl
 # we add only the include directory
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/spimpl")
-message(STATUS "Added spimpl dependency...")
 ########
 # RxCpp
 ########
 # only the include directory suffices
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rxcpp/Rx/v2/src")
-message(STATUS "Added rxcpp dependency...")
 #######
 # PLog
 #######
 # adding the include diretory only suffices
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/plog/include")
-message(STATUS "Added plog dependency...")
 ############
 # RapidJson
 ############
+# add_subdirectory("${3rdPartyPath}/rapidjson" rapidjson)
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rapidjson/include")
-message(STATUS "Added rapidjson dependency...")
+# set_target_properties(travis_doc PROPERTIES FOLDER "3rdParty")
+##################
+# OptixRayTRacer
+##################
+add_subdirectory("../OptixRayTracer" OptixRayTracer)
+target_link_libraries(Fusion OptixRayTracer)
 # target_link_libraries(Fusion FusionCommon)
 ######
 # STB
 #####
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/stb")
-message(STATUS "Added stb dependency...")
 ###################
 # FusionTranscoder
 ###################
 add_subdirectory("../VideoTranscoder" FusionTranscoder)
 target_link_libraries(Fusion FusionTranscoder)
 message(STATUS "Added FusionTranscoder dependency...")
-##################
-# OptixRayTracer
-#################
-add_subdirectory("../OptixRayTracer" OptixRayTracer)
-target_link_libraries(Fusion OptixRayTracer)
-message(STATUS "Added OptixRayTracer dependency")
-########
-# Optix
-########
-# set(OPTIX_INCLUDE_DIR CACHE STRING "Optix (6.5) include directory")
-# set(OPTIX_LIBRARIES_DIR CACHE STRING "Optix (6.5) libraries directory")
-# # replace backslashes
-# STRING(REGEX REPLACE "\\\\" "/" OPTIX_INCLUDE_DIR "${OPTIX_INCLUDE_DIR}")
-# STRING(REGEX REPLACE "\\\\" "/" OPTIX_LIBRARIES_DIR "${OPTIX_LIBRARIES_DIR}")
-# target_include_directories(OptixRayTracer PUBLIC "${OPTIX_INCLUDE_DIR}")
-# target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optix.6.5.0.lib")
-# target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optixu.6.5.0.lib")
-# message(STATUS "Selected Optix include directory: ${OPTIX_INCLUDE_DIR}")
-# message(STATUS "Selected Optix libraries directory: ${OPTIX_LIBRARIES_DIR}")
-# message(STATUS "Added Optix dependency")
-#######
-# CUDA
-#######
-find_package(CUDA REQUIRED)
-target_include_directories(Fusion PUBLIC "${CUDA_INCLUDE_DIRS}")
-target_link_libraries(Fusion "${CUDA_LIBRARIES}")
-message(STATUS "Selected CUDA include directory: ${CUDA_INCLUDE_DIRS}")
-message(STATUS "Selected CUDA libraries directory: ${CUDA_LIBRARIES}")
 #### copy resources
 # we use configure_file() instead file() because it creates a 
 # file-level dependency
@@ -250,6 +203,3 @@ configure_file(
 configure_file(
 	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf" 
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/MaterialIcons-Regular.ttf" COPYONLY)
-###
-# create the new directories for the files
-# copy optix cuda program files

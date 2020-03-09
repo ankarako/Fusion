@@ -81,7 +81,7 @@ STRING(REGEX REPLACE "\\\\" "/" OPENCV_INCLUDE_DIR "${OPENCV_INCLUDE_DIR}")
 STRING(REGEX REPLACE "\\\\" "/" OPENCV_LIBRARIES_DIR "${OPENCV_LIBRARIES_DIR}")
 message(STATUS "Selected OpenCV include directory: ${OPENCV_INCLUDE_DIR}")
 message(STATUS "Selected OpenCV libraries directory: ${OPENCV_LIBRARIES_DIR}")
-# FIXME: DO NOT FORGET TO CHANGE TO PRIVATE
+# FIXME: make this include private
 target_include_directories(FusionTranscoder PUBLIC "${OPENCV_INCLUDE_DIR}")
 target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420d.lib")
 target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420.lib")

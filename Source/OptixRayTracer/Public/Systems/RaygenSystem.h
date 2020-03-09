@@ -5,7 +5,9 @@
 #include <Components/RaygenProgComp.h>
 #include <GL/gl3w.h>
 #include <optix_world.h>
+#include <optix_gl_interop.h>
 #include <string>
+#include <plog/Log.h>
 
 namespace fu {
 namespace rt {
@@ -71,7 +73,13 @@ public:
 		ctxComp->Context->setRayTypeCount(1u);
 		ctxComp->Context->setRayGenerationProgram(0u, raygenComp->RaygenProg);
 		/// output from pbo
-		raygenComp->OutputBuffer = ctxComp->Context->createBufferFromGLBO(RT_BUFFER_OUTPUT, pboHandle);
+		try {
+			raygenComp->OutputBuffer = ctxComp->Context->createBufferFromGLBO(RT_BUFFER_OUTPUT, pboHandle);
+		}
+		catch (optix::Exception& ex)
+		{
+			LOG_ERROR << ex.getErrorString();
+		}
 		raygenComp->OutputBuffer->setFormat(RT_FORMAT_UNSIGNED_BYTE4);
 		raygenComp->OutputBuffer->setSize(size.x, size.y);
 		raygenComp->RaygenProg["output_buffer"]->setBuffer(raygenComp->OutputBuffer);

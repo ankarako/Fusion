@@ -34,7 +34,7 @@ public:
 	/// \brief copy the context's output buffer data into another one
 	///	\param	raygenComp	the raygen component to copy its buffer
 	///	\param	outBuffer	the buffer to copy the data into
-	static void CopyOutputBuffer(RaygenProgComp& rayComp, BufferCPU<uchar4> outBuffer)
+	static void CopyOutputBuffer(RaygenProgComp& rayComp, BufferCPU<uchar4>& outBuffer)
 	{
 		std::memcpy(outBuffer->Data(), rayComp->OutputBuffer->map(), outBuffer->ByteSize());
 		rayComp->OutputBuffer->unmap();

@@ -9,6 +9,7 @@
 #include <WindowFlags.h>
 #include <ImGuiOpenGLRenderer.h>
 #include <InputManager.h>
+#include <plog/Log.h>
 
 namespace fu {
 namespace app {
@@ -103,6 +104,10 @@ void ImGuiWindow::Init()
 	/// setup style
 	ImGui::StyleColorsDark();
 	m_Impl->m_Initialized = true;
+	///
+	printf("OpenGL initialized.\n");
+	printf("GPU Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
+	printf("GPU HW    : %s\n", (const char*)glGetString(GL_RENDERER));
 }
 
 void ImGuiWindow::Render()
