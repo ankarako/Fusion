@@ -75,7 +75,19 @@ PrintList("${OptixRayTracerSystemsHdrFiles}" "Gathered OptixRayTracer/Systems he
 file(GLOB OptixRayTracerSystemsSrcFiles "Private/Systems/*.cpp")
 GroupSource("${OptixRayTracerSystemsSrcFiles}" "Private\\Systems")
 PrintList("${OptixRayTracerSystemsSrcFiles}" "Gathered OptixRayTracer/Systems source files")
-####
+########################
+# Programs header files
+########################
+file (GLOB OptixRayTracerProgramsHdrFiles "Public/Programs/*.h")
+GroupSource("${OptixRayTracerProgramsHdrFiles}" "Public\\Programs")
+PrintList("${OptixRayTracerProgramsHdrFiles}" "Gathered Programs header files")
+#############################
+# Programs CUDA source files
+#############################
+file (GLOB OptixRayTracerProgramsCuFiles "Private/Programs/*.cu")
+GroupSource("${OptixRayTracerProgramsCuFiles}" "Private\\Programs")
+PrintList("${OptixRayTracerProgramsCuFiles}" "Gathered Programs cuda source files")
+
 add_library(
 	OptixRayTracer
 	STATIC
@@ -85,6 +97,8 @@ add_library(
 	"${OptixRayTracerComponentsSrcFiles}"
 	"${OptixRayTracerSystemsHdrFiles}"
 	"${OptixRayTracerSystemsSrcFiles}"
+	"${OptixRayTracerProgramsHdrFiles}"
+	"${OptixRayTracerProgramsCuFiles}"
 )
 ### set propertioes
 set_target_properties(OptixRayTracer PROPERTIES FOLDER "Fusion360")
@@ -107,7 +121,6 @@ target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optixu.6.5.0.lib")
 message(STATUS "Selected Optix include directory: ${OPTIX_INCLUDE_DIR}")
 message(STATUS "Selected Optix libraries directory: ${OPTIX_LIBRARIES_DIR}")
 message(STATUS "Added Optix dependency")
-
 #######
 # CUDA
 #######
@@ -116,6 +129,19 @@ target_include_directories(OptixRayTracer PUBLIC "${CUDA_INCLUDE_DIRS}")
 target_link_libraries(OptixRayTracer "${CUDA_LIBRARIES}")
 message(STATUS "Selected CUDA include directory: ${CUDA_INCLUDE_DIRS}")
 message(STATUS "Selected CUDA libraries directory: ${CUDA_LIBRARIES}")
+####################
+# add ptx compiling
+####################
+# TODO:
+cuda_compile_ptx( 
+	CompilePtxTargets 
+	"Private/Programs/EnvMapMiss.cu"
+	"Private/Programs/EnvMapRaygen.cu"
+	"Private/Programs/TriangleBbox.cu"
+	"Private/Programs/PinholeRaygen.cu"
+	"Private/Programs/TriangleMesh.cu"
+	"Private/Programs/Exception.cu"
+)
 #######
 # PLOG
 #######
