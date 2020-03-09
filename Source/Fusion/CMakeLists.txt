@@ -122,6 +122,18 @@ PrintList("${FusionSettingsHdrFiles}" "Gathered Settings header files")
 file (GLOB FusionSettingsSrcFiles "Private/Settings/*.cpp")
 GroupSource("${FusionSettingsSrcFiles}" "Private\\Settings")
 PrintList("${FusionSettingsSrcFiles}" "Gathered Settings source files")
+#############################
+# Gather Renderers header files
+#############################
+file (GLOB FusionRenderersHdrFiles "Public/Renderers/*.h")
+GroupSource("${FusionRenderersHdrFiles}" "Public\\Renderers")
+PrintList("${FusionRenderersHdrFiles}" "Gathered Renderers header files")
+#############################
+# Gather Renderers source files
+#############################
+file (GLOB FusionRenderersSrcFiles "Private/Renderers/*.cpp")
+GroupSource("${FusionRenderersSrcFiles}" "Private\\Renderers")
+PrintList("${FusionRenderersSrcFiles}" "Gathered Renderers source files")
 #################
 # Fusion Project
 #################
@@ -144,6 +156,8 @@ add_executable(
 	"${FusionCoreUISrcFiles}"
 	"${FusionSettingsHdrFiles}"
 	"${FusionSettingsSrcFiles}"
+	"${FusionRenderersHdrFiles}"
+	"${FusionRenderersSrcFiles}"
 )
 #### set properties
 set_target_properties(Fusion PROPERTIES FOLDER "Fusion360")

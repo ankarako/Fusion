@@ -53,10 +53,11 @@ public:
 		envComp->Height = height;
 		envComp->MissProgram["EnvMapTextSampler"]->set(envComp->TextureSampler);
 	}
+	
 	///	\brief set the texture of the texture sampler
 	///	\param	envComp	the environment map component
 	///	\param	texBuf	the texture buffer on the cpu
-	static void SetTexture(EnvMapComp& envComp, BufferCPU<uchar4> texBuf)
+	static void SetTexture(EnvMapComp& envComp, BufferCPU<uchar4>& texBuf)
 	{
 		size_t inbsize = texBuf->ByteSize();
 		size_t envbsize = envComp->Width * envComp->Height * sizeof(uchar4);

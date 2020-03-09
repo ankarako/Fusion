@@ -66,10 +66,24 @@ void PlayerControllerPresenter::Init()
 		
 	});
 	/// play event task
-	m_Impl->m_View->OnPlayButtonClicked()/*.observe_on(m_Impl->m_Coord->UICoordination())*/.subscribe(
+	m_Impl->m_View->OnPlayButtonClicked().observe_on(m_Impl->m_Coord->ModelCoordination()).subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_Model->Start();
+	}, [this](std::exception_ptr& ex) 
+	{
+		if (ex)
+		{
+			try
+			{
+				std::rethrow_exception(ex);
+			}
+			catch (std::exception & ex)
+			{
+				LOG_ERROR << "wtf." << ex.what();
+			}
+		}
+			
 	});
 	/// pause event task
 	m_Impl->m_View->OnPauseButtonClicked().subscribe(

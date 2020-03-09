@@ -11,6 +11,7 @@
 namespace fu {
 namespace fusion {
 class Coordination;
+class SettingsRepo;
 /// \class PlayerModel
 ///	\brief Fusion Model that controls media file loading and playback
 class PlayerModel	: public app::Initializable, public app::Destroyable
@@ -18,10 +19,11 @@ class PlayerModel	: public app::Initializable, public app::Destroyable
 public:
 	using coord_ptr_t = std::shared_ptr<Coordination>;
 	using frame_t = BufferCPU<uchar4>;
+	using srepo_ptr_t = std::shared_ptr<SettingsRepo>;
 	///	Construction
 	///	\brief default contstructor
 	///	does not depend on anything (yet)
-	PlayerModel(coord_ptr_t coord);
+	PlayerModel(coord_ptr_t coord, srepo_ptr_t srepo);
 	/// \brief initialize the model
 	///	Creates an internal decoding context
 	void Init() override;

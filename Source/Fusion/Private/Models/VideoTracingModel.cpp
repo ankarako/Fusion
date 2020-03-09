@@ -6,6 +6,14 @@
 #include <Systems/EnvMapSystem.h>
 #include <Systems/RaygenSystem.h>
 #include <Systems/LaunchSystem.h>
+#include <GL/gl3w.h>
+#include <plog/Log.h>
+
+// debug
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
 
 namespace fu {
 namespace fusion {
@@ -25,7 +33,10 @@ struct VideoTracingModel::Impl
 	///	ray tracing ray generation component
 	///	can render usual pinhole views
 	rt::RaygenProgComp	m_PinholeRaygen;
-	///
+	///	ray tracing conterxt's launch size
+	GLuint				m_PixelBufferHandle;
+	GLuint				m_TextureHandle;
+
 	uint2 m_LaunchSize;
 	/// frame size flow in
 	rxcpp::subjects::subject<uint2>			m_FrameSizeFlowInSubj;
@@ -63,20 +74,47 @@ void VideoTracingModel::Init()
 		.subscribe([this](uint2 size) 
 	{
 		m_Impl->m_LaunchSize = size;
-		rt::RaygenSystem::Create360RaygenProg(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, size.x, size.y);
+		//rt::RaygenSystem::Create360RaygenProg(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, size.x, size.y);
 		rt::EnvMapSystem::CreateBuffer(m_Impl->m_EnvMapComp, m_Impl->m_ContextComp, size.x, size.y);
-		m_Impl->m_FrameBuffer = CreateBufferCPU<uchar4>(size.x * size.y);
+		/// when the frame size is in we have to  create our pixel buffer too
+		glGenBuffers(GL_PIXEL_UNPACK_BUFFER, &m_Impl->m_PixelBufferHandle);
+		if (m_Impl->m_PixelBufferHandle == 0)
+		{
+			LOG_ERROR << "Failed to generate pixel buffer.";
+		}
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_Impl->m_PixelBufferHandle);
+		glBufferData(GL_PIXEL_UNPACK_BUFFER, 
+			m_Impl->m_LaunchSize.x * m_Impl->m_LaunchSize.y * sizeof(unsigned char) * 4, nullptr, GL_STREAM_READ);
+		/// create our texture handle
+		glGenTextures(1, &m_Impl->m_TextureHandle);
+		if (m_Impl->m_TextureHandle == 0)
+		{
+			LOG_ERROR << "Failed to generate texture.";
+		}
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_Impl->m_TextureHandle);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		/// unbind texture
+		glBindTexture(GL_TEXTURE_2D, 0);
+		/// create output buffer
+		rt::RaygenSystem::Create360RaygenProgWithPBO(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, size, m_Impl->m_PixelBufferHandle);
 	});
 
 	m_Impl->m_FrameFlowinSubj.get_observable()
-		.subscribe([this](BufferCPU<uchar4> frame) 
+		.subscribe([this](BufferCPU<uchar4>& frame) 
 	{
 		rt::EnvMapSystem::SetTexture(m_Impl->m_EnvMapComp, frame);
 		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
 		/// copy output buffer
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
+		/////////////////
+		cv::Mat mat = cv::Mat::zeros(m_Impl->m_LaunchSize.y, m_Impl->m_LaunchSize.x, CV_8UC4);
+		cv::imwrite("framemme.png", mat);
 		/// send frame to output
-		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+		//m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
 }
 /// \brief destroy the model

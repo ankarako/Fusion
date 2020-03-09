@@ -131,10 +131,7 @@ void DecodingNodeObj::GenerateFrame()
 		m_Impl->m_Decoder->operator>>(m_Impl->m_CurrentFrameNative);
 		cv::Mat converted;
 		cv::cvtColor(m_Impl->m_CurrentFrameNative, converted, cv::COLOR_RGB2RGBA, 4);
-		//cv::imwrite("frame.png", converted);
-		/// copy frame data to buffer
 		/// get the byte size of the native frame
-		///	get the byte size of the native frame
 		size_t bsize = converted.total() * converted.elemSize();
 		size_t fbsize = m_Impl->m_CurrentFrameBuffer->ByteSize();
 		/// check that our frame and the native have the same byte size
@@ -144,8 +141,6 @@ void DecodingNodeObj::GenerateFrame()
 		/// notify subscriber's about the current frame
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameBuffer);
 	}
-	/// make buffer from frame
-	/// send frame
 }
 ///	\brief frame output
 ///	decoding nodes have only output frame streams

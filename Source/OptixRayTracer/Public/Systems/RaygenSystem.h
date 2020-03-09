@@ -3,7 +3,7 @@
 
 #include <Components/ContextComp.h>
 #include <Components/RaygenProgComp.h>
-
+#include <GL/gl3w.h>
 #include <optix_world.h>
 #include <string>
 
@@ -52,6 +52,28 @@ public:
 		ctxComp->Context->setRayGenerationProgram(0u, raygenComp->RaygenProg);
 		/// create output buffer
 		raygenComp->OutputBuffer = ctxComp->Context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_UNSIGNED_BYTE4, width, height);
+		raygenComp->RaygenProg["output_buffer"]->setBuffer(raygenComp->OutputBuffer);
+	}
+	///	\brief create a 360 ray generation program with a specified output buffer
+	///	\param	rayComp		the raygen component
+	///	\param	ctxComp		the context component
+	///	\param	size		the launchSize
+	///	\param	pboHandle	the pixel buffer handle
+	static void Create360RaygenProgWithPBO(RaygenProgComp& raygenComp, ContextComp& ctxComp, uint2 size, GLuint pboHandle)
+	{
+		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_360RaygenPtxFilepath, k_360RaygenProgName);
+		raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
+		raygenComp->Lookat	= optix::make_float3(0.0f, 0.0f, 1.0f);
+		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
+		raygenComp->ViewWidth	= size.x;
+		raygenComp->ViewHeight	= size.y;
+		raygenComp->AspectRatio = static_cast<float>(size.x) / static_cast<float>(size.y);
+		ctxComp->Context->setRayTypeCount(1u);
+		ctxComp->Context->setRayGenerationProgram(0u, raygenComp->RaygenProg);
+		/// output from pbo
+		raygenComp->OutputBuffer = ctxComp->Context->createBufferFromGLBO(RT_BUFFER_OUTPUT, pboHandle);
+		raygenComp->OutputBuffer->setFormat(RT_FORMAT_UNSIGNED_BYTE4);
+		raygenComp->OutputBuffer->setSize(size.x, size.y);
 		raygenComp->RaygenProg["output_buffer"]->setBuffer(raygenComp->OutputBuffer);
 	}
 	///	\brief set the attributes of the raygen component
