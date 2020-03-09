@@ -6,6 +6,12 @@
 #include <GL/gl3w.h>
 #include <plog/Log.h>
 
+// FIXME: delete
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
+
 namespace fu {
 namespace fusion {
 ///	\struct Impl
@@ -134,6 +140,11 @@ void PlayerViewportView::Init()
 	m_Impl->m_FrameFlowInSubj.get_observable()
 		.subscribe([this](BufferCPU<uchar4>& frame) 
 	{
+		// FIXME: delete this
+		cv::Mat mat = cv::Mat::zeros(m_Impl->m_DisplayTextureHeight, m_Impl->m_DisplayTextureWidth, CV_8UC4);
+		std::memcpy(mat.data, frame->Data(), frame->ByteSize());
+		cv::cvtColor(mat, mat, cv::COLOR_RGBA2BGR);
+		cv::imwrite("frame_in_render.png", mat);
 		/// bind our gl texture to gl state
 		glBindTexture(GL_TEXTURE_2D, m_Impl->m_TextureHandle);
 		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -141,10 +152,6 @@ void PlayerViewportView::Init()
 		/// unbind texture
 		glBindTexture(GL_TEXTURE_2D, 0);
 	});
-	
-	/// create an initial texture with the current 
-	/// frame flow in task
-
 }
 ///	\brief widget rendering
 void PlayerViewportView::Render()

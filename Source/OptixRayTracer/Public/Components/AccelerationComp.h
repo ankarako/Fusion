@@ -1,5 +1,5 @@
-#ifndef	__OPTIXRAYTRACER_PUBLIC_COMPONENTS_MESHINSTANCECOMP_H__
-#define __OPTIXRAYTRACER_PUBLIC_COMPONENTS_MESHINSTANCECOMP_H__
+#ifndef	__OPTIXRAYTRACER_PUBLIC_COMPONENTS_ACCELERATIONCOMP_H__
+#define __OPTIXRAYTRACER_PUBLIC_COMPONENTS_ACCELERATIONCOMP_H__
 
 #include <optix.h>
 #include <optixu/optixpp_namespace.h>
@@ -9,21 +9,20 @@ namespace fu {
 namespace rt {
 ///	\struct MeshInstanceCompObj
 ///	\brief holds optix group and acceleration structure
-struct MeshInstanceCompObj
+struct AccelerationCompObj
 {
 	optix::Transform		Transform;
 	optix::Acceleration		Acceleration;
 	optix::GeometryGroup	GGroup;	
-	optix::GeometryInstance GInstance;
 };	///	!struct MeshInstanceCompObj
 ///	\typedef MeshInstanceComp
 ///	\brief a reference counted MeshInstanceCompObj
-using MeshInstanceComp = std::shared_ptr<MeshInstanceCompObj>;
+using AccelerationComp = std::shared_ptr<AccelerationCompObj>;
 ///	\brief create a MeshInstanceComp
-static MeshInstanceComp CreateMeshInstanceComponent()
+static AccelerationComp CreateAccelerationComponent()
 {
-	return std::make_shared<MeshInstanceCompObj>();
+	return std::make_shared<AccelerationCompObj>();
 }
 }	///	!namespace rt
 }	///	!namespace fu
-#endif	///	!__OPTIXRAYTRACER_PUBLIC_COMPONENTS_MESHINSTANCECOMP_H__
+#endif	///	!__OPTIXRAYTRACER_PUBLIC_COMPONENTS_ACCELERATIONCOMP_H__

@@ -2,7 +2,8 @@
 #include <Components/ContextComp.h>
 #include <Components/EnvMapComp.h>
 #include <Components/RaygenProgComp.h>
-#include <Components/MeshInstanceComp.h>
+#include <Components/TriangleMeshComp.h>
+#include <Components/AccelerationComp.h>
 #include <Systems/CreateContextSystem.h>
 #include <Systems/EnvMapSystem.h>
 #include <Systems/RaygenSystem.h>
@@ -15,6 +16,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/video.hpp>
+
+#include <vector>
 
 namespace fu {
 namespace fusion {
@@ -35,7 +38,9 @@ struct VideoTracingModel::Impl
 	///	can render usual pinhole views
 	rt::RaygenProgComp		m_PinholeRaygenComp;
 	/// mesh instance component
-	rt::MeshInstanceComp	m_MeshInstanceComp;
+	rt::AccelerationComp	m_AccelrationComp;
+	///	triangle meshes
+	std::vector<rt::TriangleMeshComp> m_TriangleMeshComps;
 	/// the context launch size
 	uint2 m_LaunchSize;
 	/// frame size flow in
@@ -70,9 +75,16 @@ void VideoTracingModel::Init()
 	rt::EnvMapSystem::CreateTexSampler(m_Impl->m_EnvMapComp, m_Impl->m_ContextComp);
 	/// create the ray generation component
 	m_Impl->m_360RaygenComp = rt::CreateRaygenProgComponent();
+	/// create a dummy first triangle mesh component
+	m_Impl->m_TriangleMeshComps.emplace_back(rt::CreateTriangleMeshComponent());
+	/// intialize the triangle mesh component with no data
+	rt::MeshMappingSystem::NullInitializeTriangleMesh(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_ContextComp);
+	/// null initialize the acceleration comp
+	m_Impl->m_AccelrationComp = rt::CreateAccelerationComponent();
 	/// initialize the mesh instance component
-	m_Impl->m_MeshInstanceComp = rt::CreateMeshInstanceComponent();
-	rt::MeshMappingSystem::NullInitializeMeshInstance(m_Impl->m_MeshInstanceComp, m_Impl->m_ContextComp);
+	rt::MeshMappingSystem::NullInitializeAcceleration(m_Impl->m_AccelrationComp, m_Impl->m_ContextComp);
+	/// attach triangle mesh component to acceleration
+	rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_AccelrationComp);
 	/// frame size flow int task
 	/// create the raygen program
 	m_Impl->m_FrameSizeFlowInSubj.get_observable()
@@ -80,8 +92,9 @@ void VideoTracingModel::Init()
 	{
 		m_Impl->m_LaunchSize = size;
 		rt::RaygenSystem::Create360RaygenProg(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, size.x, size.y);
+		rt::RaygenSystem::SetRaygenAttributes(m_Impl->m_360RaygenComp);
 		rt::EnvMapSystem::CreateTextureBuffer(m_Impl->m_EnvMapComp, m_Impl->m_ContextComp, size.x, size.y);
-		rt::MeshMappingSystem::MapMeshInstanceToRaygen(m_Impl->m_MeshInstanceComp, m_Impl->m_360RaygenComp);
+		rt::MeshMappingSystem::MapAccelerationToRaygen(m_Impl->m_AccelrationComp, m_Impl->m_360RaygenComp);
 		/// create our frame buffer
 		m_Impl->m_FrameBuffer = CreateBufferCPU<uchar4>(size.x * size.y);
 	});
@@ -100,10 +113,6 @@ void VideoTracingModel::Init()
 		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
 		/// copy output buffer
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
-		/// save the frame for debugging
-		cv::Mat mat = cv::Mat::zeros(m_Impl->m_LaunchSize.y, m_Impl->m_LaunchSize.x, CV_8UC4);
-		std::memcpy(mat.data, m_Impl->m_FrameBuffer->Data(), m_Impl->m_FrameBuffer->ByteSize());
-		cv::imwrite("traced_frame.png", mat);
 		/// send frame to output
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});

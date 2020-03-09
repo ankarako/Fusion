@@ -68,11 +68,11 @@ void DecodingNodeObj::LoadFile(const std::string& filepath)
 		m_Impl->m_FrameByteSize = m_Impl->m_FrameWidth * m_Impl->m_FrameHeight * sizeof(uchar4);
 		/// initialize the buffer according to the frame's dims
 		m_Impl->m_CurrentFrameBuffer = CreateBufferCPU<uchar4>(m_Impl->m_FrameHeight * m_Impl->m_FrameWidth);
-		m_Impl->m_CurrentFrameNative = cv::Mat(m_Impl->m_FrameHeight, m_Impl->m_FrameWidth, CV_8UC4);
+		//m_Impl->m_CurrentFrameNative = cv::Mat(m_Impl->m_FrameHeight, m_Impl->m_FrameWidth, CV_8UC4);
 		///	get the byte size of the native frame
-		size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+		//size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
 		/// check that our frame and the native have the same byte size
-		DebugAssertMsg(bsize == m_Impl->m_CurrentFrameBuffer->ByteSize(), "Decoded native frame type has different byte size.");
+		//DebugAssertMsg(bsize == m_Impl->m_CurrentFrameBuffer->ByteSize(), "Decoded native frame type has different byte size.");
 	}
 }
 ///	\brief release the underlying decoding context
@@ -129,15 +129,16 @@ void DecodingNodeObj::GenerateFrame()
 	{
 		
 		m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative);
-		cv::Mat converted;
-		cv::cvtColor(m_Impl->m_CurrentFrameNative, converted, cv::COLOR_RGB2RGBA, 4);
+		cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
+		auto color = m_Impl->m_CurrentFrameNative.at<cv::Vec4b>(cv::Point(0, 0));
+		//printf("cv color: (%u, %u, %u, %u)\n", color[0], color[1], color[2], color[2]);
 		/// get the byte size of the native frame
-		size_t bsize = converted.total() * converted.elemSize();
+		size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
 		size_t fbsize = m_Impl->m_CurrentFrameBuffer->ByteSize();
 		/// check that our frame and the native have the same byte size
 		DebugAssertMsg(bsize == m_Impl->m_CurrentFrameBuffer->ByteSize(), "Decoded native frame type has different byte size.");
 		/// copy native frame data to our buffer
-		std::memcpy(m_Impl->m_CurrentFrameBuffer->Data(), converted.data, m_Impl->m_FrameByteSize);
+		std::memcpy(m_Impl->m_CurrentFrameBuffer->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
 		/// notify subscriber's about the current frame
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameBuffer);
 	}

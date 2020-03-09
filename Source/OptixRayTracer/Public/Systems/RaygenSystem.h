@@ -91,7 +91,12 @@ public:
 	static void SetRaygenAttributes(RaygenProgComp raygenComp)
 	{
 		/// calculate camera plane
-		
+		CameraPlaneBasis basis;
+		CalcCameraPlaneBasis(raygenComp->Eye, raygenComp->Lookat, raygenComp->Up, raygenComp->AspectRatio, basis);
+		raygenComp->RaygenProg["U"]->setFloat(basis.U);
+		raygenComp->RaygenProg["V"]->setFloat(basis.V);
+		raygenComp->RaygenProg["W"]->setFloat(basis.W);
+		raygenComp->RaygenProg["eye"]->setFloat(raygenComp->Eye);
 	}
 private:
 	///	\struct CameraPlaneBasis
@@ -108,7 +113,7 @@ private:
 	///	\param	up			the up vector of the camera
 	///	\param	aspectRatio	the aspect ration of the camera
 	///	\param[out] the CameraPlaneBasis struct
-	void CalcCameraPlaneBasis(optix::float3 eye, optix::float3 lookat, optix::float3 up, float aspectRatio, CameraPlaneBasis& camPlane)
+	static void CalcCameraPlaneBasis(optix::float3 eye, optix::float3 lookat, optix::float3 up, float aspectRatio, CameraPlaneBasis& camPlane)
 	{
 		float ulen;
 		float vlen;
@@ -126,7 +131,7 @@ private:
 	///	updates eye, lookat, up vectors
 private:
 	/// system state
-	float m_Fov = 35.0f;
+	static constexpr float m_Fov = 35.0f;
 	static constexpr const char* k_360RaygenPtxFilepath = "Resources/Programs/EnvMapRaygen.ptx";
 	static constexpr const char* k_360RaygenProgName = "EnvMapRaygen";
 };	///	!OptixPinholeRaygenSystem

@@ -144,35 +144,35 @@ CUDA_INCLUDE_DIRECTORIES("${CUDA_INCLUDE_DIRS}" "${OPTIX_INCLUDE_DIR}" "${Progra
 cuda_compile_ptx(CompilePtxEnvMapMiss "Private/Programs/EnvMapMiss.cu")
 add_custom_target(CompilePtxEnvMapMissPTX ALL DEPENDS ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapMiss.ptx "Private/Programs/EnvMapMiss.cu" SOURCES "Private/Programs/EnvMapMiss.cu")
 # tedious command to rename the ptx generated files
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxEnvMapMiss} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapMiss.ptx )
-add_custom_command(TARGET CompilePtxEnvMapMissPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxEnvMapMiss} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapMiss.ptx )
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxEnvMapMiss} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapMiss.ptx )
+add_custom_command(TARGET CompilePtxEnvMapMissPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxEnvMapMiss} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapMiss.ptx )
 set_target_properties(CompilePtxEnvMapMissPTX PROPERTIES FOLDER "CUDACustomTargets")
 # EnvMapRaygen
 cuda_compile_ptx(CompilePtxEnvMapRaygen "Private/Programs/EnvMapRaygen.cu")
 add_custom_target(CompilePtxEnvMapRaygenPTX ALL DEPENDS "${CompilePtxEnvMapRaygen}" "Private/Programs/EnvMapRaygen.cu" SOURCES "Private/Programs/EnvMapRaygen.cu")
 # tedious command to rename the ptx generated files
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxEnvMapRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapRaygen.ptx )
-add_custom_command(TARGET CompilePtxEnvMapRaygenPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxEnvMapRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapRaygen.ptx )
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxEnvMapRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapRaygen.ptx )
+add_custom_command(TARGET CompilePtxEnvMapRaygenPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxEnvMapRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapRaygen.ptx )
 set_target_properties(CompilePtxEnvMapRaygenPTX PROPERTIES FOLDER "CUDACustomTargets")
 # Pinhole Raygen
 cuda_compile_ptx(CompilePtxPinholeRaygen "Private/Programs/PinholeRaygen.cu")
 add_custom_target(CompilePtxPinholeRaygenPTX ALL DEPENDS "${CompilePtxPinholeRaygen}" "Private/Programs/PinholeRaygen.cu" SOURCES "Private/Programs/PinholeRaygen.cu")
 # tedious command to rename the ptx generated files
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxPinholeRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/PinholeRaygen.ptx )
-add_custom_command(TARGET CompilePtxPinholeRaygenPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxPinholeRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/PinholeRaygen.ptx )
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPinholeRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/PinholeRaygen.ptx )
+add_custom_command(TARGET CompilePtxPinholeRaygenPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPinholeRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/PinholeRaygen.ptx )
 set_target_properties(CompilePtxPinholeRaygenPTX PROPERTIES FOLDER "CUDACustomTargets")
 # Triangle Mesh
 cuda_compile_ptx(CompilePtxTriangleMesh "Private/Programs/TriangleMesh.cu")
 add_custom_target(CompilePtxTriangleMeshPTX ALL DEPENDS "${CompilePtxTriangleMesh}" "Private/Programs/TriangleMesh.cu" SOURCES "Private/Programs/TriangleMesh.cu")
 # tedious command to rename the pts generated files
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxTriangleMesh} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleMesh.ptx )
-add_custom_command(TARGET CompilePtxTriangleMeshPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxTriangleMesh} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleMesh.ptx )
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleMesh} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleMesh.ptx )
+add_custom_command(TARGET CompilePtxTriangleMeshPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleMesh} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleMesh.ptx )
 set_target_properties(CompilePtxTriangleMeshPTX PROPERTIES FOLDER "CUDACustomTargets")
 # Exception
 cuda_compile_ptx(CompilePtxException "Private/Programs/Exception.cu")
 add_custom_target(CompilePtxExceptionPTX ALL DEPENDS "${CompilePtxException}" "Private/Programs/Exception.cu" SOURCES "Private/Programs/Exception.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxException} ${CUDA_GENERATED_OUTPUT_DIR}/Exception.ptx )
-add_custom_command(TARGET CompilePtxTriangleMeshPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E rename ${CompilePtxException} ${CUDA_GENERATED_OUTPUT_DIR}/Exception.ptx )
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxException} ${CUDA_GENERATED_OUTPUT_DIR}/Exception.ptx )
+add_custom_command(TARGET CompilePtxTriangleMeshPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxException} ${CUDA_GENERATED_OUTPUT_DIR}/Exception.ptx )
 # tedious command to rename the generated ptx file
 set_target_properties(CompilePtxExceptionPTX PROPERTIES FOLDER "CUDACustomTargets")
 #######

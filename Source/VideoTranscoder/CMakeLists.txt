@@ -83,8 +83,8 @@ message(STATUS "Selected OpenCV include directory: ${OPENCV_INCLUDE_DIR}")
 message(STATUS "Selected OpenCV libraries directory: ${OPENCV_LIBRARIES_DIR}")
 # FIXME: make this include private
 target_include_directories(FusionTranscoder PUBLIC "${OPENCV_INCLUDE_DIR}")
-target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420d.lib")
-target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420.lib")
+target_link_libraries(FusionTranscoder debug "${OPENCV_LIBRARIES_DIR}/opencv_world420d.lib")
+target_link_libraries(FusionTranscoder optimized "${OPENCV_LIBRARIES_DIR}/opencv_world420.lib")
 ########
 # Rxcpp
 #######
