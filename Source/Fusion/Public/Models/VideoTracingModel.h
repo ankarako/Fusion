@@ -6,6 +6,7 @@
 #include <Buffer.h>
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
+#include <GL/gl3w.h>
 
 namespace fu {
 namespace fusion {
@@ -30,6 +31,8 @@ public:
 	rxcpp::observable<output_frame_t>	FrameFlowOut();
 	///	\brief frame input
 	rxcpp::observer<input_frame_t>	FrameFlowIn();
+	///	\brief pixel buffer object flow in
+	rxcpp::observer<GLuint>			PboFlowIn();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
