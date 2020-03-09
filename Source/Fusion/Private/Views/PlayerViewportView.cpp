@@ -82,12 +82,13 @@ void PlayerViewportView::Init()
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Impl->m_DisplayTextureWidth, m_Impl->m_DisplayTextureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)blackBuf->Data());
 	});
 	/// frame flow in task
-	m_Impl->m_FrameFlowInSubj.get_observable().observe_on(m_Impl->m_Coord->UICoordination())
-		.subscribe([this](BufferCPU<uchar4> frame) 
+	m_Impl->m_FrameFlowInSubj.get_observable()/*.observe_on(m_Impl->m_Coord->UICoordination())*/
+		.subscribe([this](BufferCPU<uchar4>& frame) 
 	{
-		glBindTexture(GL_TEXTURE_2D, m_Impl->m_DisplayTexture);
-		glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Impl->m_DisplayTextureWidth, m_Impl->m_DisplayTextureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)frame->Data());
+		/// so the frame is here, let's save it
+		//glBindTexture(GL_TEXTURE_2D, m_Impl->m_DisplayTexture);
+		//glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Impl->m_DisplayTextureWidth, m_Impl->m_DisplayTextureHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)frame->Data());
 	});
 	/// create an initial texture with the current 
 	/// frame flow in task

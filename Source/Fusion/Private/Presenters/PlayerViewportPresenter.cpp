@@ -5,6 +5,9 @@
 #include <WidgetRepo.h>
 #include <Core/Coordination.h>
 
+///
+#include <plog/Log.h>
+
 namespace fu {
 namespace fusion {
 struct PlayerViewportPresenter::Impl
@@ -26,38 +29,59 @@ PlayerViewportPresenter::PlayerViewportPresenter(model_ptr_t model, view_ptr_t v
 
 void PlayerViewportPresenter::Init()
 {
+	///=======================
 	/// Widget activation task
+	///=======================
 	m_Impl->m_View->OnActivated().subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_Wrepo->RegisterWidget(m_Impl->m_View);
 	});
+	///=========================
 	/// Widget deactivation task
+	///==========================
 	m_Impl->m_View->OnDeactivated().subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_Wrepo->UnregisterWidget(m_Impl->m_View);
 	});
+	///=========================
 	/// frame width subscription
+	///=========================
 	m_Impl->m_Model->FrameWidthFlowOut()
 		.subscribe(m_Impl->m_View->FrameWidthFlowIn());
+	///==========================
 	/// frame height subscription
+	///===========================
 	m_Impl->m_Model->FrameHeightFlowOut()
 		.subscribe(m_Impl->m_View->FrameHeightFlowIn());
+	///========================
 	/// frame size subscription
+	///========================
 	m_Impl->m_Model->FrameSizeFlowOut()
 		.subscribe(m_Impl->m_TracerModel->FrameSizeFlowIn());
+	///============================
 	///	viewport width changed task
+	///============================
 	m_Impl->m_View->OnViewportWidthChanged().subscribe(
 		[this](float newWidth)
 	{
 		
 	});
+	///=================================
 	/// frame flow out from decoder task
-	m_Impl->m_Model->CurrentFrameFlowOut().observe_on(m_Impl->m_Coord->UICoordination())
+	///=================================
+	m_Impl->m_Model->CurrentFrameFlowOut()
 		.subscribe(m_Impl->m_TracerModel->FrameFlowIn());
+	///================================
 	/// frame flow out from tracer task
-	m_Impl->m_TracerModel->FrameFlowOut().observe_on(m_Impl->m_Coord->UICoordination())
+	///================================
+	m_Impl->m_TracerModel->FrameFlowOut()
+		.map([this](auto& buf)
+	{
+		LOG_WARNING << "dufaq";
+		return buf;
+	})
 		.subscribe(m_Impl->m_View->FrameFlowIn());
 	m_Impl->m_View->Activate();
 }

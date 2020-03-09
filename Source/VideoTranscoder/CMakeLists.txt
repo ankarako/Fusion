@@ -56,9 +56,9 @@ set_target_properties(FusionTranscoder PROPERTIES FOLDER "Fusion360")
 ###################################
 # Windows Media Foundation Library
 ###################################
-target_link_libraries(FusionTranscoder "MFPlat.lib")
-target_link_libraries(FusionTranscoder "MF.lib")
-target_link_libraries(FusionTranscoder "MFuuid.lib")
+# target_link_libraries(FusionTranscoder "MFPlat.lib")
+# target_link_libraries(FusionTranscoder "MF.lib")
+# target_link_libraries(FusionTranscoder "MFuuid.lib")
 #########
 # Common
 #########
@@ -81,7 +81,8 @@ STRING(REGEX REPLACE "\\\\" "/" OPENCV_INCLUDE_DIR "${OPENCV_INCLUDE_DIR}")
 STRING(REGEX REPLACE "\\\\" "/" OPENCV_LIBRARIES_DIR "${OPENCV_LIBRARIES_DIR}")
 message(STATUS "Selected OpenCV include directory: ${OPENCV_INCLUDE_DIR}")
 message(STATUS "Selected OpenCV libraries directory: ${OPENCV_LIBRARIES_DIR}")
-target_include_directories(FusionTranscoder PRIVATE "${OPENCV_INCLUDE_DIR}")
+# FIXME: DO NOT FORGET TO CHANGE TO PRIVATE
+target_include_directories(FusionTranscoder PUBLIC "${OPENCV_INCLUDE_DIR}")
 target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420d.lib")
 target_link_libraries(FusionTranscoder "${OPENCV_LIBRARIES_DIR}/opencv_world420.lib")
 ########
