@@ -29,6 +29,8 @@ struct PlayerModel::Impl
 	/// Our settingss
 	srepo_ptr_t						m_SettingsRepo;
 	settings_ptr_t					m_Settings;
+	/// number of buffered samples before playback
+	size_t							m_PrebufSamples;
 	///	playback start time for correct frame rate
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_Start;
 	///	frame rate (actually frame period)
@@ -70,11 +72,11 @@ PlayerModel::PlayerModel(coord_ptr_t coord, srepo_ptr_t srepo)
 void PlayerModel::Init()
 {
 	/// tedious
-	m_Impl->m_DecodingNode->FrameFlowOut()
+	/*m_Impl->m_DecodingNode->FrameFlowOut()
 		.subscribe([this](frame_t& frame)
 	{
 		m_Impl->m_FrameQueue.emplace_back(frame);
-	});
+	});*/
 	/// create out settings
 	m_Impl->m_Settings = std::make_shared<PlayerSettings>();
 	/// register them to the repo
@@ -182,7 +184,8 @@ rxcpp::observable<size_t> fu::fusion::PlayerModel::FrameCountFlowOut()
 
 rxcpp::observable<PlayerModel::frame_t> fu::fusion::PlayerModel::CurrentFrameFlowOut()
 {
-	return m_Impl->m_FrameFlowOutSubj.get_observable().as_dynamic();
+	//return m_Impl->m_FrameFlowOutSubj.get_observable().as_dynamic();
+	return m_Impl->m_DecodingNode->FrameFlowOut();
 }
 
 rxcpp::observable<int> fu::fusion::PlayerModel::FrameWidthFlowOut()

@@ -51,6 +51,10 @@ public:
 	///	\brief generate the frame at the current frame position
 	///	Outputs a frame buffer from the node's output
 	void GenerateFrame();
+	///	\brief set scaled size
+	///	\param	width	the new width of the decoded frame
+	///	\param	height	the new height of the decoded frame
+	void SetScaledSize(size_t width, size_t height);
 	///	\brief frame output
 	///	decoding nodes have only output frame streams
 	rxcpp::observable<frame_t> FrameFlowOut();

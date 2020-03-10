@@ -28,6 +28,10 @@ struct DecodingNodeObj::Impl
 	size_t		m_FrameWidth{ 0 };
 	///	frame height
 	size_t		m_FrameHeight{ 0 };
+	/// scaled frame width
+	size_t		m_ScaledFrameWidth{ 0 };
+	/// scaled frame height
+	size_t		m_ScaledFrameHeight{ 0 };
 	/// frame size in bytes
 	size_t		m_FrameByteSize{ 0 };
 	///	the video's duration in frames
@@ -64,6 +68,8 @@ void DecodingNodeObj::LoadFile(const std::string& filepath)
 		m_Impl->m_FrameHeight = m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_HEIGHT);
 		m_Impl->m_FrameCount = m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_COUNT);
 		m_Impl->m_FrameRate = m_Impl->m_Decoder->get(cv::CAP_PROP_FPS);
+		m_Impl->m_ScaledFrameWidth = m_Impl->m_FrameWidth;
+		m_Impl->m_ScaledFrameHeight = m_Impl->m_FrameHeight;
 		/// output frame byte size
 		m_Impl->m_FrameByteSize = m_Impl->m_FrameWidth * m_Impl->m_FrameHeight * sizeof(uchar4);
 		/// initialize the buffer according to the frame's dims
@@ -130,8 +136,8 @@ void DecodingNodeObj::GenerateFrame()
 		
 		m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative);
 		cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
-		auto color = m_Impl->m_CurrentFrameNative.at<cv::Vec4b>(cv::Point(0, 0));
-		//printf("cv color: (%u, %u, %u, %u)\n", color[0], color[1], color[2], color[2]);
+		/// resize to scaled frame size
+		cv::resize(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::Size(m_Impl->m_ScaledFrameWidth, m_Impl->m_ScaledFrameHeight), 0.0, 0.0, cv::INTER_LINEAR);
 		/// get the byte size of the native frame
 		size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
 		size_t fbsize = m_Impl->m_CurrentFrameBuffer->ByteSize();
@@ -142,6 +148,14 @@ void DecodingNodeObj::GenerateFrame()
 		/// notify subscriber's about the current frame
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameBuffer);
 	}
+}
+///	\brief set scaled size
+///	\param	width	the new width of the decoded frame
+///	\param	height	the new height of the decoded frame
+void fu::trans::DecodingNodeObj::SetScaledSize(size_t width, size_t height)
+{
+	m_Impl->m_ScaledFrameWidth = width;
+	m_Impl->m_ScaledFrameHeight = height;
 }
 ///	\brief frame output
 ///	decoding nodes have only output frame streams
