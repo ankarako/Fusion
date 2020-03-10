@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <rxcpp/rx.hpp>
+#include <opencv2/core.hpp>
 
 namespace fu {
 namespace trans {
@@ -20,6 +21,9 @@ public:
 	///	\brief the frame object type
 	///	a decoding node's frame type is the same as the underlying librarie's type (for now)
 	using frame_t = BufferCPU<uchar4>;
+	///	\typedef native_frame_t
+	///	\brief the native frame type (the type of the decoding library)
+	using native_frame_t = cv::Mat;
 	/// Construction
 	///	\brief Default constructor
 	///	does nothing. The decoding node initializes its members
@@ -51,6 +55,11 @@ public:
 	///	\brief generate the frame at the current frame position
 	///	Outputs a frame buffer from the node's output
 	void GenerateFrame();
+	///	\brief generate a specific number of frames
+	///	generates the specified number of frames
+	///	\param	frameCount	the number of frames to generate
+	///	\note generates the specified number of frames from the current frame position
+	void GenerateFrames(size_t frameCount);
 	///	\brief set scaled size
 	///	\param	width	the new width of the decoded frame
 	///	\param	height	the new height of the decoded frame
@@ -58,6 +67,13 @@ public:
 	///	\brief frame output
 	///	decoding nodes have only output frame streams
 	rxcpp::observable<frame_t> FrameFlowOut();
+	///	\brief native frame output
+	///	native frame output for hooking in other nodes
+	rxcpp::observable<native_frame_t> NativeFrameFlowOut();
+	///	\brief generate the specified amount of frames
+	rxcpp::observer<size_t>		PrefetchFrames();
+	///	\brief generate frames task completed notification
+	rxcpp::observable<void*>	PrefetchFramesCompleted();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

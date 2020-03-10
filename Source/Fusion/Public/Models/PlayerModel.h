@@ -39,6 +39,9 @@ public:
 	void Pause();
 	///	\brief stop playback
 	void Stop();
+	///	\brief set the number of frames to prefetch
+	///	\param	frameCount	the number of frames to prefetch
+	void SetFramePrefetchCount(size_t frameCount);
 	///	\brief current frame id output
 	rxcpp::observable<size_t> CurrentFrameIdFlowOut();
 	///	\brief frame duration output

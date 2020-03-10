@@ -5,7 +5,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/videoio.hpp>
-
+#include <thread>
+#include <plog/Log.h>
 
 namespace fu {
 namespace trans {
@@ -18,7 +19,7 @@ struct DecodingNodeObj::Impl
 	/// TODO: maybe redundant
 	std::string m_LoadedFile{ " " };
 	///	current frfame buffer
-	BufferCPU<uchar4>	m_CurrentFrameBuffer;
+	frame_t				m_CurrentFrame;
 	/// keep the cv::Mat frame too so we don't have 
 	///	to allocate new frames for each loaded frame
 	cv::Mat				m_CurrentFrameNative;
@@ -38,12 +39,16 @@ struct DecodingNodeObj::Impl
 	size_t		m_FrameCount{ 0 };
 	///	frame rate
 	double		m_FrameRate{ 0 };
-	///	the aspect ratio
-
 	///	the actual opencv video decoder
 	dec_t		m_Decoder;
+	///	prefetch event task
+	rxcpp::subjects::subject<size_t>			m_GenerateFramesTask;
 	///	frame output
-	rxcpp::subjects::subject<frame_t>	m_FrameFlowOutSubj;
+	rxcpp::subjects::subject<frame_t>			m_FrameFlowOutSubj;
+	/// native frame output
+	rxcpp::subjects::subject<native_frame_t>	m_NativeFrameFlowOutSubj;
+	///	finished prefetching notification
+	rxcpp::subjects::subject<void*>				m_GenerateFramesTaskCompetedSubj;
 	///	Construction
 	Impl() 
 		: m_Decoder(std::make_shared<cv::VideoCapture>())
@@ -55,7 +60,48 @@ struct DecodingNodeObj::Impl
 ///	from oening files
 DecodingNodeObj::DecodingNodeObj()
 	: m_Impl(spimpl::make_unique_impl<Impl>())
-{ }
+{ 
+	///=====================
+	///	Generate frames task
+	///=====================
+	///	param frameCount	the number of frames to generate
+	m_Impl->m_GenerateFramesTask.get_observable()
+		.subscribe([this](size_t frameCount) 
+	{
+		if (m_Impl->m_Decoder->isOpened() && m_Impl->m_CurrentFramePosition < m_Impl->m_FrameCount)
+		{
+			LOG_DEBUG << "Generating on thread: " << std::this_thread::get_id();
+			unsigned int counter = 0;
+			while (counter < frameCount)
+			{
+				if (m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
+				{
+					m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative);
+					cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
+					/// get the byte size of the native frame
+					size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+					size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
+					/// check that our frame and the native have the same byte size
+					DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
+					/// copy native frame data to our buffer
+					std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+					/// notify subscriber's about the current frame
+					m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
+					m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
+					///	increment counter
+					counter++;
+					m_Impl->m_CurrentFramePosition++;
+				}
+				else
+				{
+					break;
+				}
+			}
+			LOG_DEBUG << "Finished Generating on thread: " << std::this_thread::get_id();
+			m_Impl->m_GenerateFramesTaskCompetedSubj.get_subscriber().on_next(nullptr);
+		}
+	});
+}
 ///	\brief load a video file
 ///	\param	filepath the path to the file to load
 void DecodingNodeObj::LoadFile(const std::string& filepath)
@@ -73,12 +119,12 @@ void DecodingNodeObj::LoadFile(const std::string& filepath)
 		/// output frame byte size
 		m_Impl->m_FrameByteSize = m_Impl->m_FrameWidth * m_Impl->m_FrameHeight * sizeof(uchar4);
 		/// initialize the buffer according to the frame's dims
-		m_Impl->m_CurrentFrameBuffer = CreateBufferCPU<uchar4>(m_Impl->m_FrameHeight * m_Impl->m_FrameWidth);
-		//m_Impl->m_CurrentFrameNative = cv::Mat(m_Impl->m_FrameHeight, m_Impl->m_FrameWidth, CV_8UC4);
+		m_Impl->m_CurrentFrame= CreateBufferCPU<uchar4>(m_Impl->m_FrameHeight * m_Impl->m_FrameWidth);
+		m_Impl->m_CurrentFrameNative = cv::Mat::zeros(m_Impl->m_FrameHeight, m_Impl->m_FrameWidth, CV_8UC4);
 		///	get the byte size of the native frame
-		//size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+		size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
 		/// check that our frame and the native have the same byte size
-		//DebugAssertMsg(bsize == m_Impl->m_CurrentFrameBuffer->ByteSize(), "Decoded native frame type has different byte size.");
+		DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
 	}
 }
 ///	\brief release the underlying decoding context
@@ -136,17 +182,47 @@ void DecodingNodeObj::GenerateFrame()
 		
 		m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative);
 		cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
-		/// resize to scaled frame size
-		cv::resize(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::Size(m_Impl->m_ScaledFrameWidth, m_Impl->m_ScaledFrameHeight), 0.0, 0.0, cv::INTER_LINEAR);
 		/// get the byte size of the native frame
 		size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
-		size_t fbsize = m_Impl->m_CurrentFrameBuffer->ByteSize();
+		size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
 		/// check that our frame and the native have the same byte size
-		DebugAssertMsg(bsize == m_Impl->m_CurrentFrameBuffer->ByteSize(), "Decoded native frame type has different byte size.");
+		DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
 		/// copy native frame data to our buffer
-		std::memcpy(m_Impl->m_CurrentFrameBuffer->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+		std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
 		/// notify subscriber's about the current frame
-		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameBuffer);
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
+		m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
+	}
+}
+///	\brief generate a specific number of frames
+///	generates the specified 6number of frames
+///	\param	frameCount	the number of frames to generate
+///	\note generates the specified number of frames from the current frame position
+void DecodingNodeObj::GenerateFrames(size_t frameCount)
+{
+	if (m_Impl->m_Decoder->isOpened() && m_Impl->m_CurrentFramePosition < m_Impl->m_FrameCount)
+	{
+		LOG_DEBUG << "Generating frames on thread: " << std::this_thread::get_id();
+		unsigned int counter = 0;
+		while (counter < frameCount && m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
+		{
+			cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
+			/// get the byte size of the native frame
+			size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+			size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
+			/// check that our frame and the native have the same byte size
+			DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
+			/// copy native frame data to our buffer
+			std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+			/// notify subscriber's about the current frame
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
+			m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
+			///	increment counter
+			counter++;
+			m_Impl->m_CurrentFramePosition++;
+		}
+		LOG_DEBUG << "Signalled generation fineshed event from thread: " << std::this_thread::get_id();
+		m_Impl->m_GenerateFramesTaskCompetedSubj.get_subscriber().on_next(nullptr);
 	}
 }
 ///	\brief set scaled size
@@ -162,6 +238,22 @@ void fu::trans::DecodingNodeObj::SetScaledSize(size_t width, size_t height)
 rxcpp::observable<DecodingNodeObj::frame_t> DecodingNodeObj::FrameFlowOut()
 {
 	return m_Impl->m_FrameFlowOutSubj.get_observable().as_dynamic();
+}
+///	\brief native frame output
+///	native frame output for hooking in other nodes
+rxcpp::observable<DecodingNodeObj::native_frame_t> DecodingNodeObj::NativeFrameFlowOut()
+{
+	return m_Impl->m_NativeFrameFlowOutSubj.get_observable().as_dynamic();
+}
+///	\brief generate the specified amount of frames
+rxcpp::observer<size_t> fu::trans::DecodingNodeObj::PrefetchFrames()
+{
+	return m_Impl->m_GenerateFramesTask.get_subscriber().get_observer().as_dynamic();
+}
+///	\brief generate frames task completed notification
+rxcpp::observable<void*> fu::trans::DecodingNodeObj::PrefetchFramesCompleted()
+{
+	return m_Impl->m_GenerateFramesTaskCompetedSubj.get_observable().as_dynamic();
 }
 }	///	!namespace trans
 }	///	!namespace fu
