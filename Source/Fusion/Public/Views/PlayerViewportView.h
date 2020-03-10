@@ -38,6 +38,7 @@ public:
 	/// output events
 	rxcpp::observable<float>	OnViewportWidthChanged();
 	rxcpp::observable<float>	OnViewportHeightChanged();
+	rxcpp::observable<float2>	OnViewportSizeChanged();
 	rxcpp::observable<GLuint>	PixelBufferHandleFlowOut();
 private:	
 	struct Impl;

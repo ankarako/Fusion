@@ -45,16 +45,6 @@ void PlayerViewportPresenter::Init()
 	{
 		m_Impl->m_Wrepo->UnregisterWidget(m_Impl->m_View);
 	});
-	///=========================
-	/// frame width subscription
-	///=========================
-	/*m_Impl->m_Model->FrameWidthFlowOut()
-		.subscribe(m_Impl->m_View->FrameWidthFlowIn());*/
-	///==========================
-	/// frame height subscription
-	///===========================
-	/*m_Impl->m_Model->FrameHeightFlowOut()
-		.subscribe(m_Impl->m_View->FrameHeightFlowIn());*/
 	///========================
 	/// frame size subscription
 	///========================
@@ -63,18 +53,18 @@ void PlayerViewportPresenter::Init()
 	m_Impl->m_Model->FrameSizeFlowOut()
 		.subscribe(m_Impl->m_View->FrameSizeFlowIn());
 	///============================
-	///	viewport width changed task
+	///	viewport size changed task
 	///============================
-	m_Impl->m_View->OnViewportWidthChanged().subscribe(
-		[this](float newWidth)
+	m_Impl->m_View->OnViewportSizeChanged()
+		.subscribe([this](float2 newSize)
 	{
-		/// TODO:
+
 	});
 	///==========================
 	///	PBO flow out subscription
 	///==========================
-	m_Impl->m_View->PixelBufferHandleFlowOut()
-		.subscribe(m_Impl->m_TracerModel->PboFlowIn());
+	//m_Impl->m_View->PixelBufferHandleFlowOut()
+	//	.subscribe(m_Impl->m_TracerModel->PboFlowIn());
 	///=================================
 	/// frame flow out from decoder task
 	///=================================
