@@ -21,21 +21,16 @@ public:
 	///	\param	ctxComp		the context component associated with the raygen
 	///	\param	ptxFilepath	the ptx source filepath
 	///	\param	progName	the ray generation program name
-	static void CreateRaygenProg(
-		RaygenProgComp raygenComp, 
-		ContextComp ctxComp, 
-		const std::string& ptxFilepath, 
-		const std::string& progName,
-		int width,
-		int height)
+	static void CreateRaygenProg(RaygenProgComp& raygenComp, ContextComp& ctxComp, const std::string& ptxFilepath, const std::string& progName, int width, int height)
 	{
 		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(ptxFilepath, progName);
 		raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
-		raygenComp->Lookat	= optix::make_float3(0.0f, 0.0f, 1.0f);
+		raygenComp->Lookat	= optix::make_float3(1.0f, 0.0f, 0.0f);
 		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
 		raygenComp->ViewWidth	= width;
 		raygenComp->ViewHeight	= height;
 		raygenComp->AspectRatio = static_cast<float>(width) / static_cast<float>(height);
+		raygenComp->Transform = optix::Matrix4x4::identity();
 	}
 	/// \brief create a 360 ray generation component
 	///	for convenience
@@ -45,11 +40,12 @@ public:
 	{
 		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_360RaygenPtxFilepath, k_360RaygenProgName);
 		raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
-		raygenComp->Lookat	= optix::make_float3(0.0f, 0.0f, 1.0f);
+		raygenComp->Lookat	= optix::make_float3(1.0f, 0.0f, 0.0f);
 		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
 		raygenComp->ViewWidth	= width;
 		raygenComp->ViewHeight	= height;
 		raygenComp->AspectRatio = static_cast<float>(width) / static_cast<float>(height);
+		raygenComp->Transform = optix::Matrix4x4::identity();
 		ctxComp->Context->setRayTypeCount(1u);
 		ctxComp->Context->setRayGenerationProgram(0u, raygenComp->RaygenProg);
 		/// create output buffer
@@ -65,11 +61,12 @@ public:
 	{
 		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_360RaygenPtxFilepath, k_360RaygenProgName);
 		raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
-		raygenComp->Lookat	= optix::make_float3(0.0f, 0.0f, 1.0f);
+		raygenComp->Lookat	= optix::make_float3(1.0f, 0.0f, 0.0f);
 		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
 		raygenComp->ViewWidth	= size.x;
 		raygenComp->ViewHeight	= size.y;
 		raygenComp->AspectRatio = static_cast<float>(size.x) / static_cast<float>(size.y);
+		raygenComp->Transform = optix::Matrix4x4::identity();
 		ctxComp->Context->setRayTypeCount(1u);
 		ctxComp->Context->setRayGenerationProgram(0u, raygenComp->RaygenProg);
 		/// output from pbo
@@ -88,11 +85,10 @@ public:
 	///	\param	eye		the camera's eye
 	///	\param	lookat	the camera's lookat
 	///	\param	up		the camera's up
-	static void SetRaygenAttributes(RaygenProgComp raygenComp)
+	static void SetRaygenAttributes(RaygenProgComp& raygenComp)
 	{
-		/// calculate camera plane
 		CameraPlaneBasis basis;
-		CalcCameraPlaneBasis(raygenComp->Eye, raygenComp->Lookat, raygenComp->Up, raygenComp->AspectRatio, basis);
+		UpdateCameraParams(raygenComp, basis);
 		raygenComp->RaygenProg["U"]->setFloat(basis.U);
 		raygenComp->RaygenProg["V"]->setFloat(basis.V);
 		raygenComp->RaygenProg["W"]->setFloat(basis.W);
@@ -113,14 +109,14 @@ private:
 	///	\param	up			the up vector of the camera
 	///	\param	aspectRatio	the aspect ration of the camera
 	///	\param[out] the CameraPlaneBasis struct
-	static void CalcCameraPlaneBasis(optix::float3 eye, optix::float3 lookat, optix::float3 up, float aspectRatio, CameraPlaneBasis& camPlane)
+	static void CalcCameraPlaneBasis(optix::float3& eye, optix::float3& lookat, optix::float3& up, float aspectRatio, CameraPlaneBasis& camPlane)
 	{
 		float ulen;
 		float vlen;
 		float wlen;
 		camPlane.W = lookat - eye;
 		wlen = optix::length(camPlane.W);
-		camPlane.U = optix::normalize(optix::cross(camPlane.W, camPlane.U));
+		camPlane.U = optix::normalize(optix::cross(camPlane.W, up));
 		camPlane.V = optix::normalize(optix::cross(camPlane.U, camPlane.W));
 		vlen = wlen * tanf(0.5f * m_Fov * M_PIf / 180.0f);
 		camPlane.V *= vlen;
@@ -129,6 +125,22 @@ private:
 	}
 	///	\brief update camera parameters
 	///	updates eye, lookat, up vectors
+	///	\param	raygenComp	the raygen component to update
+	///	\param	camPlane	the image plane basis vectors
+	void static UpdateCameraParams(RaygenProgComp& raygenComp, CameraPlaneBasis& camPlane)
+	{
+		CalcCameraPlaneBasis(raygenComp->Eye, raygenComp->Lookat, raygenComp->Up, raygenComp->AspectRatio, camPlane);
+		const optix::Matrix4x4 frame	= optix::Matrix4x4::fromBasis(optix::normalize(camPlane.U), optix::normalize(camPlane.V), optix::normalize(-camPlane.W), raygenComp->Lookat);
+		const optix::Matrix4x4 frameInv = frame.inverse();
+		const optix::Matrix4x4 trans	= frame * raygenComp->Transform * frameInv;
+		const optix::float3 eye			= raygenComp->Eye;
+		const optix::float3 lookat		= raygenComp->Lookat;
+		const optix::float3 up			= raygenComp->Up;
+		raygenComp->Eye		= optix::make_float3(trans * optix::make_float4(eye, 1.0f));
+		raygenComp->Lookat	= optix::make_float3(trans * optix::make_float4(lookat, 1.0f));
+		raygenComp->Up		= optix::make_float3(trans * optix::make_float4(up, 1.0f));
+		CalcCameraPlaneBasis(raygenComp->Eye, raygenComp->Lookat, raygenComp->Up, raygenComp->AspectRatio, camPlane);
+	}
 private:
 	/// system state
 	static constexpr float m_Fov = 35.0f;
