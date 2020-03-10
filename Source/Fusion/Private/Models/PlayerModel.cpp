@@ -29,6 +29,8 @@ struct PlayerModel::Impl
 	/// Our settingss
 	srepo_ptr_t						m_SettingsRepo;
 	settings_ptr_t					m_Settings;
+	/// number of buffered samples before playback
+	size_t							m_PrebufSamples;
 	///	playback start time for correct frame rate
 	std::chrono::time_point<std::chrono::high_resolution_clock> m_Start;
 	///	frame rate (actually frame period)
