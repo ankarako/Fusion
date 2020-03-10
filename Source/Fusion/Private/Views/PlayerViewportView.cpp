@@ -192,5 +192,10 @@ rxcpp::observable<GLuint> fu::fusion::PlayerViewportView::PixelBufferHandleFlowO
 {
 	return m_Impl->m_PixelBufferFlowOutSubj.get_observable().as_dynamic();
 }
+
+rxcpp::observable<float2> fu::fusion::PlayerViewportView::OnViewportSizeChanged()
+{
+	return m_Impl->m_OnViewportSizeChangedSubj.get_observable().as_dynamic();
+}
 }	///	!namespace fusion
 }	///	!namespace fu
