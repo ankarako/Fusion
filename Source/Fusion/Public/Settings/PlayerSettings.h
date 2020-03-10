@@ -11,7 +11,10 @@ namespace fusion {
 class PlayerSettings : public Settings<WriterType::PrettyWriter>
 {
 public:
-	std::string	LoadedVideoFilepath;
+	std::string		LoadedVideoFilepath{ "" };
+	size_t			PrefetchFrameCount{ 0 };
+	size_t			PrefetchThreshold{ 60 };
+	size_t			CurrentFrameId{ 0 };
 
 	void Save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& writer) override;
 	void Load(rapidjson::Document& doc) override;
