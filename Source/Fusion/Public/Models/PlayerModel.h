@@ -39,6 +39,13 @@ public:
 	void Pause();
 	///	\brief stop playback
 	void Stop();
+	///	\brief seek to a specified frame position
+	///	\param	framePos	the frame position to seek
+	void Seek(int framePos);
+	///	\brief seek forward one frame
+	void SeekForward();
+	///	\brief seek backward one frame
+	void SeekBackward();
 	///	\brief set the number of frames to prefetch
 	///	\param	frameCount	the number of frames to prefetch
 	void SetFramePrefetchCount(size_t frameCount);

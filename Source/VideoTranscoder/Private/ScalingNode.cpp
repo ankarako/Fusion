@@ -37,9 +37,9 @@ ScalingNodeObj::ScalingNodeObj(unsigned int width, unsigned int height)
 	/// allocate the current native frame
 	m_Impl->m_CurrenNativeFrame =
 		cv::Mat::zeros(m_Impl->m_ScalingSize.y, m_Impl->m_ScalingSize.x, CV_8UC4);
-	///============================
-		///	native frame flow int task
-		///============================
+	///===============================
+	///	native frame flow int task
+	///===========================
 	m_Impl->m_NativeFrameFlowInSubj.get_observable()
 		.subscribe([this](native_frame_t& frame)
 	{

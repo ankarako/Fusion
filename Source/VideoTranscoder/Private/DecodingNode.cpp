@@ -221,7 +221,7 @@ void DecodingNodeObj::GenerateFrames(size_t frameCount)
 			counter++;
 			m_Impl->m_CurrentFramePosition++;
 		}
-		LOG_DEBUG << "Signalled generation fineshed event from thread: " << std::this_thread::get_id();
+		LOG_DEBUG << "Signalled generation finished event from thread: " << std::this_thread::get_id();
 		m_Impl->m_GenerateFramesTaskCompetedSubj.get_subscriber().on_next(nullptr);
 	}
 }

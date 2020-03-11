@@ -92,8 +92,6 @@ void PlayerModel::Init()
 	m_Impl->m_DecodingNode->PrefetchFramesCompleted().observe_on(m_Impl->m_Coord->ModelCoordination())
 		.subscribe([this](auto _) 
 	{
-		LOG_DEBUG << "Set finished generating on thread: " << std::this_thread::get_id();
-		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 	});
 
@@ -146,7 +144,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	{
 		if (m_Impl->m_FrameQueue.size() < m_Impl->m_Settings->PrefetchThreshold && !m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
 		{
-			LOG_DEBUG << "Checked prefetch";
+			LOG_DEBUG << "Called prefetching due to queue size.";
 			m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 		}
 	});
@@ -159,15 +157,12 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	///	scaling node Frame flow in Task
 	///	push frame in buffer
 	///=================================
-	static int pushed_frame_counter = 0;
-	m_Impl->m_ScalingNode->FrameFlowOut()/*.observe_on(m_Impl->m_Coord->ModelCoordination())*/
+	m_Impl->m_ScalingNode->FrameFlowOut()
 		.subscribe([this](frame_t frame)
 	{
-		LOG_DEBUG << "Pushed frame." << pushed_frame_counter++;
 		m_Impl->m_FrameQueue.emplace_back(frame);
 	});
 	/// start prefetching
-	//LOG_DEBUG << "Called Prefetch on thread: " << std::this_thread::get_id();
 	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 }
 ///	\brief start playback
@@ -190,35 +185,88 @@ void PlayerModel::Start()
 			m_Impl->m_Settings->CurrentFrameId++;
 			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 			m_Impl->m_FrameQueue.pop_front();
-			LOG_DEBUG << "Current frame id: " << m_Impl->m_Settings->CurrentFrameId;
 		}
 	}));
 }
 ///	\brief pause playback
 void PlayerModel::Pause()
 {
-	/*while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
 	{
 
-	}*/
+	}
 	m_Impl->m_PlaybackLifetime.clear();
-	//m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 	m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
 }
-///	\brief stio playback
+///	\brief stop playback
 void PlayerModel::Stop()
-{
-	//while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
-	//{
-
-	//}
+{	
+	/// clear playback subscription
 	m_Impl->m_PlaybackLifetime.clear();
-	//m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
-	//m_Impl->m_DecodingNode->SetCurrentFramePos(0);
-	//m_Impl->m_DecodingNode->GenerateFrame();
-	//m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(0);
+	/// set playback
 	m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
+	while(m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	{ }
+	/// erase frame queue
+	m_Impl->m_FrameQueue.clear();
+	/// generate the first frame of the video
+	m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
+	m_Impl->m_DecodingNode->SetCurrentFramePos(0);
+	m_Impl->m_DecodingNode->GenerateFrame();
+	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
+	/// send the first frame
+	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
+	/// set current frame
+	m_Impl->m_Settings->CurrentFrameId = 0;
+	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(0);
+	/// signal a prefetch event
+	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+	/// and we should be OK
+}
+///	\brief seek to a specified frame position
+void PlayerModel::Seek(int framePos)
+{
+	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	{
+		/// do nothing
+	}
+	m_Impl->m_PlaybackLifetime.clear();
+	m_Impl->m_DecodingNode->SetCurrentFramePos(framePos);
+	Start();
+}
+///	\brief seek forward one frame
+void PlayerModel::SeekForward()
+{
+	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	{
+		/// do nothing
+	}
+	Pause();
+	m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
+	m_Impl->m_Settings->CurrentFrameId++;
+	m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
+	m_Impl->m_DecodingNode->GenerateFrame();
+	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
+	/// send the frame
+	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
+	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
+}
+///	\brief seek backward one frame
+void PlayerModel::SeekBackward()
+{
+	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	{
+		/// do nothing
+	}
+	Pause();
+	m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
+	m_Impl->m_Settings->CurrentFrameId--;
+	m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
+	m_Impl->m_DecodingNode->GenerateFrame();
+	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
+	/// send the frame
+	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
+	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 }
 ///	\brief set the number of frames to prefetch
 ///	\param	frameCount	the number of frames to prefetch
