@@ -49,6 +49,11 @@ public:
 	///	\brief set the number of frames to prefetch
 	///	\param	frameCount	the number of frames to prefetch
 	void SetFramePrefetchCount(size_t frameCount);
+	///	\brief set scaling size
+	void SetScalingSize(uint2 size);
+	/// \brief checj if the model has opened a file
+	///	\return true if the video player is opened
+	bool IsOpen() const;
 	///	\brief current frame id output
 	rxcpp::observable<size_t> CurrentFrameIdFlowOut();
 	///	\brief frame duration output

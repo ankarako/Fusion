@@ -1,4 +1,4 @@
-#include <Views/PlayerViewportView.h>
+﻿#include <Views/PlayerViewportView.h>
 #include <Core/Coordination.h>
 #include <Buffer.h>
 #include <FontManager.h>
@@ -23,11 +23,13 @@ struct PlayerViewportView::Impl
 	///
 	coord_ptr_t	m_Coord;
 	/// viewport size
-	ImVec2		m_WindowSize{ 0.0f, 0.0f };
+	ImVec2		m_WindowSize{ 1280.0f, 720.0f };
 	/// gl texture width
 	int m_DisplayTextureWidth{ 0 };
 	///	gl texture height
 	int m_DisplayTextureHeight{ 0 };
+	/// viewport's aspect ratio
+	float m_DisplayAspectRatio{ 0.0f };
 	///	gl pixel buffer with texture
 	GLuint m_PixelBufferHandle{ 0 };
 	/// gl texture to display to viewport
@@ -48,7 +50,8 @@ struct PlayerViewportView::Impl
 	/// window size changed
 	rxcpp::subjects::subject<float2> m_OnViewportSizeChangedSubj;
 	/// pixel buffer flow out event
-	rxcpp::subjects::subject<GLuint>	m_PixelBufferFlowOutSubj;
+	rxcpp::subjects::subject<GLuint> m_PixelBufferFlowOutSubj;
+	/// wdeo siz
 	/// Construction
 	Impl(fman_ptr_t fman, coord_ptr_t coord)
 		: m_FontManager(fman)
@@ -62,22 +65,6 @@ PlayerViewportView::PlayerViewportView(fman_ptr_t fman, coord_ptr_t coord)
 /// \brief initialize the widget
 void PlayerViewportView::Init()
 {
-	///=========================
-	/// frame width flow in task
-	///=========================
-	/*m_Impl->m_FrameWidthFlowInSubj.get_observable().subscribe(
-		[this](int width) 
-	{
-		m_Impl->m_DisplayTextureWidth = width;
-	});
-	///==========================
-	/// frame height flow in task
-	///===========================
-	m_Impl->m_FrameHeightFlowinSubj.get_observable().subscribe(
-		[this](int height) 
-	{
-		m_Impl->m_DisplayTextureHeight = height;
-	});*/
 	///========================
 	/// frame size flow in task
 	///
@@ -89,6 +76,12 @@ void PlayerViewportView::Init()
 	{
 		m_Impl->m_DisplayTextureWidth = size.x;
 		m_Impl->m_DisplayTextureHeight = size.y;
+		m_Impl->m_DisplayAspectRatio = static_cast<float>(size.x) / static_cast<float>(size.y);
+		if (m_Impl->m_DisplayTextureWidth != m_Impl->m_WindowSize.x || m_Impl->m_DisplayTextureHeight != m_Impl->m_WindowSize.y)
+		{
+			m_Impl->m_WindowSize.x = m_Impl->m_WindowSize.y * m_Impl->m_DisplayAspectRatio;
+			//m_Impl->m_OnViewportSizeChangedSubj.get_subscriber().on_next(make_float2((unsigned int)m_Impl->m_WindowSize.x, (unsigned int)m_Impl->m_WindowSize.y));
+		}
 		/// generate a gl texture object
 		glGenTextures(1, &m_Impl->m_TextureHandle);
 		if (m_Impl->m_TextureHandle == 0)
@@ -129,27 +122,19 @@ void PlayerViewportView::Render()
 	if (!isActive)
 		return;
 
+	ImGui::SetNextWindowSize(m_Impl->m_WindowSize);
 	auto winFlags = ImGuiWindowFlags_NoScrollbar;
 
 	ImGui::PushFont(m_Impl->m_FontManager->GetFont(app::FontManager::FontType::Regular));
 	ImGui::Begin("Video Viewport", &isActive, winFlags);
 	{
-		ImVec2 winSize = ImGui::GetWindowSize();
+		auto winSize = ImGui::GetWindowSize();	
+		//LOG_DEBUG << "Window Size: " << winSize.x << " x " << winSize.y;
 		if (winSize.x != m_Impl->m_WindowSize.x)
 		{
-			m_Impl->m_WindowSize.x = winSize.x;
-			m_Impl->m_WindowSize.y = m_Impl->m_WindowSize.x / 2;
-			m_Impl->m_OnViewportWidthChangedSubj.get_subscriber().on_next(m_Impl->m_WindowSize.x);
-			m_Impl->m_OnViewportHeightChangedSubj.get_subscriber().on_next(m_Impl->m_WindowSize.y);
-			ImGui::SetWindowSize(m_Impl->m_WindowSize);
-		}
-
-		if (winSize.y != m_Impl->m_WindowSize.y)
-		{
+			m_Impl->m_WindowSize.x = winSize.y * m_Impl->m_DisplayAspectRatio;
 			m_Impl->m_WindowSize.y = winSize.y;
-			m_Impl->m_WindowSize.x = 2 * m_Impl->m_WindowSize.y;
-			m_Impl->m_OnViewportHeightChangedSubj.get_subscriber().on_next(m_Impl->m_WindowSize.y);
-			m_Impl->m_OnViewportWidthChangedSubj.get_subscriber().on_next(m_Impl->m_WindowSize.x);
+			//m_Impl->m_OnViewportSizeChangedSubj.get_subscriber().on_next(make_float2((unsigned int)m_Impl->m_WindowSize.x, (unsigned int)m_Impl->m_WindowSize.y));
 			ImGui::SetWindowSize(m_Impl->m_WindowSize);
 		}
 		if (m_Impl->m_DisplayTextureWidth != 0 && m_Impl->m_DisplayTextureHeight != 0)
@@ -197,5 +182,6 @@ rxcpp::observable<float2> fu::fusion::PlayerViewportView::OnViewportSizeChanged(
 {
 	return m_Impl->m_OnViewportSizeChangedSubj.get_observable().as_dynamic();
 }
+
 }	///	!namespace fusion
 }	///	!namespace fu

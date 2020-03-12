@@ -152,9 +152,16 @@ target_include_directories(Fusion PUBLIC "Public")
 # di
 # adding the include directory suffices
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/boost-di/include")
+#
+add_subdirectory("../Lib" FusioLib)
+# target_link_libraries(Fusion PRIVATE Common)
+target_link_libraries(Fusion PRIVATE FusionApplication)
+target_link_libraries(Fusion PRIVATE OptixRayTracer)
+target_link_libraries(Fusion PRIVATE FusionTranscoder)
+
 # Application module
-add_subdirectory("../Application" ApplicationModule)
-target_link_libraries(Fusion FusionApplication)
+# add_subdirectory("../Application" ApplicationModule)
+# target_link_libraries(Fusion PRIVATE FusionApplication)
 # depends on spimpl
 # we add only the include directory
 target_include_directories(Fusion PRIVATE "${3rdPartyPath}/spimpl")
@@ -177,9 +184,8 @@ target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rapidjson/include")
 ##################
 # OptixRayTRacer
 ##################
-add_subdirectory("../OptixRayTracer" OptixRayTracer)
-target_link_libraries(Fusion OptixRayTracer)
-# target_link_libraries(Fusion FusionCommon)
+# add_subdirectory("../OptixRayTracer" OptixRayTracer)
+# target_link_libraries(Fusion PRIVATE OptixRayTracer)
 ######
 # STB
 #####
@@ -187,19 +193,19 @@ target_include_directories(Fusion PUBLIC "${3rdPartyPath}/stb")
 ###################
 # FusionTranscoder
 ###################
-add_subdirectory("../VideoTranscoder" FusionTranscoder)
-target_link_libraries(Fusion FusionTranscoder)
-message(STATUS "Added FusionTranscoder dependency...")
+# add_subdirectory("../VideoTranscoder" FusionTranscoder)
+# target_link_libraries(Fusion PRIVATE FusionTranscoder)
+# message(STATUS "Added FusionTranscoder dependency...")
 #### copy resources
-# we use configure_file() instead file() because it creates a 
+# we use configure_file() instead file() because it creates a
 # file-level dependency
 # \see: https://stackoverflow.com/questions/34799916/copy-file-from-source-directory-to-binary-directory-using-cmake
 configure_file(
-	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/calibri.ttf" 
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/calibri.ttf"
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/calibri.ttf" COPYONLY)
 configure_file(
-	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/fa-regular-400.ttf" 
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/fa-regular-400.ttf"
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/fa-regular-400.ttf" COPYONLY)
 configure_file(
-	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf" 
+	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf"
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/MaterialIcons-Regular.ttf" COPYONLY)

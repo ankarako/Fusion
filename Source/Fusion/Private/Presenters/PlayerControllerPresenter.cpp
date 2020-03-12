@@ -62,6 +62,10 @@ void PlayerControllerPresenter::Init()
 	m_Impl->m_FexpView->OpenVideoFileFlowOut().subscribe(
 		[this](auto filepath)
 	{
+		if (m_Impl->m_Model->IsOpen())
+		{
+			m_Impl->m_Model->Destroy();
+		}
 		m_Impl->m_Model->LoadFile(filepath);
 		m_Impl->m_View->Activate();
 	});
@@ -119,7 +123,14 @@ void PlayerControllerPresenter::Init()
 	{
 		m_Impl->m_Model->SeekForward();
 	});
-
+	///============================
+	/// Slider value changed Task
+	///============================
+	m_Impl->m_View->OnSliderValueChanged()
+		.subscribe([this](int value) 
+	{
+		m_Impl->m_Model->Seek(value);
+	});
 	///===================================
 	/// Model -> FrameCount Flow out task
 	///===================================

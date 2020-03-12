@@ -19,7 +19,7 @@ struct PlayerControllerView::Impl
 		SeekForw,
 		SeekBack
 	};
-
+	const ImVec2 k_WindowSize{ 200.0f, 50.0f };
 	ControllerState m_State{ ControllerState::Idle };
 	fman_ptr_t		m_FontManger;
 	int				m_SliderValue{ 0 };
@@ -30,6 +30,7 @@ struct PlayerControllerView::Impl
 	rxcpp::subjects::subject<void*> m_OnPauseButtonClickedSubj;
 	rxcpp::subjects::subject<void*> m_OnStopButtonClickedSubj;
 	rxcpp::subjects::subject<void*> m_OnSeekForwardButtonClickedSubj;
+	rxcpp::subjects::subject<int>	m_OnSliderValueChangedSubj;
 	rxcpp::subjects::subject<int>	m_FrameIdFlowIn;
 	/// Construction
 	Impl(fman_ptr_t fman) 
@@ -43,16 +44,19 @@ PlayerControllerView::PlayerControllerView(fman_ptr_t fman)
 
 void PlayerControllerView::Render()
 {
+	bool isActive = this->IsActive();
+
 	bool checkPlayButton =
 		m_Impl->m_State == Impl::ControllerState::Idle		||
 		m_Impl->m_State == Impl::ControllerState::Paused	||
 		m_Impl->m_State == Impl::ControllerState::Stopped	||
 		m_Impl->m_State == Impl::ControllerState::SeekBack	||
 		m_Impl->m_State == Impl::ControllerState::SeekForw;
-
-
+	
+	
+	ImGui::SetWindowSize(m_Impl->k_WindowSize);
 	ImGui::PushFont(m_Impl->m_FontManger->GetFont(app::FontManager::FontType::Regular));
-	ImGui::Begin("Player");
+	ImGui::Begin("Player", &isActive);
 	{
 		/// state is playing the user cannot seek
 		if (m_Impl->m_State == Impl::ControllerState::Playing)
@@ -110,7 +114,7 @@ void PlayerControllerView::Render()
 		ImGui::SameLine();
 		if (ImGui::SliderInt("##playbackslider", &m_Impl->m_SliderValue, 0, m_Impl->m_SliderValueMax))
 		{
-
+			m_Impl->m_OnSliderValueChangedSubj.get_subscriber().on_next(m_Impl->m_SliderValue);
 		}
 		
 	}
@@ -156,6 +160,10 @@ rxcpp::observable<void*> fusion::PlayerControllerView::OnSeekForwardButtonClicke
 rxcpp::observer<int> fusion::PlayerControllerView::FrameIdFlowIn()
 {
 	return m_Impl->m_FrameIdFlowIn.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observable<int> fu::fusion::PlayerControllerView::OnSliderValueChanged()
+{
+	return m_Impl->m_OnSliderValueChangedSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }
