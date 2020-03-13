@@ -153,7 +153,7 @@ target_include_directories(Fusion PUBLIC "Public")
 # adding the include directory suffices
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/boost-di/include")
 #
-add_subdirectory("../Lib" FusioLib)
+add_subdirectory("../Lib" FusionLib)
 # target_link_libraries(Fusion PRIVATE Common)
 target_link_libraries(Fusion PRIVATE FusionApplication)
 target_link_libraries(Fusion PRIVATE OptixRayTracer)

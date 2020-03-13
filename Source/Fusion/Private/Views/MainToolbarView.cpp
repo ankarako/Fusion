@@ -14,6 +14,7 @@ struct MainToolbarView::Impl
 	rxcpp::subjects::subject<void*> FileMenu_SaveProjectAsClickedSubj;
 	rxcpp::subjects::subject<void*> FileMenu_SaveProjectClickedSubj;
 	rxcpp::subjects::subject<void*> FileMenu_OpenVideoFileClickedSubj;
+	rxcpp::subjects::subject<void*> FileMenu_Open3DFileClickedSubj;
 
 	rxcpp::subjects::subject<void*> FiltersMenu_ClickedSubj;
 	/// Construction
@@ -48,9 +49,13 @@ void MainToolbarView::Render()
 			{
 				m_Impl->FileMenu_SaveProjectClickedSubj.get_subscriber().on_next(nullptr);
 			}
-			if (ImGui::MenuItem("Open Video File"))
+			if (ImGui::MenuItem("Import Video File"))
 			{
 				m_Impl->FileMenu_OpenVideoFileClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			if (ImGui::MenuItem("Import 3D File"))
+			{
+				m_Impl->FileMenu_Open3DFileClickedSubj.get_subscriber().on_next(nullptr);
 			}
 			ImGui::EndMenu();
 		}
@@ -81,6 +86,10 @@ rxcpp::observable<void*> fusion::MainToolbarView::OnFileMenu_SaveProjectClicked(
 rxcpp::observable<void*> fusion::MainToolbarView::OnFileMenu_OpenVideoFileClicked()
 {
 	return m_Impl->FileMenu_OpenVideoFileClickedSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<void*> fusion::MainToolbarView::OnFileMenu_Open3DFileClicked()
+{
+	return m_Impl->FileMenu_Open3DFileClickedSubj.get_observable().as_dynamic();
 }
 }
 }

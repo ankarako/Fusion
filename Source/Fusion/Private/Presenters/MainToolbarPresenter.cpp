@@ -59,6 +59,13 @@ void MainToolbarPresenter::Init()
 		m_Impl->m_FexpView->Activate();
 	});
 
+	m_Impl->m_View->OnFileMenu_Open3DFileClicked().subscribe(
+		[this](auto _) 
+	{
+		m_Impl->m_FexpView->SetMode(FileExplorerMode::Open3DFile);
+		m_Impl->m_FexpView->Activate();
+	});
+
 	m_Impl->m_View->Activate();
 }
 }	///	!namespace fusion

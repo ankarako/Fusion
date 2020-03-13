@@ -86,7 +86,6 @@ void PlayerModel::Init()
 		.subscribe([this](auto _) 
 	{
 		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-		//m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 	});
 
 	/// create out settings
@@ -119,22 +118,14 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	m_Impl->m_Settings->LoadedVideoFilepath = filepath;
 	/// create our scaling node
 	m_Impl->m_ScalingNode = trans::CreateScalingNode(m_Impl->m_DecodingNode->GetFrameWidth(), m_Impl->m_DecodingNode->GetFrameHeight());
+	/// check fps to create interval observable
 	size_t frameCount = m_Impl->m_DecodingNode->GetFrameCount();
 	double fps = m_Impl->m_DecodingNode->GetFrameRate();
-	/// TODO: better prefetching determination
-	if (fps > 50.0)
-	{
-		m_Impl->m_Settings->PrefetchFrameCount = 360;
-		m_Impl->m_Settings->PrefetchThreshold = 240;
-	}
-	else
-	{
-		m_Impl->m_Settings->PrefetchFrameCount = 120;
-		m_Impl->m_Settings->PrefetchThreshold = 90;
-	}
 	double periodSecs = 1.0 / fps;
 	m_Impl->m_FramePeriod = 
 		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs));
+	/// now that we know everything about the file
+	///	we should create a prefetching technique so that we can play large files
 	m_Impl->m_FrameCountFlowOutSubj.get_subscriber().on_next(frameCount);
 	m_Impl->m_FrameWidthFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrameWidth());
 	m_Impl->m_FrameHeightFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrameHeight());
@@ -142,7 +133,8 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	/// create the interval observable according to the frame rate
 	std::chrono::nanoseconds periodNano = std::chrono::duration_cast<std::chrono::nanoseconds>(m_Impl->m_FramePeriod);
 	m_Impl->m_PlaybackObs		= rxcpp::observable<>::interval(periodNano).as_dynamic();
-	m_Impl->m_CheckPrefetchObs	= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(1.0))).as_dynamic();
+	m_Impl->m_CheckPrefetchObs	
+		= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(0.5))).as_dynamic();
 	
 	m_Impl->m_NodeTopology.add(
 	///====================================
@@ -156,7 +148,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	///	scaling node Frame flow in Task
 	///	push frame in buffer
 	///=================================
-	m_Impl->m_ScalingNode->FrameFlowOut()
+	m_Impl->m_DecodingNode->FrameFlowOut()
 		.subscribe([this](frame_t frame)
 	{
 		m_Impl->m_FrameQueue.emplace_back(frame);
@@ -222,15 +214,17 @@ void PlayerModel::Stop()
 {	
 	if (this->IsOpen())
 	{
+		Pause();
 		/// set playback
 		/// clear playback subscription
-		m_Impl->m_PrefetchLifetime.clear();
-		m_Impl->m_PlaybackLifetime.clear();
-		m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
+		//m_Impl->m_PrefetchLifetime.clear();
+		/*m_Impl->m_PlaybackLifetime.clear();
+		m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);*/
 		while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
 		{
 			LOG_DEBUG << "Stop. Waiting";
 		}
+		
 		/// erase frame queue
 		m_Impl->m_FrameQueue.clear();
 		/// generate the first frame of the video

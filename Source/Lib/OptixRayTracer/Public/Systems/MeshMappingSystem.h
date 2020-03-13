@@ -81,7 +81,7 @@ public:
 		rayComp->RaygenProg["top_object"]->set(mInstComp->GGroup);
 	}
 private:
-	static constexpr const char* k_TriangleMeshPTxFilepath			= "Resources/Programs/TriangleMesh.ptx";
+	static constexpr const char* k_TriangleMeshPTxFilepath			= "FusionLib/Resources/Programs/TriangleMesh.ptx";
 	static constexpr const char* k_TriangleMeshIntersectionProgName = "triangle_mesh_intersect";
 	static constexpr const char* k_TriangleMeshBbboxProgName		= "triangle_mesh_bounds";
 };	///	!class MeshMappingSystem

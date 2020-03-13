@@ -22,11 +22,15 @@ include(PrintList)
 # SBFCommon Project declaration
 message(STATUS "Creating cmake project...")
 project(
-    FusionProject
+    FusionLibProject
     VERSION 1.0.0
     DESCRIPTION "Fusion360 Library"
     LANGUAGES CXX
 )
+#######
+# CUDA
+#######
+find_package(CUDA REQUIRED)
 
 #### ties together library component
 add_subdirectory("Common")

@@ -20,7 +20,7 @@ static std::vector<unsigned char> ReadFileBytes(const std::string& filepath)
 		size_t bytesize = fd.tellg();
 		fd.seekg(0, std::ios::beg);
 		byte_buffer.resize(bytesize);
-		if (fd.read((unsigned char*)byte_buffer.data(), bytesize))
+		if (fd.read((char*)byte_buffer.data(), bytesize))
 			return byte_buffer;
 	}
 	throw std::runtime_error("Failed read file. Could not read binary file stream: " + filepath);

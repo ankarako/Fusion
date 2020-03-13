@@ -24,16 +24,19 @@
 #include <Models/FileExplorerModel.h>
 #include <Models/PlayerModel.h>
 #include <Models/VideoTracingModel.h>
+#include <Models/RayTracingModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
 #include <Presenters/FileExplorerPresenter.h>
 #include <Presenters/MainToolbarPresenter.h>
+#include <Presenters/RayTracingPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
 #include <Views/FileExplorerView.h>
 #include <Views/MainToolbarView.h>
+#include <Views/RayTracingView.h>
 
 namespace fu {
 namespace fusion {
@@ -56,11 +59,15 @@ namespace di {
 			MainToolbarPresenter,
 			PlayerModel,
 			VideoTracingModel,
-			PlayerViewportView
+			PlayerViewportView,
+			RayTracingPresenter,
+			RayTracingModel,
+			RayTracingView
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,
-			UIRxDispatcher
+			UIRxDispatcher,
+			RayTracingModel
 			>(),
 			boost::di::bind<app::Destroyable * []>().to<
 			app::AppWindow,

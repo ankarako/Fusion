@@ -109,6 +109,14 @@ target_include_directories(OptixRayTracer PUBLIC "Public")
 ###############
 # Dependencies
 ###############
+#######
+# CUDA
+#######
+# find_package(CUDA REQUIRED)
+target_include_directories(OptixRayTracer PUBLIC "${CUDA_INCLUDE_DIRS}")
+target_link_libraries(OptixRayTracer "${CUDA_LIBRARIES}")
+message(STATUS "Selected CUDA include directory: ${CUDA_INCLUDE_DIRS}")
+message(STATUS "Selected CUDA libraries directory: ${CUDA_LIBRARIES}")
 ########
 # Optix
 ########
@@ -123,14 +131,6 @@ target_link_libraries(OptixRayTracer "${OPTIX_LIBRARIES_DIR}/optixu.6.5.0.lib")
 message(STATUS "Selected Optix include directory: ${OPTIX_INCLUDE_DIR}")
 message(STATUS "Selected Optix libraries directory: ${OPTIX_LIBRARIES_DIR}")
 message(STATUS "Added Optix dependency")
-#######
-# CUDA
-#######
-find_package(CUDA REQUIRED)
-target_include_directories(OptixRayTracer PUBLIC "${CUDA_INCLUDE_DIRS}")
-target_link_libraries(OptixRayTracer "${CUDA_LIBRARIES}")
-message(STATUS "Selected CUDA include directory: ${CUDA_INCLUDE_DIRS}")
-message(STATUS "Selected CUDA libraries directory: ${CUDA_LIBRARIES}")
 ####################
 # add ptx compiling
 ####################
@@ -177,6 +177,13 @@ add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
 add_custom_command(TARGET CompilePtxTriangleMeshPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxException} ${CUDA_GENERATED_OUTPUT_DIR}/Exception.ptx )
 # tedious command to rename the generated ptx file
 set_target_properties(CompilePtxExceptionPTX PROPERTIES FOLDER "CUDACustomTargets")
+# SolidColorMiss
+cuda_compile_ptx(CompilePtxSolidColorMiss "Private/Programs/SolidColorMiss.cu")
+add_custom_target(CompilePtxSolidColorMissPTX ALL DEPENDS "${CompilePtxSolidColorMiss}" "Private/Programs/SolidColorMiss.cu" SOURCES "Private/Programs/SolidColorMiss.cu")
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorMiss} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorMiss.ptx )
+add_custom_command(TARGET CompilePtxSolidColorMissPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorMiss} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorMiss.ptx )
+# tedious command to rename the generated ptx file
+set_target_properties(CompilePtxSolidColorMissPTX PROPERTIES FOLDER "CUDACustomTargets")
 #######
 # PLOG
 #######

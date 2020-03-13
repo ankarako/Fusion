@@ -19,6 +19,7 @@ enum class FileExplorerMode
 	OpenProject,
 	SaveProject,
 	OpenVideoFile,
+	Open3DFile,
 };	///	!enum FileExplorerCommand
 ///	\class FileExplorerView
 ///	\brief the file exploer widget
@@ -46,6 +47,7 @@ public:
 	rxcpp::observable<std::string>		OpenProjectFileFlowOut();
 	rxcpp::observable<std::string>		SaveProjectFileFlowOut();
 	rxcpp::observable<std::string>		OpenVideoFileFlowOut();
+	rxcpp::observable<std::string>		Open3DFileFlowOut();
 	rxcpp::observable<void*>			OnMoveUpButtonClicked();
 	rxcpp::observable<std::string>		OnMoveIntoDirectory();
 private:

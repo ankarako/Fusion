@@ -21,9 +21,9 @@ public:
 	///	\param	ctxComp		the context component associated with the raygen
 	///	\param	ptxFilepath	the ptx source filepath
 	///	\param	progName	the ray generation program name
-	static void CreateRaygenProg(RaygenProgComp& raygenComp, ContextComp& ctxComp, const std::string& ptxFilepath, const std::string& progName, int width, int height)
+	static void CreatePinholeRaygenProg(RaygenProgComp& raygenComp, ContextComp& ctxComp, int width, int height)
 	{
-		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(ptxFilepath, progName);
+		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_PinholeRaygenPtxFilepath, k_PinholeRaygenProgName);
 		raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
 		raygenComp->Lookat	= optix::make_float3(1.0f, 0.0f, 0.0f);
 		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
@@ -31,6 +31,12 @@ public:
 		raygenComp->ViewHeight	= height;
 		raygenComp->AspectRatio = static_cast<float>(width) / static_cast<float>(height);
 		raygenComp->Transform = optix::Matrix4x4::identity();
+		/// TODO: maybe I ll have to change this
+		ctxComp->Context->setRayTypeCount(1u);
+		ctxComp->Context->setRayGenerationProgram(0u, raygenComp->RaygenProg);
+		/// create output buffer
+		raygenComp->OutputBuffer = ctxComp->Context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_UNSIGNED_BYTE4, width, height);
+		raygenComp->RaygenProg["output_buffer"]->setBuffer(raygenComp->OutputBuffer);
 	}
 	/// \brief create a 360 ray generation component
 	///	for convenience
@@ -144,8 +150,10 @@ private:
 private:
 	/// system state
 	static constexpr float m_Fov = 35.0f;
-	static constexpr const char* k_360RaygenPtxFilepath = "Resources/Programs/EnvMapRaygen.ptx";
-	static constexpr const char* k_360RaygenProgName = "EnvMapRaygen";
+	static constexpr const char* k_360RaygenPtxFilepath		= "FusionLib/Resources/Programs/EnvMapRaygen.ptx";
+	static constexpr const char* k_360RaygenProgName		= "EnvMapRaygen";
+	static constexpr const char* k_PinholeRaygenPtxFilepath = "FusionLib/Resources/Programs/PinholeRaygen.ptx";
+	static constexpr const char* k_PinholeRaygenProgName	= "PinholeRaygen";
 };	///	!OptixPinholeRaygenSystem
 }	///	!namespace rt
 }	///	!namespace fu

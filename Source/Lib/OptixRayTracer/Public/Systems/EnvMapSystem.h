@@ -65,7 +65,7 @@ public:
 		envComp->TextureBuffer->unmap();
 	}
 private:
-	static constexpr const char* k_EnvMapMissPtxFilepath = "Resources/Programs/EnvMapMiss.ptx";
+	static constexpr const char* k_EnvMapMissPtxFilepath = "FusionLib/Resources/Programs/EnvMapMiss.ptx";
 	static constexpr const char* k_EnvMapMissProgName	 = "EnvMapMiss";
 };	///	!class EnvMapSystem
 }	///	!namespace rt

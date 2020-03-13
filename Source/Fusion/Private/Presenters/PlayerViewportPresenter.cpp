@@ -58,10 +58,10 @@ void PlayerViewportPresenter::Init()
 	m_Impl->m_View->OnViewportSizeChanged()
 		.subscribe([this](float2 newSize)
 	{
-		//uint2 size = make_uint2((unsigned int)newSize.x, (unsigned int)newSize.y);
-		//m_Impl->m_TracerModel->FrameSizeFlowIn().on_next(size);
-		//m_Impl->m_View->FrameSizeFlowIn().on_next(size);
-		//m_Impl->m_Model->SetScalingSize(size);
+		uint2 size = make_uint2((unsigned int)newSize.x, (unsigned int)newSize.y);
+		m_Impl->m_TracerModel->FrameSizeFlowIn().on_next(size);
+		m_Impl->m_View->FrameSizeFlowIn().on_next(size);
+		m_Impl->m_Model->SetScalingSize(size);
 	});
 	///==========================
 	///	PBO flow out subscription
