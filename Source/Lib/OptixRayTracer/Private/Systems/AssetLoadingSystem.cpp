@@ -1,4 +1,5 @@
 #include <Systems/AssetLoadingSystem.h>
+#include <Systems/MeshMappingSystem.h>
 #include <ReadFileBytes.h>
 //#include <Buffer.h>
 #include <filesystem>
@@ -26,9 +27,9 @@ enum class FileType
 /// \brief maps strings to filetypes
 const std::map<std::string, FileType> String2FileType =
 {
-	{ "obj" ,		FileType::Obj },
-	{ "ply" ,		FileType::Ply },
-	{ "perfcap",	FileType::Perfcap }
+	{ ".obj" ,		FileType::Obj },
+	{ ".ply" ,		FileType::Ply },
+	{ ".perfcap",	FileType::Perfcap }
 };
 ///	\struct Impl
 ///	\brief AssetLoadingSystem implementation
@@ -44,7 +45,7 @@ struct AssetLoadingSystem::Impl
 	///	\param	filepath	the patht to the file to load
 	void LoadPerfcap(const std::string& fileapth, ContextComp& ctxComp);
 	/// Loads obj files
-	rxcpp::subjects::subject<TriangleMeshComp>	m_TrangleMeshCompFlowOutSubj;
+	rxcpp::subjects::subject<TriangleMeshComp>		m_TriangleMeshCompFlowOutSubj;
 	rxcpp::subjects::subject<PointCloudComp>		m_PointCloudCompFlowOutSubj;
 };	///	!struct Impl
 /// \brief load an obj file
@@ -85,36 +86,41 @@ void AssetLoadingSystem::Impl::LoadPly(const std::string& filepath, ContextComp&
 		{
 			LOG_DEBUG << "\t[ply_header] \tproperty: " << p.name << "(type = " << tinyply::PropertyTable[p.propertyType].str << ")";
 			if (p.isList)	LOG_DEBUG << "(list_type = " << tinyply::PropertyTable[p.listType].str << ")";
-			LOG_DEBUG << std::endl;
 		}
 	}
 
 	std::shared_ptr<PlyData> vertices, normals, colors, texcoords, faces, tripstrip;
 
 	try { vertices = file.request_properties_from_element("vertex", { "x", "y", "z" }); }
-	catch (const std::exception & e) { LOG_ERROR << "tinyply exception: " << e.what() << std::endl; }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
 
 	try { normals = file.request_properties_from_element("vertex", { "nx", "ny", "nz" }); }
-	catch (const std::exception & e) { LOG_ERROR << "tinyply exception: " << e.what() << std::endl; }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
 
 	try { colors = file.request_properties_from_element("vertex", { "red", "green", "blue", "alpha" }); }
-	catch (const std::exception & e) { LOG_ERROR << "tinyply exception: " << e.what() << std::endl; }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
+
+	try { colors = file.request_properties_from_element("vertex", { "red", "green", "blue"}); }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
 
 	try { colors = file.request_properties_from_element("vertex", { "r", "g", "b", "a" }); }
-	catch (const std::exception & e) { LOG_ERROR << "tinyply exception: " << e.what() << std::endl; }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
+
+	try { colors = file.request_properties_from_element("vertex", { "r", "g", "b"}); }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
 
 	try { texcoords = file.request_properties_from_element("vertex", { "u", "v" }); }
-	catch (const std::exception & e) { LOG_ERROR << "tinyply exception: " << e.what() << std::endl; }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
 
 	// Providing a list size hint (the last argument) is a 2x performance improvement. If you have 
 	// arbitrary ply files, it is best to leave this 0. 
 	try { faces = file.request_properties_from_element("face", { "vertex_indices" }, 3); }
-	catch (const std::exception & e) { LOG_ERROR << "tinyply exception: " << e.what() << std::endl; }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
 
 	// Tristrips must always be read with a 0 list size hint (unless you know exactly how many elements
 	// are specifically in the file, which is unlikely); 
 	try { tripstrip = file.request_properties_from_element("tristrips", { "vertex_indices" }, 0); }
-	catch (const std::exception & e) { LOG_ERROR << "tinyply exception: " << e.what() << std::endl; }
+	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
 
 	file.read(*fStream);
 
@@ -124,20 +130,75 @@ void AssetLoadingSystem::Impl::LoadPly(const std::string& filepath, ContextComp&
 	if (texcoords)	LOG_DEBUG << "\tRead " << vertices->count << "total texcoords";
 	if (faces)		LOG_DEBUG << "\tRead " << vertices->count << "total faces";
 	if (tripstrip)	LOG_DEBUG << "\tRead " << vertices->count << "total tripstrip";
-
-
-	if (vertices && faces && !tripstrip)
+	/// now we have to check if the file is a triangle mesh or a point cloud
+	/// FIXME: way to determine point cloud to mesh
+	bool isTriangleMesh		= vertices  && faces != nullptr && normals && !colors;
+	if (isTriangleMesh)
 	{
 		/// surely it is a trangle mesh
 		/// create a Triangle mesh component
 		TriangleMeshComp trMeshComp = CreateTriangleMeshComponent();
 		/// get vertex count etc
-
+		if (vertices)
+		{
+			int num_vertices = vertices->count;
+			int vertex_bsize = vertices->buffer.size_bytes();
+			MeshMappingSystem::CreateTriangleMeshVertexBuffer(trMeshComp, ctxComp, num_vertices);
+			MeshMappingSystem::MapTriangleMeshVertexBuffer(trMeshComp, (void*)vertices->buffer.get(), vertex_bsize);
+		}
+		if (normals)
+		{
+			int num_vertices = normals->count;
+			int bsize = normals->buffer.size_bytes();
+			MeshMappingSystem::CreateTriangleMeshNormalBuffer(trMeshComp, ctxComp, num_vertices);
+			MeshMappingSystem::MapTriangleMeshNormalBuffer(trMeshComp, (void*)normals->buffer.get(), bsize);
+		}
+		if (faces)
+		{
+			int numFaces = faces->count;
+			int bsize = faces->buffer.size_bytes();
+			MeshMappingSystem::CreateTriangleMeshFaceBuffer(trMeshComp, ctxComp, numFaces);
+			MeshMappingSystem::MapTriangleMeshFaceBuffer(trMeshComp, (void*)faces->buffer.get(), bsize);
+		}
+		if (texcoords)
+		{
+			int numTexcoords = texcoords->count;
+			int bsize = texcoords->buffer.size_bytes();
+			MeshMappingSystem::CreateTriangleMeshTexCoordBuffer(trMeshComp, ctxComp, numTexcoords);
+			MeshMappingSystem::MapTriangleMeshTexCoordBuffer(trMeshComp, (void*)texcoords->buffer.get(), bsize);
+		}
+		/// create and attach hitgroup programs
+		/// send mesh to flow out
 	}
-	else if (vertices && normals && !faces)
+	else
 	{
 		/// we have a point cloud
-
+		PointCloudComp pCloufComp = CreatePointCloudComponent();
+		/// get vertex count etc
+		if (vertices)
+		{
+			int numVertices = vertices->count;
+			int bsize = vertices->buffer.size_bytes();
+			MeshMappingSystem::CreatePointCloudVertexBuffer(pCloufComp, ctxComp, numVertices);
+			MeshMappingSystem::MapPointCloudVertexBuffer(pCloufComp, (void*)vertices->buffer.get(), bsize);
+		}
+		if (normals)
+		{
+			int numNormals = normals->count;
+			int bsize = normals->buffer.size_bytes();
+			MeshMappingSystem::CreatePointCloudNormalBuffer(pCloufComp, ctxComp, numNormals);
+			MeshMappingSystem::MapPointCloudNormalBuffer(pCloufComp, (void*)normals->buffer.get(), bsize);
+		}
+		if (colors)
+		{
+			int numColors = colors->count;
+			int bsize = colors->buffer.size_bytes();
+			MeshMappingSystem::CreatePointCloudColorBuffer(pCloufComp, ctxComp, numColors);
+			MeshMappingSystem::MapPointCloudColorBuffer(pCloufComp, (void*)colors->buffer.get(), bsize);
+		}
+		MeshMappingSystem::MapPointCloudComponent(pCloufComp, ctxComp, vertices->count);
+		///	send to point cloud flow out
+		m_PointCloudCompFlowOutSubj.get_subscriber().on_next(pCloufComp);
 	}
 }
 ///	\brief load a perfcap file
@@ -156,7 +217,7 @@ AssetLoadingSystem::AssetLoadingSystem()
 ///	it is a triangle mesh, it will come out frome here
 rxcpp::observable<TriangleMeshComp> AssetLoadingSystem::TriangleMeshFlowOut()
 {
-	return m_Impl->m_TrangleMeshCompFlowOutSubj.get_observable().as_dynamic();
+	return m_Impl->m_TriangleMeshCompFlowOutSubj.get_observable().as_dynamic();
 }
 rxcpp::observable<PointCloudComp> fu::rt::AssetLoadingSystem::PointCloudFlowOut()
 {

@@ -37,6 +37,8 @@
 #include <Views/FileExplorerView.h>
 #include <Views/MainToolbarView.h>
 #include <Views/RayTracingView.h>
+/// Asset Loading System
+#include <Systems/AssetLoadingSystem.h>
 
 namespace fu {
 namespace fusion {

@@ -3,7 +3,6 @@
 #include <Helpers.cuh>
 
 rtDeclareVariable(fu::rt::PerRayData_Radiance, prd_radiance, rtPayload, );
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(float3, solid_color, , );
 ///==============================================
 /// Simple miss program

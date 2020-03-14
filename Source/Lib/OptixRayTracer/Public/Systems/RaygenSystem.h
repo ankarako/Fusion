@@ -24,7 +24,7 @@ public:
 	static void CreatePinholeRaygenProg(RaygenProgComp& raygenComp, ContextComp& ctxComp, int width, int height)
 	{
 		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_PinholeRaygenPtxFilepath, k_PinholeRaygenProgName);
-		raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
+		raygenComp->Eye		= optix::make_float3(-2.0f, 0.5f, 1.0f);
 		raygenComp->Lookat	= optix::make_float3(1.0f, 0.0f, 0.0f);
 		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
 		raygenComp->ViewWidth	= width;

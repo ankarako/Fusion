@@ -184,6 +184,13 @@ add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
 add_custom_command(TARGET CompilePtxSolidColorMissPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorMiss} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorMiss.ptx )
 # tedious command to rename the generated ptx file
 set_target_properties(CompilePtxSolidColorMissPTX PROPERTIES FOLDER "CUDACustomTargets")
+# PointCloud
+cuda_compile_ptx(CompilePtxPointcloud "Private/Programs/PointCloud.cu")
+add_custom_target(CompilePtxCompilePtxPointcloudPTX ALL DEPENDS "${CompilePtxPointcloud}" "Private/Programs/PointCloud.cu" SOURCES "Private/Programs/PointCloud.cu")
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPointcloud} ${CUDA_GENERATED_OUTPUT_DIR}/PointCloud.ptx )
+add_custom_command(TARGET CompilePtxCompilePtxPointcloudPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPointcloud} ${CUDA_GENERATED_OUTPUT_DIR}/Pointcloud.ptx )
+# tedious command to rename the generated ptx file
+set_target_properties(CompilePtxCompilePtxPointcloudPTX PROPERTIES FOLDER "CUDACustomTargets")
 #######
 # PLOG
 #######

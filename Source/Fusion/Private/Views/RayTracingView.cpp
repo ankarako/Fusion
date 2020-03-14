@@ -77,12 +77,13 @@ void RayTracingView::Render()
 	if (!isActive)
 		return;
 
-	ImGui::SetWindowSize(m_Impl->m_ViewportSize);
+	ImGui::SetNextWindowSize(m_Impl->m_ViewportSize);
 	auto winflags = ImGuiWindowFlags_NoScrollbar;
 
 	ImGui::PushFont(m_Impl->m_FMan->GetFont(app::FontManager::FontType::Regular));
 	ImGui::Begin("3D Viewport", &isActive, winflags);
 	{
+		
 		auto winSize = ImGui::GetWindowSize();
 		if (winSize.x != m_Impl->m_ViewportSize.x)
 		{

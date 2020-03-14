@@ -5,6 +5,9 @@
 #include <Updateable.h>
 #include <Destroyable.h>
 #include <Buffer.h>
+#include <Components/ContextComp.h>
+#include <Components/TriangleMeshComp.h>
+#include <Components/PointCloudComp.h>
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
 #include <string>
@@ -28,7 +31,14 @@ public:
 	///	\param filepath the path to the file to load
 	void LoadAsset(const std::string& filepath);
 	///
-	rxcpp::observer<uint2>  LaunchSizeFlowIn();
+	void SetIsValid(bool val);
+	bool GetIsValid() const;
+	rt::ContextComp& GetCtxComp();
+	///
+	rxcpp::observer<uint2>					LaunchSizeFlowIn();
+	rxcpp::observer<rt::TriangleMeshComp>	TriangleMeshCompFlowIn();
+	rxcpp::observer<void*>					OnLaunch();
+	rxcpp::observer<rt::PointCloudComp>		PointCloudFlowIn();
 	///
 	rxcpp::observable<BufferCPU<uchar4>> FrameFlowOut();
 private:

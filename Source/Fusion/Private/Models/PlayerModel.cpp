@@ -134,7 +134,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	std::chrono::nanoseconds periodNano = std::chrono::duration_cast<std::chrono::nanoseconds>(m_Impl->m_FramePeriod);
 	m_Impl->m_PlaybackObs		= rxcpp::observable<>::interval(periodNano).as_dynamic();
 	m_Impl->m_CheckPrefetchObs	
-		= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(0.5))).as_dynamic();
+		= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(1.0f))).as_dynamic();
 	
 	m_Impl->m_NodeTopology.add(
 	///====================================

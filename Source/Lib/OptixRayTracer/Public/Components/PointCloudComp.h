@@ -15,6 +15,7 @@ struct PointCloudCompObj
 	optix::GeometryInstance	GInstance;
 	optix::Buffer			VertexBuffer;
 	optix::Buffer			NormalBuffer;
+	optix::Buffer			ColorBuffer;
 	optix::Buffer			MaterialBuffer;
 	optix::Program			IntersectionProg;
 	optix::Program			BoundingBoxProgram;
@@ -25,7 +26,7 @@ struct PointCloudCompObj
 ///	\brief a reference counted point cloud component object
 using PointCloudComp = std::shared_ptr<PointCloudCompObj>;
 ///	\brief create a point cloud component
-static PointCloudComp CreatePointCloudComp()
+static PointCloudComp CreatePointCloudComponent()
 {
 	return std::make_shared<PointCloudCompObj>();
 }

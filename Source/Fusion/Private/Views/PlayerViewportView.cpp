@@ -23,7 +23,7 @@ struct PlayerViewportView::Impl
 	///
 	coord_ptr_t	m_Coord;
 	/// viewport size
-	ImVec2		m_WindowSize{ 1280.0f, 720.0f };
+	ImVec2		m_WindowSize{ 720.0f, 370.0f };
 	/// gl texture width
 	int m_DisplayTextureWidth{ 0 };
 	///	gl texture height
