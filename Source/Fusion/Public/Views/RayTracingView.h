@@ -20,6 +20,7 @@ class RayTracingView : public app::Initializable, public app::Widget
 {
 public:
 	using mat_t = std::array<float, 16>;
+	using trans_vec_t = std::array<float, 3>;
 	using fman_ptr_t	= std::shared_ptr<app::FontManager>;
 	using coord_ptr_t	= std::shared_ptr<Coordination>;
 	/// Construction
@@ -34,6 +35,7 @@ public:
 	rxcpp::observable<float2>	OnViewportSizeChanged();
 	///
 	rxcpp::observable<mat_t> RotationTransformFlowOut();
+	rxcpp::observable<trans_vec_t>	TranslationFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

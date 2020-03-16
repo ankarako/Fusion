@@ -106,6 +106,12 @@ public:
 		raygenComp->Transform = mat;
 		SetRaygenAttributes(raygenComp);
 	}
+
+	static void SetPinholeRaygenEyeTranslation(RaygenProgComp& raygenComp, const optix::float3& trans)
+	{
+		raygenComp->Eye += trans;
+		SetRaygenAttributes(raygenComp);
+	}
 private:
 	///	\struct CameraPlaneBasis
 	///	\brief helper struct with the vectors that define a camera plane

@@ -35,7 +35,7 @@ struct FileExplorerView::Impl
 	rxcpp::subjects::subject<std::string>			CurrentSelectedDriveFlowInSubj;
 	/// outputs
 	rxcpp::subjects::subject<std::string>		OpenProjectFileSubj;
-	rxcpp::subjects::subject<std::string>		SaveProjectFileSubj;
+	rxcpp::subjects::subject<DirEntry>			SaveProjectFileSubj;
 	rxcpp::subjects::subject<std::string>		OpenVideoFileSubj;
 	rxcpp::subjects::subject<std::string>		Open3DFileSubj;
 	rxcpp::subjects::subject<void*>				OnMoveUpButtonClickedSubj;
@@ -236,6 +236,14 @@ void FileExplorerView::Render()
 		{
 			if (ImGui::Button("Save"))
 			{
+				std::string name = std::string(m_Impl->m_InputTextBuffer);
+				std::string abspath = m_Impl->m_CurrentDirectory + "/" + name;
+				DirEntry projectEntry;
+				projectEntry.EntryType = DirEntry::Type::File;
+				projectEntry.AbsPath = abspath;
+				projectEntry.Name = name;
+				m_Impl->SaveProjectFileSubj.get_subscriber().on_next(projectEntry);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 				this->Deactivate();
 			}
 		}
@@ -285,7 +293,7 @@ rxcpp::observable<std::string> fusion::FileExplorerView::OpenProjectFileFlowOut(
 	return m_Impl->OpenProjectFileSubj.get_observable().as_dynamic();
 }
 
-rxcpp::observable<std::string> fusion::FileExplorerView::SaveProjectFileFlowOut()
+rxcpp::observable<DirEntry> fusion::FileExplorerView::SaveProjectFileFlowOut()
 {
 	return m_Impl->SaveProjectFileSubj.get_observable().as_dynamic();
 }

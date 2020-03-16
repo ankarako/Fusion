@@ -28,6 +28,8 @@ struct RayTracingView::Impl
 	rxcpp::subjects::subject<BufferCPU<uchar4>>	m_FrameFlowInSubj;
 	rxcpp::subjects::subject<float2>			m_OnViewportSizeChangedSubj;
 	rxcpp::subjects::subject<mat_t>				m_RotationTransformFlowOutSubj;
+	rxcpp::subjects::subject<trans_vec_t>		m_TranslationFlowOutSubj;
+	
 	/// Construction
 	Impl(fman_ptr_t fman, coord_ptr_t coord)
 		: m_FMan(fman)
@@ -84,9 +86,9 @@ void RayTracingView::Render()
 		return;
 
 	
-	ImGui::SetNextWindowSize(m_Impl->m_ViewportSize);
+	ImGui::SetNextWindowSize({ m_Impl->m_ViewportSize.x + 20.0f, m_Impl->m_ViewportSize.y + 50.0f });
 	ImGui::SetNextWindowPos({ 0.0f, 20.0f });
-	auto winflags = ImGuiWindowFlags_NoScrollbar /*| ImGuiWindowFlags_NoMove*/;
+	auto winflags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysAutoResize;
 	auto& io = ImGui::GetIO();
 	
 	ImGui::PushFont(m_Impl->m_FMan->GetFont(app::FontManager::FontType::Regular));
@@ -142,9 +144,9 @@ void RayTracingView::Render()
 					ImVec2 curMousePos = ImGui::GetMousePos();
 					curMousePos = ImVec2(curMousePos.x / m_Impl->m_ViewportSize.x, curMousePos.y / m_Impl->m_ViewportSize.y);
 					delta = ImVec2(delta.x / m_Impl->m_ViewportSize.x, delta.y / m_Impl->m_ViewportSize.y);
-					mat_t mat;
-					rt::Arcball::Translate(curMousePos.x, curMousePos.y, curMousePos.x + delta.x, curMousePos.y + delta.y, mat);
-					m_Impl->m_RotationTransformFlowOutSubj.get_subscriber().on_next(mat);
+					trans_vec_t vec;
+					rt::Arcball::Translate(curMousePos.x, curMousePos.y, curMousePos.x + delta.x, curMousePos.y + delta.y, vec);
+					m_Impl->m_TranslationFlowOutSubj.get_subscriber().on_next(vec);
 					m_Impl->m_PrevMousePos = curMousePos;
 				}
 			}
@@ -171,6 +173,10 @@ rxcpp::observable<float2> fu::fusion::RayTracingView::OnViewportSizeChanged()
 rxcpp::observable<RayTracingView::mat_t> RayTracingView::RotationTransformFlowOut()
 {
 	return m_Impl->m_RotationTransformFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<RayTracingView::trans_vec_t> fu::fusion::RayTracingView::TranslationFlowOut()
+{
+	return m_Impl->m_TranslationFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namesapce fusion
 }	///	!namespace fu

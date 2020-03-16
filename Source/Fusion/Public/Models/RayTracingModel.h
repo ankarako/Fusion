@@ -21,6 +21,7 @@ class RayTracingModel : public app::Initializable, public app::Updateable, publi
 {
 public:
 	using mat_t = std::array<float, 16>;
+	using vec_t = std::array<float, 3>;
 	/// Construction
 	RayTracingModel();
 	/// \brief initialize the model
@@ -42,6 +43,7 @@ public:
 	rxcpp::observer<void*>					OnLaunch();
 	rxcpp::observer<rt::PointCloudComp>		PointCloudFlowIn();
 	rxcpp::observer<mat_t>				CameraRotationTransformFlowIn();
+	rxcpp::observer<vec_t>				CameraTranslationFlowIn();
 	///
 	rxcpp::observable<BufferCPU<uchar4>> FrameFlowOut();
 private:

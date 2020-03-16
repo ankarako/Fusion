@@ -17,6 +17,7 @@ namespace fusion {
 enum class FileExplorerMode
 {
 	OpenProject,
+	SaveProjectAs,
 	SaveProject,
 	OpenVideoFile,
 	Open3DFile,
@@ -45,7 +46,7 @@ public:
 	rxcpp::observer<std::string>		CurrentSelectedDriveFlowIn();
 	///	Outputs
 	rxcpp::observable<std::string>		OpenProjectFileFlowOut();
-	rxcpp::observable<std::string>		SaveProjectFileFlowOut();
+	rxcpp::observable<DirEntry>			SaveProjectFileFlowOut();
 	rxcpp::observable<std::string>		OpenVideoFileFlowOut();
 	rxcpp::observable<std::string>		Open3DFileFlowOut();
 	rxcpp::observable<void*>			OnMoveUpButtonClicked();

@@ -25,6 +25,7 @@
 #include <Models/PlayerModel.h>
 #include <Models/VideoTracingModel.h>
 #include <Models/RayTracingModel.h>
+#include <Models/ProjectModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -64,7 +65,8 @@ namespace di {
 			PlayerViewportView,
 			RayTracingPresenter,
 			RayTracingModel,
-			RayTracingView
+			RayTracingView,
+			ProjectModel
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,

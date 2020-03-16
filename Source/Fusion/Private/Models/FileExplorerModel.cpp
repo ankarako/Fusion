@@ -67,6 +67,7 @@ struct FileExplorerModel::Impl
 		{
 			m_CurrentDirEntries->emplace_back(ConvertToEntry(path.path().generic_string()));
 		}
+		CurrentDirectoryFlowOutSubj.get_subscriber().on_next(m_CurrentDirectory);
 		CurrentDirEntriesFlowOutSubj.get_subscriber().on_next(m_CurrentDirEntries);
 	}
 	///	\brief convert a string to a directory entry

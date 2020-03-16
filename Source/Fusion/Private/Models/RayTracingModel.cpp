@@ -48,7 +48,8 @@ struct RayTracingModel::Impl
 	rxcpp::subjects::subject<rt::TriangleMeshComp>	m_TriangleMeshFlowInSubj;
 	rxcpp::subjects::subject<rt::PointCloudComp>	m_PointCloudFlowIntSubj;
 	rxcpp::subjects::subject<void*>					m_OnLaunchSubj;
-	rxcpp::subjects::subject<mat_t>				m_RotationTransgformRaygenFlowInSubj;
+	rxcpp::subjects::subject<mat_t>					m_RotationTransgformRaygenFlowInSubj;
+	rxcpp::subjects::subject<vec_t>					m_TranslationRaygenFlowInSubj;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -132,7 +133,21 @@ void RayTracingModel::Init()
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
-
+	///================================
+	/// Camera translation flow in task
+	///================================
+	m_Impl->m_TranslationRaygenFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](vec_t& transVec) 
+	{
+		optix::float3 trans;
+		trans.x = transVec[0];
+		trans.y = transVec[1];
+		trans.z = transVec[2];
+		rt::RaygenSystem::SetPinholeRaygenEyeTranslation(m_Impl->m_PinholeRaygenComp, trans);
+		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchWidth, m_Impl->m_LaunchHeight, 0);
+		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+	});
 }
 ///	\brief update the model
 ///	if the scene is valid it launches the context
@@ -194,6 +209,10 @@ rxcpp::observer<void*> fu::fusion::RayTracingModel::OnLaunch()
 rxcpp::observer<RayTracingModel::mat_t> fu::fusion::RayTracingModel::CameraRotationTransformFlowIn()
 {
 	return m_Impl->m_RotationTransgformRaygenFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observer<RayTracingModel::vec_t> fu::fusion::RayTracingModel::CameraTranslationFlowIn()
+{
+	return m_Impl->m_TranslationRaygenFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

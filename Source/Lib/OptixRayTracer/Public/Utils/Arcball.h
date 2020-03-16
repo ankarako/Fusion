@@ -10,14 +10,15 @@ namespace rt {
 class Arcball
 {
 public:
-	using array_t = std::array<float, 16>;
+	using array_t	= std::array<float, 16>;
+	using vec_t		= std::array<float, 3>;
 	Arcball() { }
 	static void Rotate(float prevx, float prevy, float curx, float cury, float weight, array_t& m);
-	static void Translate(float prevx, float prevy, float curx, float cury, array_t& m);
+	static void Translate(float prevx, float prevy, float curx, float cury, vec_t& m);
 	static void Zoom(float prevx, float prevy, float curx, float cury, array_t& m);
 private:
 	static void ToSphere(const float x, const float y, float res[3]);
-	static void ToRotVector(const float x, const float y, float v[3]);
+	static void ToVector(const float x, const float y, float v[3]);
 	static constexpr const float m_CenterX = 0.0f;
 	static constexpr const float m_CenterY = 0.0f;
 	static constexpr const float m_Radius = 10.0f;

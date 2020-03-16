@@ -20,17 +20,14 @@ void fu::rt::Arcball::Rotate(float prevx, float prevy, float curx, float cury, f
 	std::memcpy(m.data(), mat.getData(), 16 * sizeof(float));
 }
 
-void fu::rt::Arcball::Translate(float prevx, float prevy, float curx, float cury, array_t& m)
+void fu::rt::Arcball::Translate(float prevx, float prevy, float curx, float cury, vec_t& m)
 {
 	float a[3];
 	float b[3];
-	ToRotVector(prevx, prevy, a);
-	ToRotVector(prevx, prevy, b);
-	
-
-	optix::Matrix4x4 mat = optix::Matrix4x4::identity();
-	mat = mat.translate(optix::make_float3(a[0], a[1], a[2]));
-	std::memcpy(m.data(), mat.getData(), 16 * sizeof(float));
+	ToVector(prevx, prevy, a);
+	ToVector(curx, cury, b);
+	optix::float3 trans = optix::make_float3(a[0] - b[0], a[2] - b[2], a[1] - b[1]);
+	std::memcpy(m.data(), &trans, 3 * sizeof(float));
 }
 
 void fu::rt::Arcball::Zoom(float prevx, float prevy, float curx, float cury, array_t& m)
@@ -61,7 +58,7 @@ void fu::rt::Arcball::ToSphere(const float x, const float y, float res[3])
 	res[2] = _z;
 }
 
-void fu::rt::Arcball::ToRotVector(const float x, const float y, float v[3])
+void fu::rt::Arcball::ToVector(const float x, const float y, float v[3])
 {
 	float d = x * x + y * y;
 	float sqRad = m_Radius * m_Radius;

@@ -25,7 +25,7 @@ struct PlayerViewportView::Impl
 	///
 	coord_ptr_t	m_Coord;
 	/// viewport size
-	ImVec2		m_WindowSize{ 720.0f, 370.0f };
+	ImVec2		m_WindowSize{ 720.0f, 370.0f};
 	/// gl texture width
 	int m_DisplayTextureWidth{ 0 };
 	///	gl texture height
@@ -127,7 +127,8 @@ void PlayerViewportView::Render()
 	if (!isActive)
 		return;
 
-	ImGui::SetNextWindowSize(m_Impl->m_WindowSize);
+	//ImGui::SetNextWindowPos({ 1000.0f + 20.0f, 20.0f });
+	ImGui::SetNextWindowSize({ m_Impl->m_WindowSize.x + 20.0f, m_Impl->m_WindowSize.y + 50.0f });
 	auto winFlags = ImGuiWindowFlags_NoScrollbar;
 
 	ImGui::PushFont(m_Impl->m_FontManager->GetFont(app::FontManager::FontType::Regular));
@@ -135,12 +136,11 @@ void PlayerViewportView::Render()
 	{
 		auto winSize = ImGui::GetWindowSize();	
 		//LOG_DEBUG << "Window Size: " << winSize.x << " x " << winSize.y;
-		if (winSize.x != m_Impl->m_WindowSize.x)
+		if (winSize.x != m_Impl->m_WindowSize.x + 20.0f || winSize.y != m_Impl->m_WindowSize.y + 50.0f)
 		{
-			m_Impl->m_WindowSize.x = winSize.y * m_Impl->m_DisplayAspectRatio;
-			m_Impl->m_WindowSize.y = winSize.y;
-			//m_Impl->m_OnViewportSizeChangedSubj.get_subscriber().on_next(make_float2((unsigned int)m_Impl->m_WindowSize.x, (unsigned int)m_Impl->m_WindowSize.y));
-			ImGui::SetWindowSize(m_Impl->m_WindowSize);
+			/*m_Impl->m_WindowSize.y = winSize.y + 50.0f;
+			m_Impl->m_WindowSize.x = winSize.y * m_Impl->m_DisplayAspectRatio + 20.0f;
+			ImGui::SetWindowSize(m_Impl->m_WindowSize);*/
 		}
 		if (m_Impl->m_DisplayTextureWidth != 0 && m_Impl->m_DisplayTextureHeight != 0)
 		{
