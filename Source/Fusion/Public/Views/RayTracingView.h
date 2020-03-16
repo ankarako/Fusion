@@ -5,6 +5,7 @@
 #include <Widget.h>
 #include <Buffer.h>
 #include <rxcpp/rx.hpp>
+#include <array>
 #include <spimpl.h>
 
 namespace fu {
@@ -18,6 +19,7 @@ class Coordination;
 class RayTracingView : public app::Initializable, public app::Widget
 {
 public:
+	using mat_t = std::array<float, 16>;
 	using fman_ptr_t	= std::shared_ptr<app::FontManager>;
 	using coord_ptr_t	= std::shared_ptr<Coordination>;
 	/// Construction
@@ -30,6 +32,8 @@ public:
 	rxcpp::observer<BufferCPU<uchar4>>	FrameFlowIn();
 	/// output events
 	rxcpp::observable<float2>	OnViewportSizeChanged();
+	///
+	rxcpp::observable<mat_t> RotationTransformFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

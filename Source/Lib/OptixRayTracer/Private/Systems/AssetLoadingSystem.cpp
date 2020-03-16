@@ -9,6 +9,7 @@
 #include <fstream>
 #include <istream>
 #include <tinyply.h>
+#include <tiny_obj_loader.h>
 #include <plog/Log.h>
 
 namespace fu {
@@ -52,7 +53,41 @@ struct AssetLoadingSystem::Impl
 ///	\param	filepath the path to the file to load
 void AssetLoadingSystem::Impl::LoadObj(const std::string& filepath, ContextComp& ctxComp)
 {
+	tinyobj::attrib_t					attrib;
+	std::vector<tinyobj::shape_t>		shapes;
+	std::vector<tinyobj::material_t>	materials;
+	std::string warn;
+	std::string err;
 
+	std::ifstream infd(filepath);
+	if (!infd.good())
+	{
+		LOG_ERROR << "Failed to open file: " << filepath;
+		return;
+	}
+
+	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &infd);
+	if (!warn.empty())
+	{
+		LOG_WARNING << warn;
+	}
+	if (!err.empty())
+	{
+		LOG_ERROR << err;
+	}
+	if (!ret)
+	{
+		LOG_ERROR << "Failed to open file: " << filepath;
+		return;
+	}
+	LOG_DEBUG << "[Obj Loader]";
+	LOG_DEBUG << "Parsed file: " << filepath;
+	LOG_DEBUG << "[attributes]";
+	LOG_DEBUG << "Number of vertices : " << (int)(attrib.vertices.size() / 3);
+	LOG_DEBUG << "Number of normals  : " << (int)(attrib.normals.size() / 3);
+	LOG_DEBUG << "Number of texcoords: " << (int)(attrib.texcoords.size() / 2);
+	LOG_DEBUG << "Number of materials: " << (int)(materials.size());
+	LOG_DEBUG << "Number of shapes   : " << (int)(shapes.size());
 }
 ///	\brief load ply
 ///	\param	filepath	the path to the file to load
@@ -243,7 +278,7 @@ void AssetLoadingSystem::LoadAsset(const std::string& filepath, ContextComp& ctx
 	switch (type)
 	{
 	case fu::rt::FileType::Obj:
-
+		m_Impl->LoadObj(filepath, ctxComp);
 		break;
 	case fu::rt::FileType::Ply:
 		m_Impl->LoadPly(filepath, ctxComp);

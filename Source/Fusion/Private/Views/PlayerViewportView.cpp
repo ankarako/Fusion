@@ -6,6 +6,8 @@
 #include <GL/gl3w.h>
 #include <plog/Log.h>
 
+#include <chrono>
+
 // FIXME: delete
 // #include <opencv2/core.hpp>
 // #include <opencv2/imgcodecs.hpp>
@@ -51,6 +53,8 @@ struct PlayerViewportView::Impl
 	rxcpp::subjects::subject<float2> m_OnViewportSizeChangedSubj;
 	/// pixel buffer flow out event
 	rxcpp::subjects::subject<GLuint> m_PixelBufferFlowOutSubj;
+
+	std::chrono::steady_clock::time_point m_FirstFrameTime;
 	/// wdeo siz
 	/// Construction
 	Impl(fman_ptr_t fman, coord_ptr_t coord)
@@ -103,6 +107,7 @@ void PlayerViewportView::Init()
 	///=======================
 	/// New Frame flow in Task
 	///=======================
+	m_Impl->m_FirstFrameTime = std::chrono::high_resolution_clock::now();
 	m_Impl->m_FrameFlowInSubj.get_observable()
 		.subscribe([this](BufferCPU<uchar4>& frame) 
 	{

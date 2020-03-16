@@ -11,6 +11,7 @@
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
 #include <string>
+#include <array>
 
 namespace fu {
 namespace fusion {
@@ -19,6 +20,7 @@ namespace fusion {
 class RayTracingModel : public app::Initializable, public app::Updateable, public app::Destroyable
 {
 public:
+	using mat_t = std::array<float, 16>;
 	/// Construction
 	RayTracingModel();
 	/// \brief initialize the model
@@ -39,6 +41,7 @@ public:
 	rxcpp::observer<rt::TriangleMeshComp>	TriangleMeshCompFlowIn();
 	rxcpp::observer<void*>					OnLaunch();
 	rxcpp::observer<rt::PointCloudComp>		PointCloudFlowIn();
+	rxcpp::observer<mat_t>				CameraRotationTransformFlowIn();
 	///
 	rxcpp::observable<BufferCPU<uchar4>> FrameFlowOut();
 private:

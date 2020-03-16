@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <GL/gl3w.h>
 #include <plog/Log.h>
+#include <Utils/Arcball.h>
 
 namespace fu {
 namespace fusion {
@@ -13,7 +14,10 @@ struct RayTracingView::Impl
 {
 	fman_ptr_t	m_FMan;
 	coord_ptr_t	m_Coord;
-	ImVec2		m_ViewportSize{ 1280.0f, 720.0f };
+	ImVec2		m_MinViewportSize{ 512.0f, 256.0f };
+	ImVec2		m_MaxViewportSize{ 1920.0f, 1080.0f };
+	ImVec2		m_ViewportSize{ 1000.0f, 500.0f };
+	ImVec2		m_PrevMousePos{ 0.0f, 0.0f };
 	///	gl texture
 	int m_DisplayTextureWidth{ 0 };
 	int m_DisplayTextureHeight{ 0 };
@@ -23,6 +27,7 @@ struct RayTracingView::Impl
 	/// inputs
 	rxcpp::subjects::subject<BufferCPU<uchar4>>	m_FrameFlowInSubj;
 	rxcpp::subjects::subject<float2>			m_OnViewportSizeChangedSubj;
+	rxcpp::subjects::subject<mat_t>				m_RotationTransformFlowOutSubj;
 	/// Construction
 	Impl(fman_ptr_t fman, coord_ptr_t coord)
 		: m_FMan(fman)
@@ -55,6 +60,7 @@ void RayTracingView::Init()
 	glBindTexture(GL_TEXTURE_2D, 0);
 	/// notify about window size
 	float2 size = make_float2(m_Impl->m_ViewportSize.x, m_Impl->m_ViewportSize.y);
+	
 	m_Impl->m_OnViewportSizeChangedSubj.get_subscriber().on_next(size);
 	///====================
 	/// frame flow in task
@@ -77,25 +83,77 @@ void RayTracingView::Render()
 	if (!isActive)
 		return;
 
+	
 	ImGui::SetNextWindowSize(m_Impl->m_ViewportSize);
-	auto winflags = ImGuiWindowFlags_NoScrollbar;
-
+	ImGui::SetNextWindowPos({ 0.0f, 20.0f });
+	auto winflags = ImGuiWindowFlags_NoScrollbar /*| ImGuiWindowFlags_NoMove*/;
+	auto& io = ImGui::GetIO();
+	
 	ImGui::PushFont(m_Impl->m_FMan->GetFont(app::FontManager::FontType::Regular));
 	ImGui::Begin("3D Viewport", &isActive, winflags);
 	{
-		
+		if (ImGui::IsWindowFocused())
+		{
+			m_Impl->m_PrevMousePos = ImGui::GetMousePos();
+		}
 		auto winSize = ImGui::GetWindowSize();
 		if (winSize.x != m_Impl->m_ViewportSize.x)
 		{
-			m_Impl->m_ViewportSize.x = winSize.y * m_Impl->m_DisplayAspectRatio;
+			/*m_Impl->m_ViewportSize.x = floorf(winSize.y * m_Impl->m_DisplayAspectRatio);
 			m_Impl->m_ViewportSize.y = winSize.y;
 			ImGui::SetWindowSize(m_Impl->m_ViewportSize);
 			float2 size = make_float2(m_Impl->m_ViewportSize.x, m_Impl->m_ViewportSize.y);
-			m_Impl->m_OnViewportSizeChangedSubj.get_subscriber().on_next(size);
+			m_Impl->m_OnViewportSizeChangedSubj.get_subscriber().on_next(size);*/
 		}
 		if (m_Impl->m_TextureHandle != 0)
 		{
 			ImGui::Image((void*)m_Impl->m_TextureHandle, m_Impl->m_ViewportSize);
+		}
+		if (ImGui::IsWindowFocused())
+		{
+			if (io.MouseDown[0])
+			{
+				ImVec2 delta = ImGui::GetMouseDragDelta(0);
+				if (delta.x != 0.0f || delta.y != 0.0f)
+				{
+					/// left mouse button
+					/// rotation
+					LOG_DEBUG << "Left Mouse down. delta: "  << delta.x << " x " << delta.y;
+					ImVec2 curMousePos = ImGui::GetMousePos();
+					curMousePos = ImVec2(curMousePos.x / m_Impl->m_ViewportSize.x, curMousePos.y / m_Impl->m_ViewportSize.y);
+					delta = ImVec2(delta.x / m_Impl->m_ViewportSize.x, delta.y / m_Impl->m_ViewportSize.y);
+					mat_t mat;
+					rt::Arcball::Rotate(curMousePos.x, curMousePos.y, curMousePos.x + delta.x, curMousePos.y + delta.y, 0.01f, mat);
+					m_Impl->m_RotationTransformFlowOutSubj.get_subscriber().on_next(mat);
+					m_Impl->m_PrevMousePos = curMousePos;
+				}
+			}
+			if (io.MouseDown[1])
+			{
+				/// right mouse button
+				/// translation
+				LOG_DEBUG << "Right Mouse down.";
+				ImVec2 delta = ImGui::GetMouseDragDelta(1);
+				if (delta.x != 0.0f || delta.y != 0.0f)
+				{
+					/// left mouse button
+					/// rotation
+					LOG_DEBUG << "Left Mouse down. delta: " << delta.x << " x " << delta.y;
+					ImVec2 curMousePos = ImGui::GetMousePos();
+					curMousePos = ImVec2(curMousePos.x / m_Impl->m_ViewportSize.x, curMousePos.y / m_Impl->m_ViewportSize.y);
+					delta = ImVec2(delta.x / m_Impl->m_ViewportSize.x, delta.y / m_Impl->m_ViewportSize.y);
+					mat_t mat;
+					rt::Arcball::Translate(curMousePos.x, curMousePos.y, curMousePos.x + delta.x, curMousePos.y + delta.y, mat);
+					m_Impl->m_RotationTransformFlowOutSubj.get_subscriber().on_next(mat);
+					m_Impl->m_PrevMousePos = curMousePos;
+				}
+			}
+			if (io.MouseDown[2])
+			{
+				/// middle mouse button
+				/// zoom
+				LOG_DEBUG << "Middle Mouse down.";
+			}
 		}
 	}
 	ImGui::End();
@@ -109,6 +167,10 @@ rxcpp::observer<BufferCPU<uchar4>> fu::fusion::RayTracingView::FrameFlowIn()
 rxcpp::observable<float2> fu::fusion::RayTracingView::OnViewportSizeChanged()
 {
 	return m_Impl->m_OnViewportSizeChangedSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<RayTracingView::mat_t> RayTracingView::RotationTransformFlowOut()
+{
+	return m_Impl->m_RotationTransformFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namesapce fusion
 }	///	!namespace fu

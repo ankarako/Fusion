@@ -48,6 +48,7 @@ struct RayTracingModel::Impl
 	rxcpp::subjects::subject<rt::TriangleMeshComp>	m_TriangleMeshFlowInSubj;
 	rxcpp::subjects::subject<rt::PointCloudComp>	m_PointCloudFlowIntSubj;
 	rxcpp::subjects::subject<void*>					m_OnLaunchSubj;
+	rxcpp::subjects::subject<mat_t>				m_RotationTransgformRaygenFlowInSubj;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -118,6 +119,20 @@ void RayTracingModel::Init()
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
+	///=============================
+	///	Camera rotation flow in task
+	///=============================
+	m_Impl->m_RotationTransgformRaygenFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](mat_t mat) 
+	{
+		optix::Matrix4x4 trmat;
+		std::memcpy(trmat.getData(), mat.data(), 16 * sizeof(float));
+		rt::RaygenSystem::SetPinholeRaygenTransMat(m_Impl->m_PinholeRaygenComp, trmat);
+		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchWidth, m_Impl->m_LaunchHeight, 0);
+		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+	});
+
 }
 ///	\brief update the model
 ///	if the scene is valid it launches the context
@@ -175,6 +190,10 @@ rxcpp::observer<rt::PointCloudComp> fu::fusion::RayTracingModel::PointCloudFlowI
 rxcpp::observer<void*> fu::fusion::RayTracingModel::OnLaunch()
 {
 	return m_Impl->m_OnLaunchSubj.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observer<RayTracingModel::mat_t> fu::fusion::RayTracingModel::CameraRotationTransformFlowIn()
+{
+	return m_Impl->m_RotationTransgformRaygenFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

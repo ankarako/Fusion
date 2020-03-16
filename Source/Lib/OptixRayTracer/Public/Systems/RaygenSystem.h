@@ -100,6 +100,12 @@ public:
 		raygenComp->RaygenProg["W"]->setFloat(basis.W);
 		raygenComp->RaygenProg["eye"]->setFloat(raygenComp->Eye);
 	}
+
+	static void SetPinholeRaygenTransMat(RaygenProgComp& raygenComp, const optix::Matrix4x4& mat)
+	{
+		raygenComp->Transform = mat;
+		SetRaygenAttributes(raygenComp);
+	}
 private:
 	///	\struct CameraPlaneBasis
 	///	\brief helper struct with the vectors that define a camera plane

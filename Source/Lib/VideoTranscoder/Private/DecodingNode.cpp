@@ -7,6 +7,7 @@
 #include <opencv2/videoio.hpp>
 #include <thread>
 #include <plog/Log.h>
+#include <atomic>
 
 namespace fu {
 namespace trans {
@@ -41,6 +42,8 @@ struct DecodingNodeObj::Impl
 	double		m_FrameRate{ 0 };
 	///	the actual opencv video decoder
 	dec_t		m_Decoder;
+	///
+	std::atomic_bool	m_GenerateFrames{ false };
 	///	prefetch event task
 	rxcpp::subjects::subject<size_t>			m_GenerateFramesTask;
 	///	frame output
@@ -207,7 +210,7 @@ void DecodingNodeObj::GenerateFrames(size_t frameCount)
 	{
 		LOG_DEBUG << "Generating frames on thread: " << std::this_thread::get_id();
 		unsigned int counter = 0;
-		while (counter < frameCount && m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
+		while (m_Impl->m_GenerateFrames.load(std::memory_order_seq_cst) && m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
 		{
 			cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
 			/// get the byte size of the native frame
@@ -235,6 +238,11 @@ void fu::trans::DecodingNodeObj::SetScaledSize(size_t width, size_t height)
 {
 	m_Impl->m_ScaledFrameWidth = width;
 	m_Impl->m_ScaledFrameHeight = height;
+}
+
+void fu::trans::DecodingNodeObj::SetGeneratingFrames(bool val)
+{
+	m_Impl->m_GenerateFrames.store(val, std::memory_order_seq_cst);
 }
 ///	\brief frame output
 ///	decoding nodes have only output frame streams

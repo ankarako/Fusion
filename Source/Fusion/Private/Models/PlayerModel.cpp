@@ -27,6 +27,8 @@ struct PlayerModel::Impl
 	/// a scaling node for scaling the incoming decoded frames
 	trans::ScalingNode				m_ScalingNode{ nullptr };
 	///
+	std::chrono::steady_clock::time_point	m_StartedPlayback;
+	///
 	rxcpp::observable<long>			m_PlaybackObs;
 	rxcpp::observable<long>			m_CheckPrefetchObs;
 	/// playback subscription
@@ -99,6 +101,10 @@ void PlayerModel::Init()
 ///	Closes the MFSession
 void PlayerModel::Destroy()
 {
+	if (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	{
+		m_Impl->m_DecodingNode->SetGeneratingFrames(false);
+	}
 	/// if decoder is generating frames wait
 	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
 	{
@@ -123,7 +129,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	double fps = m_Impl->m_DecodingNode->GetFrameRate();
 	double periodSecs = 1.0 / fps;
 	m_Impl->m_FramePeriod = 
-		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs));
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs + 0.001));
 	/// now that we know everything about the file
 	///	we should create a prefetching technique so that we can play large files
 	m_Impl->m_FrameCountFlowOutSubj.get_subscriber().on_next(frameCount);
@@ -133,8 +139,8 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	/// create the interval observable according to the frame rate
 	std::chrono::nanoseconds periodNano = std::chrono::duration_cast<std::chrono::nanoseconds>(m_Impl->m_FramePeriod);
 	m_Impl->m_PlaybackObs		= rxcpp::observable<>::interval(periodNano).as_dynamic();
-	m_Impl->m_CheckPrefetchObs	
-		= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(1.0f))).as_dynamic();
+	//m_Impl->m_CheckPrefetchObs	
+	//	= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(1.0f))).as_dynamic();
 	
 	m_Impl->m_NodeTopology.add(
 	///====================================
@@ -161,6 +167,8 @@ void PlayerModel::Start()
 {
 	LOG_DEBUG << "Started PLayback on thread: " << std::this_thread::get_id();
 	m_Impl->m_IsPlaying.store(true, std::memory_order_seq_cst);
+
+	m_Impl->m_DecodingNode->SetGeneratingFrames(true);
 	/// Play one frame task
 	m_Impl->m_PlaybackLifetime.add(
 		m_Impl->m_PlaybackObs.subscribe(
@@ -169,8 +177,9 @@ void PlayerModel::Start()
 		size_t dur	= m_Impl->m_DecodingNode->GetFrameCount();
 		size_t dist = m_Impl->m_Settings->CurrentFrameId;
 		size_t queuesz = m_Impl->m_FrameQueue.size();
+		bool playbackPred = m_Impl->m_FrameQueue.size() > (size_t)(ceilf(m_Impl->m_DecodingNode->GetFrameRate() / 2)) && m_Impl->m_IsPlaying.load(std::memory_order_seq_cst);
 
-		if (!m_Impl->m_FrameQueue.empty() && m_Impl->m_IsPlaying.load(std::memory_order_seq_cst))
+		if (playbackPred)
 		{
 			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.front());
 			m_Impl->m_Settings->CurrentFrameId++;
@@ -182,12 +191,14 @@ void PlayerModel::Start()
 	///=================================================
 	/// tasks that checks the queue size for prefetching
 	///=================================================
-	m_Impl->m_PlaybackLifetime.add(
+	/*m_Impl->m_PlaybackLifetime.add(
 		m_Impl->m_CheckPrefetchObs.subscribe(
 			[this](auto _)
 	{
 		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
-	}));
+	}));*/
+	///
+	
 	///============================
 	///	initialize prefetching task
 	///=============================
@@ -196,12 +207,14 @@ void PlayerModel::Start()
 		.subscribe([this](auto _)
 	{
 		m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
-		m_Impl->m_DecodingNode->GenerateFrames((unsigned int)ceilf(m_Impl->m_DecodingNode->GetFrameRate()));
+		m_Impl->m_DecodingNode->GenerateFrames((unsigned int)ceilf(m_Impl->m_DecodingNode->GetFrameRate() * 4));
 	}));
+	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 }
 ///	\brief pause playback
 void PlayerModel::Pause()
 {
+	m_Impl->m_DecodingNode->SetGeneratingFrames(false);
 	m_Impl->m_PlaybackLifetime.clear();
 	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
 	{
@@ -222,7 +235,7 @@ void PlayerModel::Stop()
 		m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);*/
 		while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
 		{
-			LOG_DEBUG << "Stop. Waiting";
+			//LOG_DEBUG << "Stop. Waiting";
 		}
 		
 		/// erase frame queue

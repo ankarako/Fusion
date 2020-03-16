@@ -64,6 +64,8 @@ public:
 	///	\param	width	the new width of the decoded frame
 	///	\param	height	the new height of the decoded frame
 	void SetScaledSize(size_t width, size_t height);
+	///
+	void SetGeneratingFrames(bool val);
 	///	\brief frame output
 	///	decoding nodes have only output frame streams
 	rxcpp::observable<frame_t> FrameFlowOut();

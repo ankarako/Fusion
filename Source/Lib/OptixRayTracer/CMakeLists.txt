@@ -87,6 +87,18 @@ PrintList("${OptixRayTracerProgramsHdrFiles}" "Gathered Programs header files")
 file (GLOB OptixRayTracerProgramsCuFiles "Private/Programs/*.cu")
 GroupSource("${OptixRayTracerProgramsCuFiles}" "Private\\Programs")
 PrintList("${OptixRayTracerProgramsCuFiles}" "Gathered Programs cuda source files")
+########################
+# Utils header files
+########################
+file (GLOB OptixRayTracerUtilsHdrFiles "Public/Utils/*.h")
+GroupSource("${OptixRayTracerUtilsHdrFiles}" "Public\\Utils")
+PrintList("${OptixRayTracerUtilsHdrFiles}" "Gathered Utils header files")
+#############################
+# Programs CUDA source files
+#############################
+file (GLOB OptixRayTracerUtilsSrcFiles "Private/Utils/*.cpp")
+GroupSource("${OptixRayTracerUtilsSrcFiles}" "Private\\Utils")
+PrintList("${OptixRayTracerUtilsSrcFiles}" "Gathered Utils source files")
 
 add_library(
 	OptixRayTracer
@@ -99,6 +111,8 @@ add_library(
 	"${OptixRayTracerSystemsSrcFiles}"
 	"${OptixRayTracerProgramsHdrFiles}"
 	"${OptixRayTracerProgramsCuFiles}"
+	"${OptixRayTracerUtilsHdrFiles}"
+	"${OptixRayTracerUtilsSrcFiles}"
 )
 target_compile_options(OptixRayTracer PUBLIC "-DNOMINMAX")
 target_compile_options(OptixRayTracer PUBLIC "/std:c++latest")

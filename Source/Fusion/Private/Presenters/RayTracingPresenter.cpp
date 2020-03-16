@@ -84,6 +84,11 @@ void RayTracingPresenter::Init()
 	///=========================================================
 	m_Impl->m_AssetSystem->PointCloudFlowOut()
 		.subscribe(m_Impl->m_Model->PointCloudFlowIn());
+	///=================================
+	/// camera rotation output to input
+	///=================================
+	m_Impl->m_View->RotationTransformFlowOut()
+		.subscribe(m_Impl->m_Model->CameraRotationTransformFlowIn());
 	/// activate 3D viewport
 	m_Impl->m_View->Activate();
 }
