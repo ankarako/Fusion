@@ -30,18 +30,18 @@ void fu::fusion::ProjectSettings::Load(rapidjson::Document& doc)
 	auto obj = doc.GetObject();
 	if (obj.HasMember("ProjectSettings"))
 	{
-		obj = obj["ProjectSettings"].GetObject();
-		if (obj.HasMember("ProjectPath"))
+		auto member = obj["ProjectSettings"].GetObject();
+		if (member.HasMember("ProjectPath"))
 		{
-			this->ProjectPath = obj["ProjectPath"].GetString();
+			this->ProjectPath = member["ProjectPath"].GetString();
 		}
-		if (obj.HasMember("WorkspacePath"))
+		if (member.HasMember("WorkspacePath"))
 		{
-			this->WorkspacePath = obj["WorkspacePath"].GetString();
+			this->WorkspacePath = member["WorkspacePath"].GetString();
 		}
-		if (obj.HasMember("ProjectName"))
+		if (member.HasMember("ProjectName"))
 		{
-			this->ProjectName = obj["ProjectName"].GetString();
+			this->ProjectName = member["ProjectName"].GetString();
 		}
 	}
 	this->m_OnSettingsLoadedSubj.get_subscriber().on_next(nullptr);

@@ -54,6 +54,10 @@ public:
 	/// \brief checj if the model has opened a file
 	///	\return true if the video player is opened
 	bool IsOpen() const;
+
+	uint2 GetFrameSize() const;
+
+	const BufferCPU<uchar4>& GetCurrentFrame();
 	///	\brief current frame id output
 	rxcpp::observable<size_t> CurrentFrameIdFlowOut();
 	///	\brief frame duration output
@@ -66,6 +70,8 @@ public:
 	rxcpp::observable<int>	FrameHeightFlowOut();
 	///	\brief frame size flow out
 	rxcpp::observable<uint2> FrameSizeFlowOut();
+
+	rxcpp::observable<void*> OnVideoLoaded();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

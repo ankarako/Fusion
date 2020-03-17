@@ -17,6 +17,8 @@ struct MainToolbarView::Impl
 	rxcpp::subjects::subject<void*> FileMenu_Open3DFileClickedSubj;
 
 	rxcpp::subjects::subject<void*> FiltersMenu_ClickedSubj;
+	rxcpp::subjects::subject<void*> FiltersMenu_EstimateDepthClickedSubj;
+	rxcpp::subjects::subject<void*> FiltersMenu_EstimateSurfNormalClickedSubj;
 	/// Construction
 	Impl(fman_ptr_t fman)
 		: m_FontManager(fman)
@@ -61,6 +63,14 @@ void MainToolbarView::Render()
 		}
 		if (ImGui::BeginMenu("Filters"))
 		{
+			if (ImGui::MenuItem("Depth Estimation"))
+			{
+				m_Impl->FiltersMenu_EstimateDepthClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			if (ImGui::MenuItem("Surface Normal Estimation"))
+			{
+				m_Impl->FiltersMenu_EstimateSurfNormalClickedSubj.get_subscriber().on_next(nullptr);
+			}
 			ImGui::EndMenu();
 		}
 	}
@@ -90,6 +100,11 @@ rxcpp::observable<void*> fusion::MainToolbarView::OnFileMenu_OpenVideoFileClicke
 rxcpp::observable<void*> fusion::MainToolbarView::OnFileMenu_Open3DFileClicked()
 {
 	return m_Impl->FileMenu_Open3DFileClickedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFiltersMenu_EstimateDepthClicked()
+{
+	return m_Impl->FiltersMenu_EstimateDepthClickedSubj.get_observable().as_dynamic();
 }
 }
 }

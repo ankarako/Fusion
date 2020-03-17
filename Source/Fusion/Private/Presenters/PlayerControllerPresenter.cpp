@@ -99,6 +99,15 @@ void PlayerControllerPresenter::Init()
 		}
 			
 	});
+	///=====================
+	/// player loaded video
+	///=====================
+	m_Impl->m_Model->OnVideoLoaded()
+		.subscribe([this](auto _) 
+	{
+		if (!m_Impl->m_View->IsActive())
+			m_Impl->m_View->Activate();
+	});
 	///==================
 	/// pause event task
 	///==================

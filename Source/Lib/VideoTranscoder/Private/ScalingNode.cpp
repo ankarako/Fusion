@@ -44,7 +44,7 @@ ScalingNodeObj::ScalingNodeObj(unsigned int width, unsigned int height)
 		.subscribe([this](native_frame_t& frame)
 	{
 		/// resize the incoming frame with opencv
-		if (m_Impl->m_ScalingSize.x != frame.size().width && m_Impl->m_ScalingSize.y != frame.size().height)
+		/*if (m_Impl->m_ScalingSize.x != frame.size().width && m_Impl->m_ScalingSize.y != frame.size().height)
 		{
 			cv::resize(frame, m_Impl->m_CurrenNativeFrame, cv::Size(m_Impl->m_ScalingSize.x, m_Impl->m_ScalingSize.y), 0.0, 0.0, cv::INTER_LINEAR);
 			/// allocate current frame
@@ -52,7 +52,7 @@ ScalingNodeObj::ScalingNodeObj(unsigned int width, unsigned int height)
 			/// copy native frame to our frame
 			std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrenNativeFrame.data, m_Impl->m_CurrentFrame->ByteSize());
 		}
-		else
+		else*/
 		{
 			/// allocate current frame
 			m_Impl->m_CurrentFrame = CreateBufferCPU<uchar4>(m_Impl->m_ScalingSize.x * m_Impl->m_ScalingSize.y);

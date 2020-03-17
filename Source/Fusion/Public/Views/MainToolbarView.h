@@ -25,6 +25,7 @@ public:
 	rxcpp::observable<void*> OnFileMenu_SaveProjectClicked();
 	rxcpp::observable<void*> OnFileMenu_OpenVideoFileClicked();
 	rxcpp::observable<void*> OnFileMenu_Open3DFileClicked();
+	rxcpp::observable<void*> OnFiltersMenu_EstimateDepthClicked();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

@@ -22,8 +22,8 @@ struct SettingsRepo::Impl
 {
 	std::vector<settings_ptr_t> m_Settings;
 	bool						m_SettingsSaved{ false };
-	rxcpp::subjects::subject<void*> m_OnSettingsSavedSubject;
-	rxcpp::subjects::subject<void*> m_OnSettingsLoadedSubject;
+	rxcpp::subjects::subject<void*> _m_OnSettingsSavedSubject;
+	rxcpp::subjects::subject<void*> _m_OnSettingsLoadedSubject;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -45,7 +45,7 @@ void SettingsRepo::Init()
 
 }
 
-void SettingsRepo::RegisterSettings(settings_ptr_t s)
+void SettingsRepo::RegisterSettings(const settings_ptr_t& s)
 {
 	if (std::find(m_Impl->m_Settings.begin(), m_Impl->m_Settings.end(), s) == m_Impl->m_Settings.end())
 	{
@@ -76,7 +76,7 @@ void SettingsRepo::Save(const std::string& filepath)
 	//std::string savePath = std::experimental::filesystem::path(filepath).parent_path().generic_string();
 	std::string savePath = filepath;
 	m_Impl->m_SettingsSaved = true;
-	m_Impl->m_OnSettingsSavedSubject.get_subscriber().on_next(nullptr);
+	m_Impl->_m_OnSettingsSavedSubject.get_subscriber().on_next(nullptr);
 }
 
 void SettingsRepo::Load(const std::string& filepath)
@@ -94,17 +94,17 @@ void SettingsRepo::Load(const std::string& filepath)
 		}
 	}
 	in_fs.close();
-	m_Impl->m_OnSettingsLoadedSubject.get_subscriber().on_next(nullptr);
+	m_Impl->_m_OnSettingsLoadedSubject.get_subscriber().on_next(nullptr);
 }
 
 
 rxcpp::observable<void*> SettingsRepo::OnSettingsSaved()
 {
-	return m_Impl->m_OnSettingsSavedSubject.get_observable().as_dynamic();
+	return m_Impl->_m_OnSettingsSavedSubject.get_observable().as_dynamic();
 }
 rxcpp::observable<void*> SettingsRepo::OnSettingsLoaded()
 {
-	return m_Impl->m_OnSettingsLoadedSubject.get_observable().as_dynamic();
+	return m_Impl->_m_OnSettingsLoadedSubject.get_observable().as_dynamic();
 }
 
 }	///	!namespace fusion

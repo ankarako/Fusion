@@ -25,7 +25,7 @@ public:
 	/// Initialize
 	void Init() override;
 	///	\brief register settings
-	void RegisterSettings(settings_ptr_t settings);
+	void RegisterSettings(const settings_ptr_t& settings);
 	///	\brief unregister settings
 	void UnregisterSettings(settings_ptr_t settings);
 	///	\brief save all registerd settings to file

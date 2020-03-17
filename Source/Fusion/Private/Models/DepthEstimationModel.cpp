@@ -5,7 +5,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
-
+#include <filesystem>
 
 namespace fu {
 namespace fusion {
@@ -45,12 +45,15 @@ void DepthEstimationModel::Init()
 		cv::Mat mat = cv::Mat::zeros(size.y, size.x, CV_8UC4);
 		std::memcpy(mat.data, f->Data(), f->ByteSize());
 		/// rescale the frame to 512 x 256 (that our network supprts)
+		cv::Mat tosave = cv::Mat::zeros(256, 512, CV_8UC3);
 		cv::resize(mat, mat, cv::Size(512, 256));
+		cv::cvtColor(mat, tosave, cv::COLOR_BGRA2RGB);
 		/// save
 		std::string filepath = m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/color_depth_est_input.png";
-		cv::imwrite(filepath, mat);
+		cv::imwrite(filepath, tosave);
 		/// make cli
-		std::string cli = std::string(m_Impl->k_CaffeExecutablePath) + " " + std::string(m_Impl->k_CaffeCommand)
+		std::string absexe = std::filesystem::absolute(std::filesystem::path(m_Impl->k_CaffeExecutablePath)).generic_string();
+		std::string cli = absexe + " " + std::string(m_Impl->k_CaffeCommand)
 			+ " " + "--model"
 			+ " " + m_Impl->m_ModelFilepath
 			+ " " + "--weights"
@@ -58,7 +61,8 @@ void DepthEstimationModel::Init()
 			+ " " + "--input"
 			+ " " + m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_input.png"
 			+ " " + "--output"
-			+ " " + m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_output";
+			+ " " + m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_output"
+			+ " " + "--gpu 0";
 		/// run depth estimation network
 		std::system(cli.c_str());
 		/// send filepath to pcl loader

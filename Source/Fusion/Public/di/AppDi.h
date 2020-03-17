@@ -26,6 +26,7 @@
 #include <Models/VideoTracingModel.h>
 #include <Models/RayTracingModel.h>
 #include <Models/ProjectModel.h>
+#include <Models/DepthEstimationModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -38,6 +39,7 @@
 #include <Views/FileExplorerView.h>
 #include <Views/MainToolbarView.h>
 #include <Views/RayTracingView.h>
+#include <Views/DepthEstimationSettingsView.h>
 /// Asset Loading System
 #include <Systems/AssetLoadingSystem.h>
 
@@ -54,19 +56,20 @@ namespace di {
 			app::FontManager,
 			LoggerModel,
 			SettingsRepo,
-			PlayerControllerPresenter,
-			PlayerViewportPresenter,
 			FileExplorerView,
 			FileExplorerPresenter,
 			FileExplorerModel,
 			MainToolbarPresenter,
-			PlayerModel,
-			VideoTracingModel,
 			PlayerViewportView,
+			PlayerModel,
+			PlayerControllerPresenter,
+			PlayerViewportPresenter,
+			VideoTracingModel,
 			RayTracingPresenter,
 			RayTracingModel,
 			RayTracingView,
-			ProjectModel
+			ProjectModel,
+			DepthEstimationModel
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,

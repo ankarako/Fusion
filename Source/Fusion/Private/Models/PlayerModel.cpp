@@ -60,6 +60,8 @@ struct PlayerModel::Impl
 	rxcpp::subjects::subject<frame_t>	m_FrameFlowOutSubj;
 	///	start prefetch event
 	rxcpp::subjects::subject<void*>		m_StartPrefetchEventSubj;
+
+	rxcpp::subjects::subject<void*>		m_OnVideoLoadedSubj;
 	/// Construction
 	/// \brief default constructor
 	///	does nothing
@@ -96,6 +98,15 @@ void PlayerModel::Init()
 	m_Impl->m_SettingsRepo->RegisterSettings(m_Impl->m_Settings);
 	/// set settinsgs frames prtefetch
 	m_Impl->m_Settings->PrefetchFrameCount = m_Impl->k_InitialFramesPrefetch;
+
+	/// settings loaded task
+	/// FIXME: take(1) is a workaround because subscription hits two times for some reason
+	m_Impl->m_Settings->OnSettingsLoaded().take(1)
+		.subscribe([this](auto _)
+	{
+		this->LoadFile(m_Impl->m_Settings->LoadedVideoFilepath);
+		this->Seek(m_Impl->m_Settings->CurrentFrameId);
+	});
 }
 ///	\brief destroy the player
 ///	Closes the MFSession
@@ -159,8 +170,10 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	{
 		m_Impl->m_FrameQueue.emplace_back(frame);
 	}));
+	
 	/// start prefetching
 	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+	m_Impl->m_OnVideoLoadedSubj.get_subscriber().on_next(nullptr);
 }
 ///	\brief start playback
 void PlayerModel::Start()
@@ -349,6 +362,20 @@ void fu::fusion::PlayerModel::SetScalingSize(uint2 size)
 		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 	}
 }
+
+uint2 fu::fusion::PlayerModel::GetFrameSize() const
+{
+	return make_uint2(m_Impl->m_DecodingNode->GetFrameWidth(), m_Impl->m_DecodingNode->GetFrameHeight());
+}
+
+const BufferCPU<uchar4>& fu::fusion::PlayerModel::GetCurrentFrame()
+{
+	if (!m_Impl->m_FrameQueue.empty())
+	{
+		return m_Impl->m_FrameQueue.front();
+	}
+	return CreateBufferCPU<uchar4>(0);
+}
 ///	\brief current frame id output
 rxcpp::observable<size_t> fu::fusion::PlayerModel::CurrentFrameIdFlowOut()
 {
@@ -378,6 +405,11 @@ rxcpp::observable<int> fu::fusion::PlayerModel::FrameHeightFlowOut()
 rxcpp::observable<uint2> fu::fusion::PlayerModel::FrameSizeFlowOut()
 {
 	return m_Impl->m_FrameSizeFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::PlayerModel::OnVideoLoaded()
+{
+	return	m_Impl->m_OnVideoLoadedSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu
