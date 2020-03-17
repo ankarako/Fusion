@@ -88,7 +88,7 @@ void ProjectModel::Save()
 
 void ProjectModel::LoadProject(const std::string& filepath)
 {
-	if (std::filesystem::exists(filepath) && std::filesystem::path(filepath).extension.generic_string() == ".fuproj")
+	if (std::filesystem::exists(filepath) && std::filesystem::path(filepath).extension().generic_string() == ".fuproj")
 	{
 		m_Impl->m_Srepo->Load(filepath);
 	}

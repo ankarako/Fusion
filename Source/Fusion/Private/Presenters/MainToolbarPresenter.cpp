@@ -21,7 +21,12 @@ struct MainToolbarPresenter::Impl
 	{ }
 };	///	!struct Impl
 ///	Construction
-MainToolbarPresenter::MainToolbarPresenter(player_model_ptr_t dec_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo, prj_model_ptr_t prj_model)
+MainToolbarPresenter::MainToolbarPresenter(
+	player_model_ptr_t	dec_model, 
+	view_ptr_t			view, 
+	fexp_view_ptr_t		fexp_view, 
+	wrepo_ptr_t			wrepo, 
+	prj_model_ptr_t		prj_model)
 	: m_Impl(spimpl::make_unique_impl<Impl>(dec_model, view, fexp_view, wrepo, prj_model))
 { }
 ///	\brief Initialization

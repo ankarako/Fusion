@@ -35,8 +35,8 @@ DepthEstimationModel::DepthEstimationModel(prj_model_ptr_t prj_model, coord_ptr_
 
 void DepthEstimationModel::Init()
 {
-	m_Impl->m_FrameFlowInSubj.get_observable().as_dynamic().
-		observe_on(m_Impl->m_Coord->ModelCoordination())
+	m_Impl->m_FrameFlowInSubj.get_observable().as_dynamic()
+		//.observe_on(m_Impl->m_Coord->ModelCoordination())
 		.subscribe([this](const std::pair<uint2, BufferCPU<uchar4>>& frame)
 	{
 		uint2 size = std::get<0>(frame);
@@ -50,7 +50,7 @@ void DepthEstimationModel::Init()
 		std::string filepath = m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/color_depth_est_input.png";
 		cv::imwrite(filepath, mat);
 		/// make cli
-		std::string cli = std::string(m_Impl->k_CaffeExecutablePath) + " " + std::string(+m_Impl->k_CaffeCommand)
+		std::string cli = std::string(m_Impl->k_CaffeExecutablePath) + " " + std::string(m_Impl->k_CaffeCommand)
 			+ " " + "--model"
 			+ " " + m_Impl->m_ModelFilepath
 			+ " " + "--weights"

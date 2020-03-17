@@ -34,7 +34,7 @@ struct FileExplorerView::Impl
 	rxcpp::subjects::subject<drive_letter_array>	DriveLettersFlowInSubj;
 	rxcpp::subjects::subject<std::string>			CurrentSelectedDriveFlowInSubj;
 	/// outputs
-	rxcpp::subjects::subject<std::string>		OpenProjectFileSubj;
+	rxcpp::subjects::subject<DirEntry>			OpenProjectFileSubj;
 	rxcpp::subjects::subject<DirEntry>			SaveProjectFileSubj;
 	rxcpp::subjects::subject<std::string>		OpenVideoFileSubj;
 	rxcpp::subjects::subject<std::string>		Open3DFileSubj;
@@ -182,7 +182,7 @@ void FileExplorerView::Render()
 						m_Impl->m_SelectedEntry = m_Impl->m_CurrentDirEntries[de].second;
 						if (m_Impl->m_Mode == FileExplorerMode::OpenProject)
 						{
-							m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+							m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry);
 							memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 							this->Deactivate();
 						}
@@ -209,7 +209,7 @@ void FileExplorerView::Render()
 		{
 			if (ImGui::Button("Open"))
 			{
-				m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+				m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry);
 				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 				this->Deactivate();
 			}
@@ -288,7 +288,7 @@ rxcpp::observer<FileExplorerView::drive_letter_array> fusion::FileExplorerView::
 	return m_Impl->DriveLettersFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
-rxcpp::observable<std::string> fusion::FileExplorerView::OpenProjectFileFlowOut()
+rxcpp::observable<DirEntry> fusion::FileExplorerView::OpenProjectFileFlowOut()
 {
 	return m_Impl->OpenProjectFileSubj.get_observable().as_dynamic();
 }

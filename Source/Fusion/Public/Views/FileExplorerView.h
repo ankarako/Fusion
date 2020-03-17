@@ -45,7 +45,7 @@ public:
 	rxcpp::observer<drive_letter_array> DriveLettersFlowIn();
 	rxcpp::observer<std::string>		CurrentSelectedDriveFlowIn();
 	///	Outputs
-	rxcpp::observable<std::string>		OpenProjectFileFlowOut();
+	rxcpp::observable<DirEntry>			OpenProjectFileFlowOut();
 	rxcpp::observable<DirEntry>			SaveProjectFileFlowOut();
 	rxcpp::observable<std::string>		OpenVideoFileFlowOut();
 	rxcpp::observable<std::string>		Open3DFileFlowOut();
