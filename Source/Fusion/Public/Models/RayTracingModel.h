@@ -44,6 +44,7 @@ public:
 	rxcpp::observer<rt::PointCloudComp>		PointCloudFlowIn();
 	rxcpp::observer<mat_t>				CameraRotationTransformFlowIn();
 	rxcpp::observer<vec_t>				CameraTranslationFlowIn();
+	rxcpp::observer<float>				CullingPlanePositionFlowIn();
 	///
 	rxcpp::observable<BufferCPU<uchar4>> FrameFlowOut();
 private:

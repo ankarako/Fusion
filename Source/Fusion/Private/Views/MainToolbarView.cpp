@@ -19,6 +19,8 @@ struct MainToolbarView::Impl
 	rxcpp::subjects::subject<void*> FiltersMenu_ClickedSubj;
 	rxcpp::subjects::subject<void*> FiltersMenu_EstimateDepthClickedSubj;
 	rxcpp::subjects::subject<void*> FiltersMenu_EstimateSurfNormalClickedSubj;
+
+	rxcpp::subjects::subject<void*> WindowsMenu_RayTracingControlClickedSubj;
 	/// Construction
 	Impl(fman_ptr_t fman)
 		: m_FontManager(fman)
@@ -73,6 +75,14 @@ void MainToolbarView::Render()
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Windows"))
+		{
+			if (ImGui::MenuItem("3D Viewport controls"))
+			{
+				m_Impl->WindowsMenu_RayTracingControlClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			ImGui::EndMenu();
+		}
 	}
 	ImGui::EndMainMenuBar();
 	ImGui::PopFont();
@@ -106,5 +116,11 @@ rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFiltersMenu_EstimateDept
 {
 	return m_Impl->FiltersMenu_EstimateDepthClickedSubj.get_observable().as_dynamic();
 }
+
+rxcpp::observable<void*> MainToolbarView::OnWindowsMenu_RayTracingControlClicked()
+{
+	return m_Impl->WindowsMenu_RayTracingControlClickedSubj.get_observable().as_dynamic();
 }
-}
+
+}	///	!namespce fusion
+}	///	!namespace fu

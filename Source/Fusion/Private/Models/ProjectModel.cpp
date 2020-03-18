@@ -53,7 +53,6 @@ void ProjectModel::Init()
 		.subscribe([this](const DirEntry& entry) 
 	{
 		LoadProject(entry.AbsPath);
-		LOG_DEBUG << "yo";
 	});
 }
 /// \brief create a new project

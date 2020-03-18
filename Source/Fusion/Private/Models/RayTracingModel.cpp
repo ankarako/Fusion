@@ -50,6 +50,7 @@ struct RayTracingModel::Impl
 	rxcpp::subjects::subject<void*>					m_OnLaunchSubj;
 	rxcpp::subjects::subject<mat_t>					m_RotationTransgformRaygenFlowInSubj;
 	rxcpp::subjects::subject<vec_t>					m_TranslationRaygenFlowInSubj;
+	rxcpp::subjects::subject<float>					m_CullingPlanePositionFlowInSubj;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -107,6 +108,8 @@ void RayTracingModel::Init()
 		/// attach to our top object
 		rt::MeshMappingSystem::AttachPointCloudToAcceleration(m_Impl->m_PointCloudComps.back(), m_Impl->m_AccelerationComp);
 		///
+		rt::MeshMappingSystem::SetCullingPlanePos(m_Impl->m_PointCloudComps.back(), 5.0f);
+		///
 		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelerationComp);
 		this->OnLaunch().on_next(nullptr);
 	});
@@ -144,6 +147,18 @@ void RayTracingModel::Init()
 		trans.y = transVec[1];
 		trans.z = transVec[2];
 		rt::RaygenSystem::SetPinholeRaygenEyeTranslation(m_Impl->m_PinholeRaygenComp, trans);
+		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchWidth, m_Impl->m_LaunchHeight, 0);
+		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+	});
+
+	m_Impl->m_CullingPlanePositionFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](float cullPlanePos) 
+	{
+		for (int i = 0; i < m_Impl->m_PointCloudComps.size(); i++)
+		{
+			rt::MeshMappingSystem::SetCullingPlanePos(m_Impl->m_PointCloudComps[i], cullPlanePos);
+		}
 		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchWidth, m_Impl->m_LaunchHeight, 0);
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
@@ -213,6 +228,11 @@ rxcpp::observer<RayTracingModel::mat_t> fu::fusion::RayTracingModel::CameraRotat
 rxcpp::observer<RayTracingModel::vec_t> fu::fusion::RayTracingModel::CameraTranslationFlowIn()
 {
 	return m_Impl->m_TranslationRaygenFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<float> fu::fusion::RayTracingModel::CullingPlanePositionFlowIn()
+{
+	return m_Impl->m_CullingPlanePositionFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

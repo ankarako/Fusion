@@ -40,6 +40,7 @@
 #include <Views/MainToolbarView.h>
 #include <Views/RayTracingView.h>
 #include <Views/DepthEstimationSettingsView.h>
+#include <Views/RayTracingControlView.h>
 /// Asset Loading System
 #include <Systems/AssetLoadingSystem.h>
 

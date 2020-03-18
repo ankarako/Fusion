@@ -120,7 +120,7 @@ void RayTracingView::Render()
 				{
 					/// left mouse button
 					/// rotation
-					LOG_DEBUG << "Left Mouse down. delta: "  << delta.x << " x " << delta.y;
+					//LOG_DEBUG << "Left Mouse down. delta: "  << delta.x << " x " << delta.y;
 					ImVec2 curMousePos = ImGui::GetMousePos();
 					curMousePos = ImVec2(curMousePos.x / m_Impl->m_ViewportSize.x, curMousePos.y / m_Impl->m_ViewportSize.y);
 					delta = ImVec2(delta.x / m_Impl->m_ViewportSize.x, delta.y / m_Impl->m_ViewportSize.y);
@@ -134,13 +134,13 @@ void RayTracingView::Render()
 			{
 				/// right mouse button
 				/// translation
-				LOG_DEBUG << "Right Mouse down.";
+				//LOG_DEBUG << "Right Mouse down.";
 				ImVec2 delta = ImGui::GetMouseDragDelta(1);
 				if (delta.x != 0.0f || delta.y != 0.0f)
 				{
 					/// left mouse button
 					/// rotation
-					LOG_DEBUG << "Left Mouse down. delta: " << delta.x << " x " << delta.y;
+					//LOG_DEBUG << "Left Mouse down. delta: " << delta.x << " x " << delta.y;
 					ImVec2 curMousePos = ImGui::GetMousePos();
 					curMousePos = ImVec2(curMousePos.x / m_Impl->m_ViewportSize.x, curMousePos.y / m_Impl->m_ViewportSize.y);
 					delta = ImVec2(delta.x / m_Impl->m_ViewportSize.x, delta.y / m_Impl->m_ViewportSize.y);

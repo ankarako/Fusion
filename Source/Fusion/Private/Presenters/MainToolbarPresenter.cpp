@@ -6,6 +6,8 @@
 #include <Models/DepthEstimationModel.h>
 #include <Models/ProjectModel.h>
 #include <Models/PlayerModel.h>
+#include <Core/Coordination.h>
+#include <Views/RayTracingControlView.h>
 
 namespace fu {
 namespace fusion {
@@ -20,9 +22,11 @@ struct MainToolbarPresenter::Impl
 	prj_model_ptr_t		m_ProjectModel;
 	dest_set_view_ptr_t m_DepthEstSetView;
 	dest_model_ptr_t	m_DepthEstModel;
+	coord_ptr_t			m_Coord;
+	rt_ctrl_view_ptr_t	m_RayControlView;
 
-	Impl(player_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo, prj_model_ptr_t prj_model, dest_set_view_ptr_t dest_view, dest_model_ptr_t dest_model)
-		: m_View(view), m_FexpView(fexp_view), m_Wrepo(wrepo), m_PlayerModel(decoder_model), m_ProjectModel(prj_model), m_DepthEstSetView(dest_view), m_DepthEstModel(dest_model)
+	Impl(player_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo, prj_model_ptr_t prj_model, dest_set_view_ptr_t dest_view, dest_model_ptr_t dest_model, coord_ptr_t coord, rt_ctrl_view_ptr_t rt_ctrl_view)
+		: m_View(view), m_FexpView(fexp_view), m_Wrepo(wrepo), m_PlayerModel(decoder_model), m_ProjectModel(prj_model), m_DepthEstSetView(dest_view), m_DepthEstModel(dest_model), m_Coord(coord), m_RayControlView(rt_ctrl_view)
 	{ }
 };	///	!struct Impl
 ///	Construction
@@ -33,8 +37,10 @@ MainToolbarPresenter::MainToolbarPresenter(
 	wrepo_ptr_t			wrepo, 
 	prj_model_ptr_t		prj_model,
 	dest_set_view_ptr_t dest_view,
-	dest_model_ptr_t	dest_model)
-	: m_Impl(spimpl::make_unique_impl<Impl>(dec_model, view, fexp_view, wrepo, prj_model, dest_view, dest_model))
+	dest_model_ptr_t	dest_model,
+	coord_ptr_t			coord,
+	rt_ctrl_view_ptr_t	rt_ctrl_view)
+	: m_Impl(spimpl::make_unique_impl<Impl>(dec_model, view, fexp_view, wrepo, prj_model, dest_view, dest_model, coord, rt_ctrl_view))
 { }
 ///	\brief Initialization
 void MainToolbarPresenter::Init()
@@ -137,15 +143,30 @@ void MainToolbarPresenter::Init()
 	
 	});
 
-	m_Impl->m_DepthEstSetView->OnEstimateDepthButtonClicked()
+	m_Impl->m_DepthEstSetView->OnEstimateDepthButtonClicked().observe_on(m_Impl->m_Coord->ModelCoordination())
 		.subscribe([this](auto _) 
 	{
+		m_Impl->m_DepthEstSetView->Deactivate();
 		/// send buffer to depth est model ->
 		//m_Impl->m_PlayerModel->
 		uint2 framesize = m_Impl->m_PlayerModel->GetFrameSize();
 		BufferCPU<uchar4> curFrame = m_Impl->m_PlayerModel->GetCurrentFrame();
 		auto sizeFramePair = std::make_pair(framesize, curFrame);
 		m_Impl->m_DepthEstModel->FrameFlowIn().on_next(sizeFramePair);
+	});
+
+	m_Impl->m_View->OnWindowsMenu_RayTracingControlClicked()
+		.subscribe([this](auto _) 
+	{
+		if (m_Impl->m_RayControlView->IsActive())
+		{
+			m_Impl->m_RayControlView->Deactivate();
+		}
+		else
+		{
+			m_Impl->m_RayControlView->Activate();
+		}
+			
 	});
 
 	m_Impl->m_View->Activate();

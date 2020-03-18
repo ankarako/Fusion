@@ -213,7 +213,7 @@ public:
 		pcComp->ColorBuffer->unmap();
 	}
 	///	\brief Map point cloud component
-	static void MapPointCloudComponent(PointCloudComp& pcComp, ContextComp& ctxComp, int elementCount)
+	static void MapPointCloudComponent(PointCloudComp& pcComp, ContextComp& ctxComp, int elementCount, bool hasnormals = false)
 	{
 		try {
 			pcComp->Geometry = ctxComp->Context->createGeometry();
@@ -239,7 +239,8 @@ public:
 			pcComp->GInstance->setMaterial(0, pcComp->Material);
 			/// set the program's variables on ginstance 
 			pcComp->GInstance["vertex_positions"]->setBuffer(pcComp->VertexBuffer);
-			pcComp->GInstance["normal_buffer"]->setBuffer(pcComp->NormalBuffer);
+			if (hasnormals)
+				pcComp->GInstance["normal_buffer"]->setBuffer(pcComp->NormalBuffer);
 			pcComp->GInstance["vertex_colors"]->setBuffer(pcComp->ColorBuffer);
 			pcComp->GInstance["flat_shaded"]->setInt(1);
 			pcComp->GInstance["radius"]->setFloat(0.01f);
@@ -249,6 +250,11 @@ public:
 		{
 			LOG_ERROR << "Failed to map PointCloud component. Error: " << ex.getErrorString();
 		}
+	}
+
+	static void SetCullingPlanePos(PointCloudComp& pcComp, float cullPlanePos)
+	{
+		pcComp->GInstance["culling_plane_pos"]->setFloat(cullPlanePos);
 	}
 private:
 	static constexpr const char* k_TriangleMeshPTxFilepath			= "FusionLib/Resources/Programs/TriangleMesh.ptx";

@@ -6,6 +6,8 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 #include <filesystem>
+#include <plog/Log.h>
+#include <Core/DepthColorToPCL.h>
 
 namespace fu {
 namespace fusion {
@@ -53,26 +55,36 @@ void DepthEstimationModel::Init()
 		cv::imwrite(filepath, tosave);
 		/// make cli
 		std::string absexe = std::filesystem::absolute(std::filesystem::path(m_Impl->k_CaffeExecutablePath)).generic_string();
+		std::string absinputimg = std::filesystem::absolute(std::filesystem::path(filepath)).generic_string();
+		std::string absoutimg = std::filesystem::absolute(std::filesystem::path(m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_output")).generic_string();
 		std::string cli = absexe + " " + std::string(m_Impl->k_CaffeCommand)
 			+ " " + "--model"
 			+ " " + m_Impl->m_ModelFilepath
 			+ " " + "--weights"
 			+ " " + m_Impl->m_WeightsFilepath
 			+ " " + "--input"
-			+ " " + m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_input.png"
+			+ " " + absinputimg
 			+ " " + "--output"
-			+ " " + m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_output"
+			+ " " + absoutimg
 			+ " " + "--gpu 0";
+		LOG_DEBUG << "Running cli: " << cli;
 		/// run depth estimation network
 		std::system(cli.c_str());
+		std::string absoutply = std::filesystem::absolute(std::filesystem::path(m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_pcl.ply")).generic_string();
 		/// send filepath to pcl loader
-		
+		DepthColorToPCL(absinputimg, absoutimg + ".exr", 10.0f, absoutply);
+		m_Impl->m_PointcloudFilepathFlowOut.get_subscriber().on_next(absoutply);
 	});
 }
 
 rxcpp::observer<std::pair<uint2, BufferCPU<uchar4>>> fu::fusion::DepthEstimationModel::FrameFlowIn()
 {
 	return m_Impl->m_FrameFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observable<std::string> fu::fusion::DepthEstimationModel::PointCloudFilepathFlowOut()
+{
+	return m_Impl->m_PointcloudFilepathFlowOut.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namesapce fu

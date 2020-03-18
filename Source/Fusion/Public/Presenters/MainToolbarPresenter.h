@@ -16,6 +16,8 @@ class PlayerModel;
 class ProjectModel;
 class DepthEstimationSettingsView;
 class DepthEstimationModel;
+class Coordination;
+class RayTracingControlView;
 ///	\class MainToolbarPresenter
 ///	\brief responsible for interacting with the main toolbar
 class MainToolbarPresenter	: public app::Initializable
@@ -28,8 +30,20 @@ public:
 	using prj_model_ptr_t = std::shared_ptr<ProjectModel>;
 	using dest_set_view_ptr_t = std::shared_ptr<DepthEstimationSettingsView>;
 	using dest_model_ptr_t = std::shared_ptr<DepthEstimationModel>;
+	using coord_ptr_t = std::shared_ptr<Coordination>;
+	using rt_ctrl_view_ptr_t = std::shared_ptr<RayTracingControlView>;
+
 	/// Construction
-	MainToolbarPresenter(player_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo, prj_model_ptr_t prj_model, dest_set_view_ptr_t dest_view, dest_model_ptr_t dest_model);
+	MainToolbarPresenter(
+		player_model_ptr_t decoder_model, 
+		view_ptr_t view, 
+		fexp_view_ptr_t fexp_view, 
+		wrepo_ptr_t wrepo, 
+		prj_model_ptr_t prj_model, 
+		dest_set_view_ptr_t dest_view, 
+		dest_model_ptr_t dest_model, 
+		coord_ptr_t coord,
+		rt_ctrl_view_ptr_t rt_ctrl_view);
 	/// \brief Initialization
 	void Init() override;
 private:

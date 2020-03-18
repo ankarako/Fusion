@@ -178,6 +178,7 @@ void AssetLoadingSystem::Impl::LoadPly(const std::string& filepath, ContextComp&
 		{
 			int num_vertices = vertices->count;
 			int vertex_bsize = vertices->buffer.size_bytes();
+			/// work around to change y and z coordinates??
 			MeshMappingSystem::CreateTriangleMeshVertexBuffer(trMeshComp, ctxComp, num_vertices);
 			MeshMappingSystem::MapTriangleMeshVertexBuffer(trMeshComp, (void*)vertices->buffer.get(), vertex_bsize);
 		}
@@ -207,6 +208,7 @@ void AssetLoadingSystem::Impl::LoadPly(const std::string& filepath, ContextComp&
 	}
 	else
 	{
+		bool hasnormals = false;
 		/// we have a point cloud
 		PointCloudComp pCloufComp = CreatePointCloudComponent();
 		/// get vertex count etc
@@ -219,6 +221,7 @@ void AssetLoadingSystem::Impl::LoadPly(const std::string& filepath, ContextComp&
 		}
 		if (normals)
 		{
+			hasnormals = true;
 			int numNormals = normals->count;
 			int bsize = normals->buffer.size_bytes();
 			MeshMappingSystem::CreatePointCloudNormalBuffer(pCloufComp, ctxComp, numNormals);
@@ -231,7 +234,7 @@ void AssetLoadingSystem::Impl::LoadPly(const std::string& filepath, ContextComp&
 			MeshMappingSystem::CreatePointCloudColorBuffer(pCloufComp, ctxComp, numColors);
 			MeshMappingSystem::MapPointCloudColorBuffer(pCloufComp, (void*)colors->buffer.get(), bsize);
 		}
-		MeshMappingSystem::MapPointCloudComponent(pCloufComp, ctxComp, vertices->count);
+		MeshMappingSystem::MapPointCloudComponent(pCloufComp, ctxComp, vertices->count, hasnormals);
 		///	send to point cloud flow out
 		m_PointCloudCompFlowOutSubj.get_subscriber().on_next(pCloufComp);
 	}
