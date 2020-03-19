@@ -4,7 +4,8 @@
 #include <Models/VideoTracingModel.h>
 #include <WidgetRepo.h>
 #include <Core/Coordination.h>
-
+#include <Views/FileExplorerView.h>
+#include <Models/AssetLoadingModel.h>
 ///
 #include <plog/Log.h>
 
@@ -17,14 +18,22 @@ struct PlayerViewportPresenter::Impl
 	tracer_model_ptr_t	m_TracerModel;
 	wrepo_ptr_t			m_Wrepo;
 	coord_ptr_t			m_Coord;
-
-	Impl(model_ptr_t model, view_ptr_t view, tracer_model_ptr_t tracer_model, wrepo_ptr_t wrepo, coord_ptr_t coord)
-		: m_Model(model), m_View(view), m_TracerModel(tracer_model), m_Wrepo(wrepo), m_Coord(coord)
+	fexp_view_ptr_t		m_FexpView;
+	asset_model_ptr_t	m_AssetModel;
+	Impl(model_ptr_t model, view_ptr_t view, tracer_model_ptr_t tracer_model, wrepo_ptr_t wrepo, coord_ptr_t coord, fexp_view_ptr_t fexp_view, asset_model_ptr_t asset_model)
+		: m_Model(model), m_View(view), m_TracerModel(tracer_model), m_Wrepo(wrepo), m_Coord(coord), m_FexpView(fexp_view), m_AssetModel(asset_model)
 	{ }
 };
 /// Construction
-PlayerViewportPresenter::PlayerViewportPresenter(model_ptr_t model, view_ptr_t view, tracer_model_ptr_t tracer_model, wrepo_ptr_t wrepo, coord_ptr_t coord)
-	: m_Impl(spimpl::make_unique_impl<Impl>(model, view, tracer_model, wrepo, coord))
+PlayerViewportPresenter::PlayerViewportPresenter(
+	model_ptr_t model, 
+	view_ptr_t view, 
+	tracer_model_ptr_t tracer_model, 
+	wrepo_ptr_t wrepo, 
+	coord_ptr_t coord, 
+	fexp_view_ptr_t fexp_view,
+	asset_model_ptr_t asset_model)
+	: m_Impl(spimpl::make_unique_impl<Impl>(model, view, tracer_model, wrepo, coord, fexp_view, asset_model))
 { }
 
 void PlayerViewportPresenter::Init()
@@ -63,11 +72,11 @@ void PlayerViewportPresenter::Init()
 		m_Impl->m_View->FrameSizeFlowIn().on_next(size);
 		m_Impl->m_Model->SetScalingSize(size);
 	});
-	///==========================
-	///	PBO flow out subscription
-	///==========================
-	//m_Impl->m_View->PixelBufferHandleFlowOut()
-	//	.subscribe(m_Impl->m_TracerModel->PboFlowIn());
+	///======================
+	/// 3D file loading task
+	///======================
+	m_Impl->m_AssetModel->MeshDataFlowOut()
+		.subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
 	///=================================
 	/// frame flow out from decoder task
 	///=================================

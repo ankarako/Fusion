@@ -4,9 +4,10 @@ rtBuffer<float3> 	vertex_buffer;
 rtBuffer<float3> 	normal_buffer;
 rtBuffer<float2>	texcoord_buffer;
 rtBuffer<uint3>		tindex_buffer;
-rtBuffer<int>		material_buffer;
 
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(optix::float2, cur_texcoord, attribute Texcoord, );
+rtDeclareVariable(optix::float3, cur_normal, attribute NormalVector, );
 
 ///==========================================
 ///	Intersection Program for Triangle Meshes

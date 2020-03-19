@@ -1,4 +1,5 @@
 #include <Models/RayTracingModel.h>
+#include <Core/AssetTypeResolver.h>
 #include <Components/ContextComp.h>
 #include <Components/RaygenProgComp.h>
 #include <Components/AccelerationComp.h>
@@ -6,12 +7,14 @@
 #include <Components/MeshMaterialComp.h> 
 #include <Components/SolidColorMissComp.h>
 
-#include <Systems/AssetLoadingSystem.h>
 #include <Systems/CreateContextSystem.h>
 #include <Systems/RaygenSystem.h>
 #include <Systems/MissSystem.h>
 #include <Systems/MeshMappingSystem.h>
 #include <Systems/LaunchSystem.h>
+
+#include <LoadPly.h>
+#include <LoadObj.h>
 
 #include <vector>
 
@@ -21,10 +24,6 @@ namespace fusion {
 ///	\brief RayTracer Implementation
 struct RayTracingModel::Impl
 {
-	/// \typedef asset_load_syst_ptr_t
-	///	\brief a reference counted instance of the asset loading system
-	using asset_load_syst_ptr_t = std::shared_ptr<rt::AssetLoadingSystem>;
-
 	bool					m_IsValid{ false };
 	BufferCPU<uchar4>		m_FrameBuffer;
 	/// ray tracing context component
@@ -45,12 +44,11 @@ struct RayTracingModel::Impl
 
 	rxcpp::subjects::subject<uint2>					m_LaunchSizeFlowInSubj;
 	rxcpp::subjects::subject<BufferCPU<uchar4>>		m_FrameFlowOutSubj;
-	rxcpp::subjects::subject<rt::TriangleMeshComp>	m_TriangleMeshFlowInSubj;
-	rxcpp::subjects::subject<rt::PointCloudComp>	m_PointCloudFlowIntSubj;
 	rxcpp::subjects::subject<void*>					m_OnLaunchSubj;
 	rxcpp::subjects::subject<mat_t>					m_RotationTransgformRaygenFlowInSubj;
 	rxcpp::subjects::subject<vec_t>					m_TranslationRaygenFlowInSubj;
 	rxcpp::subjects::subject<float>					m_CullingPlanePositionFlowInSubj;
+	rxcpp::subjects::subject<io::MeshData>			m_MeshDataFlowInSubj;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -81,6 +79,7 @@ void RayTracingModel::Init()
 	/// attach mesh to acceleration
 	rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_AccelerationComp);
 	rt::MissSystem::AttachSolidColorMissToContext(m_Impl->m_SolidColorMissComp, m_Impl->m_ContextComp);
+
 	///==========================
 	/// launch size flow in task
 	///==========================
@@ -95,22 +94,6 @@ void RayTracingModel::Init()
 
 		m_Impl->m_FrameBuffer = CreateBufferCPU<uchar4>(m_Impl->m_LaunchWidth * m_Impl->m_LaunchHeight);
 		/// Launch on frame
-		this->OnLaunch().on_next(nullptr);
-	});
-	///========================
-	/// PointCloud flow in Task
-	///========================
-	m_Impl->m_PointCloudFlowIntSubj.get_observable().as_dynamic()
-		.subscribe([this](rt::PointCloudComp comp) 
-	{
-		/// push to point cloud array
-		m_Impl->m_PointCloudComps.emplace_back(comp);
-		/// attach to our top object
-		rt::MeshMappingSystem::AttachPointCloudToAcceleration(m_Impl->m_PointCloudComps.back(), m_Impl->m_AccelerationComp);
-		///
-		rt::MeshMappingSystem::SetCullingPlanePos(m_Impl->m_PointCloudComps.back(), 5.0f);
-		///
-		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelerationComp);
 		this->OnLaunch().on_next(nullptr);
 	});
 	///=============
@@ -163,6 +146,37 @@ void RayTracingModel::Init()
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
+	///================================
+	/// Mesh data flow in task
+	///================================
+	m_Impl->m_MeshDataFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](io::MeshData data) 
+	{
+		if (!data.HasFaces)
+		{
+			/// create a point cloud component
+			rt::PointCloudComp pcComp = rt::CreatePointCloudComponent();
+			rt::MeshMappingSystem::MapMeshDataToPointCloud(data, pcComp, m_Impl->m_ContextComp);
+			/// attach component to top level acceleration
+			rt::MeshMappingSystem::AttachPointCloudCompToTopLevelAcceleration(pcComp, m_Impl->m_AccelerationComp);
+			m_Impl->m_PointCloudComps.emplace_back(pcComp);
+			this->OnLaunch().on_next(nullptr);
+		}
+		else
+		{
+			/// triangle mesh
+			rt::TriangleMeshComp trComp = rt::CreateTriangleMeshComponent();
+			rt::MeshMappingSystem::MapMeshDataToTriangleMesh(data, trComp, m_Impl->m_ContextComp);
+			if (m_Impl->m_TriangleMeshComps.size() == 1)
+			{
+				rt::MeshMappingSystem::DetachTriangleMeshToTopLevelAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_AccelerationComp);
+				m_Impl->m_TriangleMeshComps.clear();
+			}
+			rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(trComp, m_Impl->m_AccelerationComp);
+			m_Impl->m_TriangleMeshComps.emplace_back(trComp);
+			this->OnLaunch().on_next(nullptr);
+		}
+	});
 }
 ///	\brief update the model
 ///	if the scene is valid it launches the context
@@ -191,12 +205,6 @@ rt::ContextComp& RayTracingModel::GetCtxComp()
 {
 	return m_Impl->m_ContextComp;
 }
-///	\brief load a 3D asset
-///	\param filepath the path to the file to load
-void RayTracingModel::LoadAsset(const std::string& filepath)
-{
-	//m_Impl->m_AssetLoadSystem->LoadAsset(filepath, m_Impl->m_ContextComp);
-}
 ///
 rxcpp::observable<BufferCPU<uchar4>> RayTracingModel::FrameFlowOut()
 {
@@ -205,16 +213,6 @@ rxcpp::observable<BufferCPU<uchar4>> RayTracingModel::FrameFlowOut()
 rxcpp::observer<uint2> fu::fusion::RayTracingModel::LaunchSizeFlowIn()
 {
 	return m_Impl->m_LaunchSizeFlowInSubj.get_subscriber().get_observer().as_dynamic();
-}
-
-rxcpp::observer<rt::TriangleMeshComp> fu::fusion::RayTracingModel::TriangleMeshCompFlowIn()
-{
-	return m_Impl->m_TriangleMeshFlowInSubj.get_subscriber().get_observer().as_dynamic();
-}
-
-rxcpp::observer<rt::PointCloudComp> fu::fusion::RayTracingModel::PointCloudFlowIn()
-{
-	return m_Impl->m_PointCloudFlowIntSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 rxcpp::observer<void*> fu::fusion::RayTracingModel::OnLaunch()
@@ -234,5 +232,11 @@ rxcpp::observer<float> fu::fusion::RayTracingModel::CullingPlanePositionFlowIn()
 {
 	return m_Impl->m_CullingPlanePositionFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
+
+rxcpp::observer<io::MeshData> fu::fusion::RayTracingModel::MeshDataFlowIn()
+{
+	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
 }	///	!namespace fusion
 }	///	!namespace fu

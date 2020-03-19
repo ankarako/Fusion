@@ -158,6 +158,7 @@ add_subdirectory("../Lib" FusionLib)
 target_link_libraries(Fusion PRIVATE FusionApplication)
 target_link_libraries(Fusion PRIVATE OptixRayTracer)
 target_link_libraries(Fusion PRIVATE FusionTranscoder)
+target_link_libraries(Fusion PRIVATE FusionIO)
 
 # Application module
 # add_subdirectory("../Application" ApplicationModule)

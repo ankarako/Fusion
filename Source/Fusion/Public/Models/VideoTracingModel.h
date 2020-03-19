@@ -4,6 +4,9 @@
 #include <Initializable.h>
 #include <Destroyable.h>
 #include <Buffer.h>
+#include <Components/TriangleMeshComp.h>
+#include <Components/ContextComp.h>
+#include <MeshData.h>
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
 #include <GL/gl3w.h>
@@ -31,8 +34,8 @@ public:
 	rxcpp::observable<output_frame_t>	FrameFlowOut();
 	///	\brief frame input
 	rxcpp::observer<input_frame_t>	FrameFlowIn();
-	///	\brief pixel buffer object flow in
-	rxcpp::observer<GLuint>			PboFlowIn();
+
+	rxcpp::observer<io::MeshData> MeshDataFlowIn();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

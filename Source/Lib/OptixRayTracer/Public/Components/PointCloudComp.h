@@ -13,6 +13,9 @@ struct PointCloudCompObj
 	optix::Geometry			Geometry;
 	optix::Material 		Material;
 	optix::GeometryInstance	GInstance;
+	optix::GeometryGroup	GGroup;
+	optix::Acceleration		Acceleration;
+	optix::Transform		Transform;
 	optix::Buffer			VertexBuffer;
 	optix::Buffer			NormalBuffer;
 	optix::Buffer			ColorBuffer;

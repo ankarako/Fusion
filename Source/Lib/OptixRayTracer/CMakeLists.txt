@@ -199,29 +199,20 @@ add_custom_command(TARGET CompilePtxSolidColorMissPTX POST_BUILD COMMAND ${CMAKE
 # tedious command to rename the generated ptx file
 set_target_properties(CompilePtxSolidColorMissPTX PROPERTIES FOLDER "CUDACustomTargets")
 # PointCloud
-cuda_compile_ptx(CompilePtxPointcloud "Private/Programs/PointCloud.cu")
-add_custom_target(CompilePtxCompilePtxPointcloudPTX ALL DEPENDS "${CompilePtxPointcloud}" "Private/Programs/PointCloud.cu" SOURCES "Private/Programs/PointCloud.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPointcloud} ${CUDA_GENERATED_OUTPUT_DIR}/PointCloud.ptx )
-add_custom_command(TARGET CompilePtxCompilePtxPointcloudPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPointcloud} ${CUDA_GENERATED_OUTPUT_DIR}/Pointcloud.ptx )
+cuda_compile_ptx(CompilePtxPointcloudColor "Private/Programs/PointCloudColor.cu")
+add_custom_target(CompilePtxCompilePtxPointcloudColorPTX ALL DEPENDS "${CompilePtxPointcloudColor}" "Private/Programs/PointCloudColor.cu" SOURCES "Private/Programs/PointCloudColor.cu")
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPointcloudColor} ${CUDA_GENERATED_OUTPUT_DIR}/PointCloudColor.ptx )
+add_custom_command(TARGET CompilePtxCompilePtxPointcloudColorPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPointcloudColor} ${CUDA_GENERATED_OUTPUT_DIR}/PointcloudColor.ptx )
 # tedious command to rename the generated ptx file
-set_target_properties(CompilePtxCompilePtxPointcloudPTX PROPERTIES FOLDER "CUDACustomTargets")
-#######
-# PLOG
-#######
-target_include_directories(OptixRayTracer PRIVATE "${3rdPartyPath}/plog/include")
-#########
-# Tinyply
-#########
-add_subdirectory("${3rdPartyPath}/tinyply" tinyply)
-target_link_libraries(OptixRayTracer tinyply)
-set_target_properties(tinyply PROPERTIES FOLDER "3rdParty")
-################
-# TinyOBJLoader
-################
-add_subdirectory("${3rdPartyPath}/tinyobjloader" tinyobjloader)
-target_link_libraries(OptixRayTracer tinyobjloader)
-set_target_properties(tinyobjloader PROPERTIES FOLDER "3rdParty")
-set_target_properties(example PROPERTIES FOLDER "3rdParty")
+set_target_properties(CompilePtxCompilePtxPointcloudColorPTX PROPERTIES FOLDER "CUDACustomTargets")
+# Solid Color hitgroup
+cuda_compile_ptx(CompilePtxSolidColorHitGroup "Private/Programs/SolidColorHitGroup.cu")
+add_custom_target(CompilePtxSolidColorHitGroupPTX ALL DEPENDS "${CompilePtxSolidColorHitGroup}" "Private/Programs/SolidColorHitGroup.cu" SOURCES "Private/Programs/SolidColorHitGroup.cu")
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorHitGroup.ptx )
+add_custom_command(TARGET CompilePtxSolidColorHitGroupPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorHitGroup.ptx )
+# tedious command to rename the generated ptx file
+set_target_properties(CompilePtxSolidColorHitGroupPTX PROPERTIES FOLDER "CUDACustomTargets")
+
 ########
 # RxCpp
 ########
@@ -232,11 +223,11 @@ target_include_directories(OptixRayTracer PRIVATE "${3rdPartyPath}/rxcpp/Rx/v2/s
 #########
 # include dir suffices
 target_include_directories(OptixRayTracer PRIVATE "${3rdPartyPath}/spimpl")
-#########
-# Common
-#########
-# FIXME: we need Buffer to work like humans
-# target_link_libraries(OptixRayTracer PRIVATE Common)
+#######
+# PLOG
+#######
+target_include_directories(OptixRayTracer PRIVATE "${3rdPartyPath}/plog/include")
+
 ##########################
 # Copy files to resources
 ##########################

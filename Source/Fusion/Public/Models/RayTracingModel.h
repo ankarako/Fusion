@@ -8,6 +8,7 @@
 #include <Components/ContextComp.h>
 #include <Components/TriangleMeshComp.h>
 #include <Components/PointCloudComp.h>
+#include <MeshData.h>
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
 #include <string>
@@ -30,21 +31,17 @@ public:
 	void Update() override;
 	///	\brief destroy the model
 	void Destroy() override;
-	///	\brief load a 3D asset
-	///	\param filepath the path to the file to load
-	void LoadAsset(const std::string& filepath);
 	///
 	void SetIsValid(bool val);
 	bool GetIsValid() const;
 	rt::ContextComp& GetCtxComp();
 	///
-	rxcpp::observer<uint2>					LaunchSizeFlowIn();
-	rxcpp::observer<rt::TriangleMeshComp>	TriangleMeshCompFlowIn();
-	rxcpp::observer<void*>					OnLaunch();
-	rxcpp::observer<rt::PointCloudComp>		PointCloudFlowIn();
-	rxcpp::observer<mat_t>				CameraRotationTransformFlowIn();
-	rxcpp::observer<vec_t>				CameraTranslationFlowIn();
-	rxcpp::observer<float>				CullingPlanePositionFlowIn();
+	rxcpp::observer<uint2>			LaunchSizeFlowIn();
+	rxcpp::observer<void*>			OnLaunch();
+	rxcpp::observer<mat_t>			CameraRotationTransformFlowIn();
+	rxcpp::observer<vec_t>			CameraTranslationFlowIn();
+	rxcpp::observer<float>			CullingPlanePositionFlowIn();
+	rxcpp::observer<io::MeshData>	MeshDataFlowIn();
 	///
 	rxcpp::observable<BufferCPU<uchar4>> FrameFlowOut();
 private:

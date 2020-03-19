@@ -9,13 +9,11 @@
 #include <Systems/RaygenSystem.h>
 #include <Systems/LaunchSystem.h>
 #include <Systems/MeshMappingSystem.h>
-#include <GL/gl3w.h>
 #include <plog/Log.h>
 
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/imgproc.hpp>
-#include <opencv2/video.hpp>
+#include <Core/AssetTypeResolver.h>
+#include <LoadObj.h>
+#include <LoadPly.h>
 
 #include <vector>
 
@@ -44,13 +42,13 @@ struct VideoTracingModel::Impl
 	/// the context launch size
 	uint2 m_LaunchSize;
 	/// frame size flow in
-	rxcpp::subjects::subject<uint2>			m_FrameSizeFlowInSubj;
-	/// gl pixel buffer flow in
-	rxcpp::subjects::subject<GLuint>		m_PboFlowInSubj;
+	rxcpp::subjects::subject<uint2>				m_FrameSizeFlowInSubj;
 	///frame output
 	rxcpp::subjects::subject<output_frame_t>	m_FrameFlowOutSubj;
 	///	frame input
 	rxcpp::subjects::subject<input_frame_t>		m_FrameFlowinSubj;
+	///
+	rxcpp::subjects::subject<io::MeshData>		m_MeshDataFlowInSubj;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -85,8 +83,10 @@ void VideoTracingModel::Init()
 	rt::MeshMappingSystem::NullInitializeAcceleration(m_Impl->m_AccelrationComp, m_Impl->m_ContextComp);
 	/// attach triangle mesh component to acceleration
 	rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_AccelrationComp);
-	/// frame size flow int task
+	///==========================
+	/// frame size flow in task
 	/// create the raygen program
+	///==========================
 	m_Impl->m_FrameSizeFlowInSubj.get_observable()
 		.subscribe([this](uint2 size) 
 	{
@@ -98,14 +98,9 @@ void VideoTracingModel::Init()
 		/// create our frame buffer
 		m_Impl->m_FrameBuffer = CreateBufferCPU<uchar4>(size.x * size.y);
 	});
-
-	m_Impl->m_PboFlowInSubj.get_observable()
-		.subscribe([this](GLuint pbohandle) 
-	{
-		//rt::RaygenSystem::Create360RaygenProgWithPBO(m_Impl->m_360RaygenComp, m_Impl->m_ContextComp, m_Impl->m_LaunchSize, pbohandle);
-	});
-	
-
+	///====================
+	///	Frame Flow in Task
+	///====================
 	m_Impl->m_FrameFlowinSubj.get_observable()
 		.subscribe([this](BufferCPU<uchar4>& frame) 
 	{
@@ -116,6 +111,27 @@ void VideoTracingModel::Init()
 		/// send frame to output
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
+	///=======================
+	///	Mesh data floe in Task
+	///========================
+	m_Impl->m_MeshDataFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](io::MeshData data) 
+	{
+		
+	}, [this](std::exception_ptr exptr) 
+	{
+		if (exptr)
+		{
+			try
+			{
+				std::rethrow_exception(exptr);
+			}
+			catch (std::exception & ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
+	});
 }
 /// \brief destroy the model
 ///	destroys whatever needs to be destroyed
@@ -124,6 +140,7 @@ void VideoTracingModel::Destroy()
 	/// destroy the ray tracing context component
 	rt::CreateContextSystem::DestroyContext(m_Impl->m_ContextComp);
 }
+
 rxcpp::observer<uint2> VideoTracingModel::FrameSizeFlowIn()
 {
 	return m_Impl->m_FrameSizeFlowInSubj.get_subscriber().get_observer().as_dynamic();
@@ -138,9 +155,10 @@ rxcpp::observer<VideoTracingModel::input_frame_t> fu::fusion::VideoTracingModel:
 {
 	return m_Impl->m_FrameFlowinSubj.get_subscriber().get_observer().as_dynamic();
 }
-rxcpp::observer<GLuint> fu::fusion::VideoTracingModel::PboFlowIn()
+
+rxcpp::observer<io::MeshData> fu::fusion::VideoTracingModel::MeshDataFlowIn()
 {
-	return m_Impl->m_PboFlowInSubj.get_subscriber().get_observer().as_dynamic();
+	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

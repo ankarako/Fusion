@@ -27,6 +27,7 @@
 #include <Models/RayTracingModel.h>
 #include <Models/ProjectModel.h>
 #include <Models/DepthEstimationModel.h>
+#include <Models/AssetLoadingModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -41,8 +42,6 @@
 #include <Views/RayTracingView.h>
 #include <Views/DepthEstimationSettingsView.h>
 #include <Views/RayTracingControlView.h>
-/// Asset Loading System
-#include <Systems/AssetLoadingSystem.h>
 
 namespace fu {
 namespace fusion {

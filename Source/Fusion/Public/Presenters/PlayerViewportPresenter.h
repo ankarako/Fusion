@@ -16,6 +16,8 @@ class PlayerViewportView;
 class PlayerModel;
 class VideoTracingModel;
 class Coordination;
+class FileExplorerView;
+class AssetLoadingModel;
 ///	\class PlayerViewportPresenter
 ///	\brief presents the video frames
 class PlayerViewportPresenter : public app::Initializable
@@ -26,8 +28,17 @@ public:
 	using wrepo_ptr_t			= std::shared_ptr<app::WidgetRepo>;
 	using tracer_model_ptr_t	= std::shared_ptr<VideoTracingModel>;
 	using coord_ptr_t			= std::shared_ptr<Coordination>;
+	using fexp_view_ptr_t		= std::shared_ptr<FileExplorerView>;
+	using asset_model_ptr_t		= std::shared_ptr<AssetLoadingModel>;
 	/// Construction
-	PlayerViewportPresenter(model_ptr_t model, view_ptr_t view, tracer_model_ptr_t tracer_model, wrepo_ptr_t wrepo, coord_ptr_t coord);
+	PlayerViewportPresenter(
+		model_ptr_t model, 
+		view_ptr_t view, 
+		tracer_model_ptr_t tracer_model, 
+		wrepo_ptr_t wrepo, 
+		coord_ptr_t coord,
+		fexp_view_ptr_t fexp_view,
+		asset_model_ptr_t asset_model);
 	void Init() override;
 private:
 	struct Impl;

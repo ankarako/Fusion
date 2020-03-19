@@ -13,7 +13,7 @@ struct AccelerationCompObj
 {
 	optix::Transform		Transform;
 	optix::Acceleration		Acceleration;
-	optix::GeometryGroup	GGroup;	
+	optix::Group			Group;	
 };	///	!struct MeshInstanceCompObj
 ///	\typedef MeshInstanceComp
 ///	\brief a reference counted MeshInstanceCompObj
