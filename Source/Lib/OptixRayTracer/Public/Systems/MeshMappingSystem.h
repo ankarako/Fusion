@@ -497,6 +497,11 @@ public:
 				attributes += "Texcoord";
 			}
 		}
+
+		if (attributes == "NoAttrib")
+		{
+			trComp->GInstance["solid_color"]->setFloat(optix::make_float3(0.5f, 0.5f, 0.5f));
+		}
 		/// select the appropriate programs
 		std::string intersect_ptx	= GetResourceFilepath(intersect, attributes);
 		std::string hitgroup_ptx	= GetResourceFilepath(intersect + "Hitgroup", attributes);
@@ -512,6 +517,7 @@ public:
 
 		trComp->Geometry->setIntersectionProgram(trComp->IntersectionProg);
 		trComp->Geometry->setBoundingBoxProgram(trComp->BoundingBoxProgram);
+		trComp->Geometry->setPrimitiveCount(data.TIndexBuffer->Count());
 		trComp->Material->setClosestHitProgram(0, trComp->ClosestHitProgram);
 		trComp->Material->setAnyHitProgram(0, trComp->AnyHitProgram);
 		trComp->GInstance->setGeometry(trComp->Geometry);
@@ -532,6 +538,11 @@ public:
 	{
 		accelComp->Group->removeChild(trComp->GGroup);
 		accelComp->Acceleration->markDirty();
+	}
+
+	static void SetPointcloudCompPointSize(PointCloudComp& pcComp, float size)
+	{
+		pcComp->GInstance["radius"]->setFloat(size);
 	}
 private:
 	static constexpr const char* k_TriangleMeshPTxFilepath			= "FusionLib/Resources/Programs/TriangleMesh.ptx";

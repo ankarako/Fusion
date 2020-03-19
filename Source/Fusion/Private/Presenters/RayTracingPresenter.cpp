@@ -154,6 +154,10 @@ void RayTracingPresenter::Init()
 
 	m_Impl->m_RayControlView->OnCullingPlanePositionChanged()
 		.subscribe(m_Impl->m_Model->CullingPlanePositionFlowIn());
+
+	/// 
+	m_Impl->m_RayControlView->OnPclSizeChanged()
+		.subscribe(m_Impl->m_Model->PointcloudPointSizeFlowIn());
 	/// activate 3D viewport
 	m_Impl->m_View->Activate();
 }

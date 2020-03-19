@@ -45,6 +45,8 @@ PlayerControllerView::PlayerControllerView(fman_ptr_t fman)
 void PlayerControllerView::Render()
 {
 	bool isActive = this->IsActive();
+	if (!isActive)
+		return;
 
 	bool checkPlayButton =
 		m_Impl->m_State == Impl::ControllerState::Idle		||

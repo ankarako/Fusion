@@ -4,6 +4,7 @@
 #include <Initializable.h>
 #include <Destroyable.h>
 #include <Buffer.h>
+#include <Core/SequenceItem.h>
 #include <spimpl.h>
 #include <string>
 #include <rxcpp/rx.hpp>
@@ -72,6 +73,8 @@ public:
 	rxcpp::observable<uint2> FrameSizeFlowOut();
 
 	rxcpp::observable<void*> OnVideoLoaded();
+
+	rxcpp::observable<SequenceItem> SequenceItemFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

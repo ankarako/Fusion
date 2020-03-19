@@ -48,6 +48,7 @@ struct RayTracingModel::Impl
 	rxcpp::subjects::subject<mat_t>					m_RotationTransgformRaygenFlowInSubj;
 	rxcpp::subjects::subject<vec_t>					m_TranslationRaygenFlowInSubj;
 	rxcpp::subjects::subject<float>					m_CullingPlanePositionFlowInSubj;
+	rxcpp::subjects::subject<float>					m_PclSizeFlowInSubj;
 	rxcpp::subjects::subject<io::MeshData>			m_MeshDataFlowInSubj;
 	/// Construction
 	Impl() { }
@@ -134,7 +135,9 @@ void RayTracingModel::Init()
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
-
+	///============================================
+	/// Point cloud culling plane position changed
+	///============================================
 	m_Impl->m_CullingPlanePositionFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](float cullPlanePos) 
 	{
@@ -146,6 +149,21 @@ void RayTracingModel::Init()
 		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
+	///================================
+	/// point cloud point size changed
+	///================================
+	m_Impl->m_PclSizeFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](float size) 
+	{
+		for (auto& pcomp : m_Impl->m_PointCloudComps)
+		{
+			rt::MeshMappingSystem::SetPointcloudCompPointSize(pcomp, size);
+		}
+		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchWidth, m_Impl->m_LaunchHeight, 0);
+		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_PinholeRaygenComp, m_Impl->m_FrameBuffer);
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+	});
+
 	///================================
 	/// Mesh data flow in task
 	///================================
@@ -236,6 +254,11 @@ rxcpp::observer<float> fu::fusion::RayTracingModel::CullingPlanePositionFlowIn()
 rxcpp::observer<io::MeshData> fu::fusion::RayTracingModel::MeshDataFlowIn()
 {
 	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<float> fu::fusion::RayTracingModel::PointcloudPointSizeFlowIn()
+{
+	return m_Impl->m_PclSizeFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 }	///	!namespace fusion

@@ -44,33 +44,95 @@ static MeshData LoadObj(const std::string& filepath)
 	LOG_DEBUG << "[attributes]";
 	LOG_DEBUG << "Number of vertices : " << (int)(attrib.vertices.size() / 3);
 	LOG_DEBUG << "Number of normals  : " << (int)(attrib.normals.size() / 3);
+	LOG_DEBUG << "Number of colors   : " << (int)(attrib.colors.size() / 3);
 	LOG_DEBUG << "Number of texcoords: " << (int)(attrib.texcoords.size() / 2);
 	LOG_DEBUG << "Number of materials: " << (int)(materials.size());
 	LOG_DEBUG << "Number of shapes   : " << (int)(shapes.size());
-	
-	///
+	for (int i = 0; i < shapes.size(); i++)
+	{
+		LOG_DEBUG << "Shape #" << i << ": ";
+		LOG_DEBUG << "\tIndices: " << shapes[i].mesh.indices.size() / 3;
+	}
+
+	std::vector<float3> vertices;
+	std::vector<float2> texcoords;
+	std::vector<float3> normals;
+	std::vector<uchar4> colors;
+	std::vector<uint3>	tindex;
+	int numFaces = 0;
+	int numVertices = 0;
+	float3 bboxMin{ 1.0e16, 1.0e16 , 1.0e16 };
+	float3 bboxMax{ -1.0e16, -1.0e16 , -1.0e16 };
+	for (auto& it = shapes.begin(); it != shapes.end(); it++)
+	{
+		const tinyobj::shape_t& shape = *it;
+		/// get the polygon type of the shape
+		for (uint64_t i = 0; i < shape.mesh.indices.size(); i++)
+		{
+			const int vIdx = shape.mesh.indices[i].vertex_index;
+			const float x = attrib.vertices[3 * vIdx + 0];
+			const float y = attrib.vertices[3 * vIdx + 1];
+			const float z = attrib.vertices[3 * vIdx + 2];
+
+			float3 vertex = make_float3(x, y, z);
+			bboxMax.x = std::max(bboxMax.x, vertex.x);
+			bboxMax.y = std::max(bboxMax.y, vertex.y);
+			bboxMax.z = std::max(bboxMax.z, vertex.z);
+			bboxMin.x = std::min(bboxMin.x, vertex.x);
+			bboxMin.y = std::min(bboxMin.y, vertex.y);
+			bboxMin.z = std::min(bboxMin.z, vertex.z);
+
+		}
+	}
+
+	/*///
 	if (shapes.size() > 1)
 	{
 		LOG_ERROR << "Currently single shape loading is supported";
 		return MeshData{};
 	}
+	MeshData data;
 	if (!attrib.vertices.empty())
 	{
+		int count = attrib.vertices.size() / 3;
 		int bsize = attrib.vertices.size() * sizeof(float);
-		
+		data.VertexBuffer = CreateBufferCPU<float3>(count);
+		std::memcpy(data.VertexBuffer->Data(), attrib.vertices.data(), bsize);
 	}
-	std::vector<unsigned int> face_indices;
-	for (int f = 0; f < shapes[0].mesh.indices.size(); f++)
+	if (!shapes[0].mesh.indices.empty())
 	{
-		face_indices.emplace_back(shapes[0].mesh.indices[f].vertex_index);
+		data.HasFaces = true;
+		int count = shapes[0].mesh.indices.size() / 3;
+		int bsize = shapes[0].mesh.indices.size() * sizeof(unsigned int);
+		data.TIndexBuffer = CreateBufferCPU<uint3>(count);
+		std::memcpy(data.TIndexBuffer->Data(), shapes[0].mesh.indices.data(), bsize);
 	}
-	if (!face_indices.empty())
+	if (!attrib.normals.empty())
 	{
-		int bsize = face_indices.size() * sizeof(unsigned int);
-		
+		data.HasNormals = true;
+		int count = attrib.normals.size() / 3;
+		int bsize = attrib.normals.size() * sizeof(float);
+		data.NormalBuffer = CreateBufferCPU<float3>(count);
+		std::memcpy(data.NormalBuffer->Data(), attrib.normals.data(), bsize);
 	}
-	bool hasnormals = false;
-	
+	if (!attrib.colors.empty())
+	{
+		data.HasColors = true;
+		int count = attrib.colors.size() / 3;
+		int bsize = attrib.colors.size() * sizeof(float);
+		/// convert colors to bytes
+		data.ColorBuffer = CreateBufferCPU<uchar4>(count);
+		std::memcpy(data.ColorBuffer->Data(), attrib.colors.data(), bsize);
+	}
+	if (!attrib.texcoords.empty())
+	{
+		data.HasTexcoords = true;
+		int count = attrib.texcoords.size() / 2;
+		int bsize = attrib.texcoords.size() * sizeof(float);
+		data.TexcoordBuffer = CreateBufferCPU<float2>(count);
+		std::memcpy(data.TexcoordBuffer->Data(), attrib.texcoords.data(), bsize);
+	}
+	return data;*/
 }
 }	///	!namespace io
 }	///	!namespace fu

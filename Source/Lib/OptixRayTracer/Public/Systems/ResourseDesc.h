@@ -28,11 +28,11 @@ static const ResourceDesc k_ResourceDesc =
 	/// TODO: Point cloud with normals
 	/// Triangle Meshes
 	{ { ResType::Filepath,		{"TriangleMesh",				"NoAttrib" }},	"FusionLib/Resources/Programs/TriangleMesh.ptx" },
-	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"NoAttrib" }},	"FusionLib/Resources/Programs/SolidColor.ptx" },
+	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"NoAttrib" }},	"FusionLib/Resources/Programs/SolidColorHitGroup.ptx" },
 	{ { ResType::ProgramName,	{"TriangleMeshIntersection",	"NoAttrib" }}, 	"triangle_mesh_intersect" },
-	{ { ResType::ProgramName,	{"TriangleMesgBoundingBox",		"NoAttrib" }}, 	"triangle_mesh_bounds" },
+	{ { ResType::ProgramName,	{"TriangleMeshBoundingBox",		"NoAttrib" }}, 	"triangle_mesh_bounds" },
 	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"NoAttrib" }}, 	"solid_color_closest_hit" },
-	{ { ResType::ProgramName,	{"TraingleMeshAnyHit",			"NoAttrib" }}, 	"solid_color_any_hit" },
+	{ { ResType::ProgramName,	{"TriangleMeshAnyHit",			"NoAttrib" }}, 	"solid_color_any_hit" },
 	/// Triangle meshes with normals
 	{ { ResType::Filepath,		{"TriangleMesh",				"Normals" }},	"FusionLib/Resources/Programs/TriangleMesh.ptx" },
 	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"Normals" }},	"FusionLib/Resources/Programs/SolidColor.ptx" },

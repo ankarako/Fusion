@@ -62,6 +62,8 @@ struct PlayerModel::Impl
 	rxcpp::subjects::subject<void*>		m_StartPrefetchEventSubj;
 
 	rxcpp::subjects::subject<void*>		m_OnVideoLoadedSubj;
+
+	rxcpp::subjects::subject<SequenceItem> m_SequenceItemFlowOutSubj;
 	/// Construction
 	/// \brief default constructor
 	///	does nothing
@@ -174,6 +176,9 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	/// start prefetching
 	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 	m_Impl->m_OnVideoLoadedSubj.get_subscriber().on_next(nullptr);
+
+	SequenceItem item{ SequenceItemType::Video, 0, m_Impl->m_DecodingNode->GetFrameCount(), false, m_Impl->m_DecodingNode->GetFrameCount() };
+	m_Impl->m_SequenceItemFlowOutSubj.get_subscriber().on_next(item);
 }
 ///	\brief start playback
 void PlayerModel::Start()
@@ -410,6 +415,11 @@ rxcpp::observable<uint2> fu::fusion::PlayerModel::FrameSizeFlowOut()
 rxcpp::observable<void*> fu::fusion::PlayerModel::OnVideoLoaded()
 {
 	return	m_Impl->m_OnVideoLoadedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<SequenceItem> fu::fusion::PlayerModel::SequenceItemFlowOut()
+{
+	return m_Impl->m_SequenceItemFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

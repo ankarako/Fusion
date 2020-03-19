@@ -28,12 +28,14 @@
 #include <Models/ProjectModel.h>
 #include <Models/DepthEstimationModel.h>
 #include <Models/AssetLoadingModel.h>
+#include <Models/SequencerModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
 #include <Presenters/FileExplorerPresenter.h>
 #include <Presenters/MainToolbarPresenter.h>
 #include <Presenters/RayTracingPresenter.h>
+#include <Presenters/SequencerPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -42,6 +44,7 @@
 #include <Views/RayTracingView.h>
 #include <Views/DepthEstimationSettingsView.h>
 #include <Views/RayTracingControlView.h>
+#include <Views/SequencerView.h>
 
 namespace fu {
 namespace fusion {
@@ -69,7 +72,9 @@ namespace di {
 			RayTracingModel,
 			RayTracingView,
 			ProjectModel,
-			DepthEstimationModel
+			DepthEstimationModel,
+			SequencerModel,
+			SequencerPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,
@@ -86,7 +91,14 @@ namespace di {
 			app::WidgetRepo
 			>(),
 			boost::di::bind<app::Widget * []>().to<
-			PlayerControllerView
+			PlayerControllerView,
+			PlayerViewportView,
+			FileExplorerView,
+			MainToolbarView,
+			RayTracingView,
+			DepthEstimationSettingsView,
+			RayTracingControlView,
+			SequencerView
 			>(),
 			boost::di::bind<Settings<WriterType::File>>().to<SettingsRepo>()
 		);

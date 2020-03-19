@@ -10,6 +10,7 @@
 #include <ImGuiOpenGLRenderer.h>
 #include <InputManager.h>
 #include <plog/Log.h>
+#include <ImSequencer.h>
 
 namespace fu {
 namespace app {
@@ -117,6 +118,7 @@ void ImGuiWindow::Render()
 	m_Impl->m_GLRenderer.NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+	
 
 	int displayW, displayH;
 	glfwGetFramebufferSize(m_Impl->m_Window, &displayW, &displayH);

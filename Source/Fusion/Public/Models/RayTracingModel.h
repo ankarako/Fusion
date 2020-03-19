@@ -41,6 +41,7 @@ public:
 	rxcpp::observer<mat_t>			CameraRotationTransformFlowIn();
 	rxcpp::observer<vec_t>			CameraTranslationFlowIn();
 	rxcpp::observer<float>			CullingPlanePositionFlowIn();
+	rxcpp::observer<float>			PointcloudPointSizeFlowIn();
 	rxcpp::observer<io::MeshData>	MeshDataFlowIn();
 	///
 	rxcpp::observable<BufferCPU<uchar4>> FrameFlowOut();

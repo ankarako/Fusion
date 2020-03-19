@@ -39,7 +39,9 @@ add_subdirectory("VideoTranscoder")
 add_subdirectory("OptixRayTracer")
 add_subdirectory("IO")
 
+
 cmake_policy(SET CMP0079 NEW)
+target_link_libraries(FusionApplication ImGuizmo)
 target_link_libraries(FusionTranscoder Common)
 target_link_libraries(OptixRayTracer Common)
 target_link_libraries(FusionIO Common)
