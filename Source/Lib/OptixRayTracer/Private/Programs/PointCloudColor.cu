@@ -91,5 +91,5 @@ RT_PROGRAM void pointcloud_closest_hit()
 ///====================
 RT_PROGRAM void pointcloud_any_hit()
 {
-	rtTerminateRay();
+	// rtTerminateRay();
 }

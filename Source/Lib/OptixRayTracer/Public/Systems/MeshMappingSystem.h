@@ -45,6 +45,7 @@ public:
 		trComp->Transform = ctxComp->Context->createTransform();
 		trComp->VertexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3);
 		trComp->NormalBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3);
+		trComp->ColorsBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4);
 		trComp->TIndexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_INT3);
 		trComp->TexCoordBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_INT2);
 		trComp->MaterialBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_INT);
@@ -67,6 +68,7 @@ public:
 		trComp->GInstance["vertex_buffer"]->setBuffer(trComp->VertexBuffer);
 		trComp->GInstance["normal_buffer"]->setBuffer(trComp->NormalBuffer);
 		trComp->GInstance["tindex_buffer"]->setBuffer(trComp->TIndexBuffer);
+		trComp->GInstance["color_buffer"]->setBuffer(trComp->ColorsBuffer);
 		trComp->GInstance["texcoord_buffer"]->setBuffer(trComp->TexCoordBuffer);
 		trComp->GInstance["material_buffer"]->setBuffer(trComp->MaterialBuffer);
 		trComp->BBox = optix::Aabb(optix::make_float3(1.e16f, 1.e16f, 1.e16f), optix::make_float3(-1.e16f, -1.e16f, -1.e16f));
@@ -329,22 +331,22 @@ public:
 		///=================
 		/// we expect that every piece of mesh data has vertices
 		{
-			int count = data.VertexBuffer->Count();
-			int bsize = data.VertexBuffer->ByteSize();
+			int count = data->VertexBuffer->Count();
+			int bsize = data->VertexBuffer->ByteSize();
 			pcComp->VertexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
-			std::memcpy(pcComp->VertexBuffer->map(), data.VertexBuffer->Data(), bsize);
+			std::memcpy(pcComp->VertexBuffer->map(), data->VertexBuffer->Data(), bsize);
 			pcComp->VertexBuffer->unmap();
 			pcComp->GInstance["vertex_positions"]->setBuffer(pcComp->VertexBuffer);
 		}
 		std::string intersect = "Pointcloud";
 		std::string attributes = "NoAttrib";
 		/// let's see about normals
-		if (data.HasNormals)
+		if (data->HasNormals)
 		{
-			int count = data.NormalBuffer->Count();
-			int bsize = data.NormalBuffer->ByteSize();
+			int count = data->NormalBuffer->Count();
+			int bsize = data->NormalBuffer->ByteSize();
 			pcComp->NormalBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
-			std::memcpy(pcComp->NormalBuffer->map(), data.NormalBuffer->Data(), bsize);
+			std::memcpy(pcComp->NormalBuffer->map(), data->NormalBuffer->Data(), bsize);
 			pcComp->NormalBuffer->unmap();
 			pcComp->GInstance["normal_buffer"]->setBuffer(pcComp->NormalBuffer);
 			if (attributes == "NoAttrib")
@@ -357,12 +359,12 @@ public:
 			}
 			
 		}
-		if (data.HasColors)
+		if (data->HasColors)
 		{
-			int count = data.ColorBuffer->Count();
-			int bsize = data.ColorBuffer->ByteSize();
+			int count = data->ColorBuffer->Count();
+			int bsize = data->ColorBuffer->ByteSize();
 			pcComp->ColorBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, count);
-			std::memcpy(pcComp->ColorBuffer->map(), data.ColorBuffer->Data(), bsize);
+			std::memcpy(pcComp->ColorBuffer->map(), data->ColorBuffer->Data(), bsize);
 			pcComp->ColorBuffer->unmap();
 			pcComp->GInstance["vertex_colors"]->setBuffer(pcComp->ColorBuffer);
 			if (attributes == "NoAttrib")
@@ -391,7 +393,7 @@ public:
 		pcComp->AnyHitProgram		= ctxComp->Context->createProgramFromPTXFile(ptxFilepath, any);
 		pcComp->Geometry->setIntersectionProgram(pcComp->IntersectionProg);
 		pcComp->Geometry->setBoundingBoxProgram(pcComp->BoundingBoxProgram);
-		pcComp->Geometry->setPrimitiveCount(data.VertexBuffer->Count());
+		pcComp->Geometry->setPrimitiveCount(data->VertexBuffer->Count());
 		pcComp->Material->setClosestHitProgram(0, pcComp->ClosestHitProgram);
 		pcComp->Material->setAnyHitProgram(0, pcComp->AnyHitProgram);
 		pcComp->GInstance->setGeometry(pcComp->Geometry);
@@ -429,48 +431,52 @@ public:
 		std::string attributes = "NoAttrib";
 		/// we expect that every piece of mesh data has vertices
 		{
-			int count = data.VertexBuffer->Count();
-			int bsize = data.VertexBuffer->ByteSize();
+			int count = data->VertexBuffer->Count();
+			int bsize = data->VertexBuffer->ByteSize();
 			trComp->VertexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
-			std::memcpy(trComp->VertexBuffer->map(), data.VertexBuffer->Data(), bsize);
+			std::memcpy(trComp->VertexBuffer->map(), data->VertexBuffer->Data(), bsize);
 			trComp->VertexBuffer->unmap();
 			trComp->GInstance["vertex_buffer"]->setBuffer(trComp->VertexBuffer);
 		}
 		/// here we expect that mesh data always carry faces
 		{
-			int count = data.TIndexBuffer->Count();
-			int bsize = data.TIndexBuffer->ByteSize();
+			int count = data->TIndexBuffer->Count();
+			int bsize = data->TIndexBuffer->ByteSize();
 			trComp->TIndexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_INT3, count);
-			std::memcpy(trComp->TIndexBuffer->map(), data.TIndexBuffer->Data(), bsize);
+			std::memcpy(trComp->TIndexBuffer->map(), data->TIndexBuffer->Data(), bsize);
 			trComp->TIndexBuffer->unmap();
 			trComp->GInstance["tindex_buffer"]->setBuffer(trComp->TIndexBuffer);
 		}
-		if (data.HasNormals)
+		if (data->HasNormals)
 		{
-			int count = data.NormalBuffer->Count();
-			int bsize = data.NormalBuffer->ByteSize();
+			int count = data->NormalBuffer->Count();
+			int bsize = data->NormalBuffer->ByteSize();
 			trComp->NormalBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
-			std::memcpy(trComp->NormalBuffer->map(), data.VertexBuffer->Data(), bsize);
+			std::memcpy(trComp->NormalBuffer->map(), data->VertexBuffer->Data(), bsize);
 			trComp->NormalBuffer->unmap();
 			trComp->GInstance["normal_buffer"]->setBuffer(trComp->NormalBuffer);
 			if (attributes == "NoAttrib")
 			{
-				attributes = "Normal";
+				attributes = "Normals";
 			}
 			else
 			{
-				attributes += "Normal";
+				attributes += "Normals";
 			}
-
 		}
-		if (data.HasColors)
+		else
 		{
-			int count = data.ColorBuffer->Count();
-			int bsize = data.ColorBuffer->ByteSize();
+			trComp->NormalBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, 0);
+			trComp->GInstance["normal_buffer"]->setBuffer(trComp->NormalBuffer);
+		}
+		if (data->HasColors)
+		{
+			int count = data->ColorBuffer->Count();
+			int bsize = data->ColorBuffer->ByteSize();
 			trComp->ColorsBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, count);
-			std::memcpy(trComp->ColorsBuffer->map(), data.ColorBuffer->Data(), bsize);
+			std::memcpy(trComp->ColorsBuffer->map(), data->ColorBuffer->Data(), bsize);
 			trComp->ColorsBuffer->unmap();
-			trComp->GInstance["colors_buffer"]->setBuffer(trComp->ColorsBuffer);
+			trComp->GInstance["color_buffer"]->setBuffer(trComp->ColorsBuffer);
 			if (attributes == "NoAttrib")
 			{
 				attributes = "Color";
@@ -480,12 +486,17 @@ public:
 				attributes += "Color";
 			}
 		}
-		if (data.HasTexcoords)
+		else
 		{
-			int count = data.TexcoordBuffer->Count();
-			int bsize = data.TexcoordBuffer->ByteSize();
+			trComp->ColorsBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, 0);
+			trComp->GInstance["color_buffer"]->setBuffer(trComp->ColorsBuffer);
+		}
+		if (data->HasTexcoords)
+		{
+			int count = data->TexcoordBuffer->Count();
+			int bsize = data->TexcoordBuffer->ByteSize();
 			trComp->TexCoordBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT2, count);
-			std::memcpy(trComp->TexCoordBuffer->map(), data.TexcoordBuffer->Data(), bsize);
+			std::memcpy(trComp->TexCoordBuffer->map(), data->TexcoordBuffer->Data(), bsize);
 			trComp->TexCoordBuffer->unmap();
 			trComp->GInstance["texcoord_buffer"]->setBuffer(trComp->TexCoordBuffer);
 			if (attributes == "NoAttrib")
@@ -497,7 +508,11 @@ public:
 				attributes += "Texcoord";
 			}
 		}
-
+		else
+		{
+			trComp->TexCoordBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT2, 0);
+			trComp->GInstance["texcoord_buffer"]->setBuffer(trComp->TexCoordBuffer);
+		}
 		if (attributes == "NoAttrib")
 		{
 			trComp->GInstance["solid_color"]->setFloat(optix::make_float3(0.5f, 0.5f, 0.5f));
@@ -517,7 +532,7 @@ public:
 
 		trComp->Geometry->setIntersectionProgram(trComp->IntersectionProg);
 		trComp->Geometry->setBoundingBoxProgram(trComp->BoundingBoxProgram);
-		trComp->Geometry->setPrimitiveCount(data.TIndexBuffer->Count());
+		trComp->Geometry->setPrimitiveCount(data->TIndexBuffer->Count());
 		trComp->Material->setClosestHitProgram(0, trComp->ClosestHitProgram);
 		trComp->Material->setAnyHitProgram(0, trComp->AnyHitProgram);
 		trComp->GInstance->setGeometry(trComp->Geometry);

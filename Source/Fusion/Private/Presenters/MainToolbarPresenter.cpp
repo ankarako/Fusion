@@ -8,6 +8,7 @@
 #include <Models/PlayerModel.h>
 #include <Core/Coordination.h>
 #include <Views/RayTracingControlView.h>
+#include <Models/PerfcapPlayerModel.h>
 
 namespace fu {
 namespace fusion {
@@ -24,9 +25,10 @@ struct MainToolbarPresenter::Impl
 	dest_model_ptr_t	m_DepthEstModel;
 	coord_ptr_t			m_Coord;
 	rt_ctrl_view_ptr_t	m_RayControlView;
+	perfcap_model_ptr_t	m_PerfcapModel;
 
-	Impl(player_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo, prj_model_ptr_t prj_model, dest_set_view_ptr_t dest_view, dest_model_ptr_t dest_model, coord_ptr_t coord, rt_ctrl_view_ptr_t rt_ctrl_view)
-		: m_View(view), m_FexpView(fexp_view), m_Wrepo(wrepo), m_PlayerModel(decoder_model), m_ProjectModel(prj_model), m_DepthEstSetView(dest_view), m_DepthEstModel(dest_model), m_Coord(coord), m_RayControlView(rt_ctrl_view)
+	Impl(player_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo, prj_model_ptr_t prj_model, dest_set_view_ptr_t dest_view, dest_model_ptr_t dest_model, coord_ptr_t coord, rt_ctrl_view_ptr_t rt_ctrl_view, perfcap_model_ptr_t perfcap_model)
+		: m_View(view), m_FexpView(fexp_view), m_Wrepo(wrepo), m_PlayerModel(decoder_model), m_ProjectModel(prj_model), m_DepthEstSetView(dest_view), m_DepthEstModel(dest_model), m_Coord(coord), m_RayControlView(rt_ctrl_view), m_PerfcapModel(perfcap_model)
 	{ }
 };	///	!struct Impl
 ///	Construction
@@ -39,8 +41,9 @@ MainToolbarPresenter::MainToolbarPresenter(
 	dest_set_view_ptr_t dest_view,
 	dest_model_ptr_t	dest_model,
 	coord_ptr_t			coord,
-	rt_ctrl_view_ptr_t	rt_ctrl_view)
-	: m_Impl(spimpl::make_unique_impl<Impl>(dec_model, view, fexp_view, wrepo, prj_model, dest_view, dest_model, coord, rt_ctrl_view))
+	rt_ctrl_view_ptr_t	rt_ctrl_view,
+	perfcap_model_ptr_t perfcap_model)
+	: m_Impl(spimpl::make_unique_impl<Impl>(dec_model, view, fexp_view, wrepo, prj_model, dest_view, dest_model, coord, rt_ctrl_view, perfcap_model))
 { }
 ///	\brief Initialization
 void MainToolbarPresenter::Init()
@@ -86,25 +89,11 @@ void MainToolbarPresenter::Init()
 		m_Impl->m_FexpView->Activate();
 	});
 
-	//m_Impl->m_View->OnFileMenu_SaveProjectClicked().subscribe(
-	//	[this](auto _) 
-	//{
-	//	m_Impl->m_FexpView->SetMode(FileExplorerMode::SaveProject);
-	//	m_Impl->m_FexpView->Activate();
-	//});
-
 	m_Impl->m_View->OnFileMenu_SaveProjectClicked()
 		.subscribe([this](auto _) 
 	{
 		m_Impl->m_ProjectModel->Save();
 	});
-
-	//m_Impl->m_FexpView->OpenProjectFileFlowOut()
-	//	.subscribe([this](const DirEntry& entry) 
-	//{
-	//	m_Impl->m_ProjectModel->LoadProject(entry.AbsPath);
-	//});
-
 
 	m_Impl->m_View->OnActivated()
 		.subscribe([this](auto _)
@@ -148,7 +137,6 @@ void MainToolbarPresenter::Init()
 	{
 		m_Impl->m_DepthEstSetView->Deactivate();
 		/// send buffer to depth est model ->
-		//m_Impl->m_PlayerModel->
 		uint2 framesize = m_Impl->m_PlayerModel->GetFrameSize();
 		BufferCPU<uchar4> curFrame = m_Impl->m_PlayerModel->GetCurrentFrame();
 		auto sizeFramePair = std::make_pair(framesize, curFrame);
@@ -165,9 +153,18 @@ void MainToolbarPresenter::Init()
 		else
 		{
 			m_Impl->m_RayControlView->Activate();
-		}
-			
+		}	
 	});
+
+	m_Impl->m_View->OnFileMenu_OpenPerfcapFileClicked()
+		.subscribe([this](auto _) 
+	{
+		m_Impl->m_FexpView->SetMode(FileExplorerMode::OpenPerfcapFile);
+		m_Impl->m_FexpView->Activate();
+	});
+
+	m_Impl->m_FexpView->OpenPerfcapFileFlowOut()
+		.subscribe(m_Impl->m_PerfcapModel->PerfcapFilepathFlowIn());
 
 	m_Impl->m_View->Activate();
 }

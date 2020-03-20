@@ -15,6 +15,7 @@ struct MainToolbarView::Impl
 	rxcpp::subjects::subject<void*> FileMenu_SaveProjectClickedSubj;
 	rxcpp::subjects::subject<void*> FileMenu_OpenVideoFileClickedSubj;
 	rxcpp::subjects::subject<void*> FileMenu_Open3DFileClickedSubj;
+	rxcpp::subjects::subject<void*> FileMenu_OpenPerfcapFileClickedSubj;
 
 	rxcpp::subjects::subject<void*> FiltersMenu_ClickedSubj;
 	rxcpp::subjects::subject<void*> FiltersMenu_EstimateDepthClickedSubj;
@@ -60,6 +61,10 @@ void MainToolbarView::Render()
 			if (ImGui::MenuItem("Import 3D File"))
 			{
 				m_Impl->FileMenu_Open3DFileClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			if (ImGui::MenuItem("Import Perfcap File"))
+			{
+				m_Impl->FileMenu_OpenPerfcapFileClickedSubj.get_subscriber().on_next(nullptr);
 			}
 			ImGui::EndMenu();
 		}
@@ -120,6 +125,11 @@ rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFiltersMenu_EstimateDept
 rxcpp::observable<void*> MainToolbarView::OnWindowsMenu_RayTracingControlClicked()
 {
 	return m_Impl->WindowsMenu_RayTracingControlClickedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFileMenu_OpenPerfcapFileClicked()
+{
+	return m_Impl->FileMenu_OpenPerfcapFileClickedSubj.get_observable().as_dynamic();
 }
 
 }	///	!namespce fusion

@@ -117,7 +117,24 @@ void VideoTracingModel::Init()
 	m_Impl->m_MeshDataFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](io::MeshData data) 
 	{
-		
+		if (data->HasFaces)
+		{
+			/// triangle mesh
+			rt::TriangleMeshComp trComp = rt::CreateTriangleMeshComponent();
+			rt::MeshMappingSystem::MapMeshDataToTriangleMesh(data, trComp, m_Impl->m_ContextComp);
+			if (m_Impl->m_TriangleMeshComps.size() == 1)
+			{
+				rt::MeshMappingSystem::DetachTriangleMeshToTopLevelAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_AccelrationComp);
+				m_Impl->m_TriangleMeshComps.clear();
+			}
+			rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(trComp, m_Impl->m_AccelrationComp);
+			m_Impl->m_TriangleMeshComps.emplace_back(trComp);
+			rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
+			/// copy output buffer
+			rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
+			/// send frame to output
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+		}
 	}, [this](std::exception_ptr exptr) 
 	{
 		if (exptr)

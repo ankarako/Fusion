@@ -28,18 +28,25 @@ static const ResourceDesc k_ResourceDesc =
 	/// TODO: Point cloud with normals
 	/// Triangle Meshes
 	{ { ResType::Filepath,		{"TriangleMesh",				"NoAttrib" }},	"FusionLib/Resources/Programs/TriangleMesh.ptx" },
-	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"NoAttrib" }},	"FusionLib/Resources/Programs/SolidColorHitGroup.ptx" },
+	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"NoAttrib" }},	"FusionLib/Resources/Programs/TriangleColorHitGroup.ptx" },
 	{ { ResType::ProgramName,	{"TriangleMeshIntersection",	"NoAttrib" }}, 	"triangle_mesh_intersect" },
 	{ { ResType::ProgramName,	{"TriangleMeshBoundingBox",		"NoAttrib" }}, 	"triangle_mesh_bounds" },
-	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"NoAttrib" }}, 	"solid_color_closest_hit" },
-	{ { ResType::ProgramName,	{"TriangleMeshAnyHit",			"NoAttrib" }}, 	"solid_color_any_hit" },
+	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"NoAttrib" }}, 	"closest_hit_radiance" },
+	{ { ResType::ProgramName,	{"TriangleMeshAnyHit",			"NoAttrib" }}, 	"any_hit" },
 	/// Triangle meshes with normals
 	{ { ResType::Filepath,		{"TriangleMesh",				"Normals" }},	"FusionLib/Resources/Programs/TriangleMesh.ptx" },
-	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"Normals" }},	"FusionLib/Resources/Programs/SolidColor.ptx" },
+	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"Normals" }},	"FusionLib/Resources/Programs/TriangleColorHitGroup.ptx" },
 	{ { ResType::ProgramName,	{"TriangleMeshIntersection",	"Normals" }}, 	"triangle_mesh_intersect" },
-	{ { ResType::ProgramName,	{"TriangleMesgBoundingBox",		"Normals" }}, 	"triangle_mesh_bounds" },
-	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"Normals" }}, 	"solid_color_closest_hit" },
-	{ { ResType::ProgramName,	{"TraingleMeshAnyHit",			"Normals" }}, 	"solid_color_any_hit" },
+	{ { ResType::ProgramName,	{"TriangleMeshBoundingBox",		"Normals" }}, 	"triangle_mesh_bounds" },
+	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"Normals" }}, 	"closest_hit_radiance" },
+	{ { ResType::ProgramName,	{"TriangleMeshAnyHit",			"Normals" }}, 	"any_hit" },
+	/// triangle meshes with vertex colors
+	{ { ResType::Filepath,		{"TriangleMesh",				"NormalsColor" }},	"FusionLib/Resources/Programs/TriangleMesh.ptx" },
+	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"NormalsColor" }},	"FusionLib/Resources/Programs/TriangleColorHitGroup.ptx" },
+	{ { ResType::ProgramName,	{"TriangleMeshIntersection",	"NormalsColor" }}, 	"triangle_mesh_intersect" },
+	{ { ResType::ProgramName,	{"TriangleMeshBoundingBox",		"NormalsColor" }}, 	"triangle_mesh_bounds" },
+	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"NormalsColor" }}, 	"closest_hit_radiance" },
+	{ { ResType::ProgramName,	{"TriangleMeshAnyHit",			"NormalsColor" }}, 	"any_hit" },
 };
 
 static std::string GetResourceFilepath(const std::string& intersectType, const std::string & attributes)

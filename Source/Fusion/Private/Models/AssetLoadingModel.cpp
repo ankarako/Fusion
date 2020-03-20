@@ -1,5 +1,6 @@
 #include <Models/AssetLoadingModel.h>
 #include <Core/AssetTypeResolver.h>
+#include <Load3DAsset.h>
 #include <LoadObj.h>
 #include <LoadPly.h>
 #include <plog/Log.h>
@@ -27,7 +28,8 @@ AssetLoadingModel::AssetLoadingModel()
 		LOG_INFO << "Attempting to load file: " << filepath;
 		AssetType type = AssetTypeResolver::GetAssetType(filepath);
 		io::MeshData data;
-
+		
+		//data = io::Load3DAsset(filepath);
 		switch (type)
 		{
 		case fu::fusion::AssetType::Unknown:

@@ -184,6 +184,13 @@ add_custom_target(CompilePtxTriangleMeshPTX ALL DEPENDS "${CompilePtxTriangleMes
 add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleMesh} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleMesh.ptx )
 add_custom_command(TARGET CompilePtxTriangleMeshPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleMesh} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleMesh.ptx )
 set_target_properties(CompilePtxTriangleMeshPTX PROPERTIES FOLDER "CUDACustomTargets")
+# Triangle Color hitgroup
+cuda_compile_ptx(CompilePtxTriangleColorHitGroup "Private/Programs/TriangleColorHitGroup.cu")
+add_custom_target(CompilePtxTriangleColorHitGroupPTX ALL DEPENDS "${CompilePtxTriangleColorHitGroup}" "Private/Programs/TriangleColorHitGroup.cu" SOURCES "Private/Programs/TriangleColorHitGroup.cu")
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleColorHitGroup.ptx )
+add_custom_command(TARGET CompilePtxTriangleColorHitGroupPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleColorHitGroup.ptx )
+# tedious command to rename the generated ptx file
+set_target_properties(CompilePtxTriangleColorHitGroupPTX PROPERTIES FOLDER "CUDACustomTargets")
 # Exception
 cuda_compile_ptx(CompilePtxException "Private/Programs/Exception.cu")
 add_custom_target(CompilePtxExceptionPTX ALL DEPENDS "${CompilePtxException}" "Private/Programs/Exception.cu" SOURCES "Private/Programs/Exception.cu")

@@ -5,6 +5,7 @@
 #include <GL/gl3w.h>
 #include <plog/Log.h>
 #include <Utils/Arcball.h>
+#include <ImGuizmo.h>
 
 namespace fu {
 namespace fusion {
@@ -98,6 +99,7 @@ void RayTracingView::Render()
 		{
 			m_Impl->m_PrevMousePos = ImGui::GetMousePos();
 		}
+		ImGuizmo::Enable(true);
 		auto winSize = ImGui::GetWindowSize();
 		if (winSize.x != m_Impl->m_ViewportSize.x)
 		{

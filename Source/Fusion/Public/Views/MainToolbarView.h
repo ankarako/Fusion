@@ -25,6 +25,7 @@ public:
 	rxcpp::observable<void*> OnFileMenu_SaveProjectClicked();
 	rxcpp::observable<void*> OnFileMenu_OpenVideoFileClicked();
 	rxcpp::observable<void*> OnFileMenu_Open3DFileClicked();
+	rxcpp::observable<void*> OnFileMenu_OpenPerfcapFileClicked();
 	rxcpp::observable<void*> OnFiltersMenu_EstimateDepthClicked();
 	rxcpp::observable<void*> OnWindowsMenu_RayTracingControlClicked();
 private:

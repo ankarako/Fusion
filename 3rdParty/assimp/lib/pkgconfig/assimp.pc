@@ -1,0 +1,11 @@
+prefix=E:\_dev\_Libraries\assimp\build\vc16/install
+exec_prefix=E:\_dev\_Libraries\assimp\build\vc16/install/
+libdir=E:\_dev\_Libraries\assimp\build\vc16/install/lib
+includedir=E:\_dev\_Libraries\assimp\build\vc16/install/include
+
+Name: Assimp
+Description: Import various well-known 3D model formats in an uniform manner.
+Version: 5.0.1
+Libs: -L${libdir} -lassimp
+Libs.private:  
+Cflags: -I${includedir}

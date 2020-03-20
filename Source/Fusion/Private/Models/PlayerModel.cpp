@@ -9,6 +9,7 @@
 #include <chrono>
 #include <atomic>
 #include <deque>
+#include <filesystem>
 
 namespace fu {
 namespace fusion {
@@ -132,6 +133,7 @@ void PlayerModel::Destroy()
 ///	\param	filepath	the path of the file to load
 void PlayerModel::LoadFile(const std::string& filepath)
 {
+	std::string filename = std::filesystem::path(filepath).filename().generic_string();
 	/// load 
 	m_Impl->m_DecodingNode->LoadFile(filepath);
 	m_Impl->m_Settings->LoadedVideoFilepath = filepath;
@@ -142,7 +144,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	double fps = m_Impl->m_DecodingNode->GetFrameRate();
 	double periodSecs = 1.0 / fps;
 	m_Impl->m_FramePeriod = 
-		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs + 0.001));
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs));
 	/// now that we know everything about the file
 	///	we should create a prefetching technique so that we can play large files
 	m_Impl->m_FrameCountFlowOutSubj.get_subscriber().on_next(frameCount);
@@ -177,7 +179,15 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 	m_Impl->m_OnVideoLoadedSubj.get_subscriber().on_next(nullptr);
 
-	SequenceItem item{ SequenceItemType::Video, 0, m_Impl->m_DecodingNode->GetFrameCount(), false, m_Impl->m_DecodingNode->GetFrameCount() };
+	SequenceItem item; 
+	item.Name = filename;
+	item.Type = SequenceItemType::Video;
+	item.FrameStart = 0;
+	item.Duration = m_Impl->m_DecodingNode->GetFrameCount();
+	item.FrameEnd = item.Duration;
+	item.SeqFrameStart = 0;
+	item.SeqFrameEnd = item.Duration;
+	item.Id = 1;
 	m_Impl->m_SequenceItemFlowOutSubj.get_subscriber().on_next(item);
 }
 ///	\brief start playback

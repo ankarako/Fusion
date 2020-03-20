@@ -9,13 +9,16 @@ namespace fu {
 namespace fusion {
 ///
 class PlayerModel;
+class PerfcapPlayerModel;
 // class AnimationModel;
 
 class SequencerModel : public app::Initializable
 {
 public:
-	using player_model_ptr_t = std::shared_ptr<PlayerModel>;
-	SequencerModel(player_model_ptr_t player_model);
+	using player_model_ptr_t	= std::shared_ptr<PlayerModel>;
+	using perfcap_player_ptr_t	= std::shared_ptr<PerfcapPlayerModel>;
+
+	SequencerModel(player_model_ptr_t player_model, perfcap_player_ptr_t perfcap_model);
 
 	void Init() override;
 	void Start();

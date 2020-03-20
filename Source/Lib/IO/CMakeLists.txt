@@ -48,6 +48,18 @@ PrintList("${FusionIOHdrFiles}" "Gathered FusionIO header files")
 file(GLOB FusionIOSrcFiles "Private/*.cpp")
 GroupSource("${FusionIOSrcFiles}" "Private")
 PrintList("${FusionIOSrcFiles}" "Gathered FusionIO source files")
+######################
+# Gather Perfcap Header files
+######################
+file(GLOB FusionIOPerfcapHdrFiles "Public/Perfcap/*.h")
+GroupSource("${FusionIOPerfcapHdrFiles}" "Public\\Perfcap")
+PrintList("${FusionIOPerfcapHdrFiles}" "Gathered FusionIO/Perfcap header files")
+######################
+# Gather Perfcap source files
+######################
+file(GLOB FusionIOPerfcapSrcFiles "Private/Perfcap/*.cpp")
+GroupSource("${FusionIOPerfcapSrcFiles}" "Private\\Perfcap")
+PrintList("${FusionIOPerfcapSrcFiles}" "Gathered FusionIO/Perfcap source files")
 ###################
 # FusionIO library
 ###################
@@ -56,11 +68,22 @@ add_library(
 	STATIC
 	"${FusionIOHdrFiles}"
 	"${FusionIOSrcFiles}"
+	"${FusionIOPerfcapHdrFiles}"
+	"${FusionIOPerfcapSrcFiles}"
 )
 target_include_directories(FusionIO PUBLIC "Public")
 # set properties
 set_target_properties(FusionIO PROPERTIES FOLDER "Fusion360")
-
+########
+# ASSIMP
+########
+target_include_directories(FusionIO PRIVATE "${3rdPartyPath}/assimp/include")
+target_link_libraries(FusionIO debug "${3rdPartyPath}/assimp/lib/assimp-vc142-mtd.lib")
+target_link_libraries(FusionIO optimized "${3rdPartyPath}/assimp/lib/assimp-vc142-mt.lib")
+target_link_libraries(FusionIO debug "${3rdPartyPath}/assimp/lib/IrrXMLd.lib")
+target_link_libraries(FusionIO optimized "${3rdPartyPath}/assimp/lib/IrrXML.lib")
+target_link_libraries(FusionIO debug "${3rdPartyPath}/assimp/lib/zlibstaticd.lib")
+target_link_libraries(FusionIO optimized "${3rdPartyPath}/assimp/lib/zlibstatic.lib")
 #######
 # PLOG
 #######
@@ -78,3 +101,19 @@ add_subdirectory("${3rdPartyPath}/tinyobjloader" tinyobjloader)
 target_link_libraries(FusionIO tinyobjloader)
 set_target_properties(tinyobjloader PROPERTIES FOLDER "3rdParty")
 set_target_properties(example PROPERTIES FOLDER "3rdParty")
+################
+# spimpl
+################
+# include dir suffices
+target_include_directories(FusionIO PRIVATE "${3rdPartyPath}/spimpl")
+#############################
+# HPS (for perfcap importer)
+#############################
+# include suffices
+target_include_directories(FusionIO PRIVATE "${3rdPartyPath}/hps/src")
+##################################
+# TURBOJPEG (for perfcap importer)
+##################################
+target_include_directories(FusionIO PRIVATE "${3rdPartyPath}/libjpegturbo/include")
+target_link_libraries(FusionIO "${3rdPartyPath}/libjpegturbo/lib/jpeg-static.lib")
+target_link_libraries(FusionIO "${3rdPartyPath}/libjpegturbo/lib/turbojpeg-static.lib")

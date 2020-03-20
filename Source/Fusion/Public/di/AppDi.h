@@ -29,6 +29,7 @@
 #include <Models/DepthEstimationModel.h>
 #include <Models/AssetLoadingModel.h>
 #include <Models/SequencerModel.h>
+#include <Models/PerfcapPlayerModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -36,6 +37,7 @@
 #include <Presenters/MainToolbarPresenter.h>
 #include <Presenters/RayTracingPresenter.h>
 #include <Presenters/SequencerPresenter.h>
+#include <Presenters/PerfcapPlayerPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -74,7 +76,8 @@ namespace di {
 			ProjectModel,
 			DepthEstimationModel,
 			SequencerModel,
-			SequencerPresenter
+			SequencerPresenter,
+			PerfcapPlayerPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,

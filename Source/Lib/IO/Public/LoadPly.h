@@ -85,45 +85,45 @@ static MeshData LoadPly(const std::string& filepath)
 	if (faces)		LOG_DEBUG << "\tRead " << vertices->count << "total faces";
 	if (tripstrip)	LOG_DEBUG << "\tRead " << vertices->count << "total tripstrip";
 	/// now lets copy our data
-	MeshData data;
+	MeshData data = CreateMeshData();
 	if (vertices)
 	{
 		int count = vertices->count;
 		int bsize = vertices->buffer.size_bytes();
-		data.VertexBuffer = CreateBufferCPU<float3>(count);
-		std::memcpy(data.VertexBuffer->Data(), vertices->buffer.get(), bsize);
+		data->VertexBuffer = CreateBufferCPU<float3>(count);
+		std::memcpy(data->VertexBuffer->Data(), vertices->buffer.get(), bsize);
 	}
 	if (normals)
 	{
-		data.HasNormals = true;
+		data->HasNormals = true;
 		int count = normals->count;
 		int bsize = normals->buffer.size_bytes();
-		data.NormalBuffer = CreateBufferCPU<float3>(count);
-		std::memcpy(data.NormalBuffer->Data(), normals->buffer.get(), bsize);
+		data->NormalBuffer = CreateBufferCPU<float3>(count);
+		std::memcpy(data->NormalBuffer->Data(), normals->buffer.get(), bsize);
 	}
 	if (colors)
 	{
-		data.HasColors = true;
+		data->HasColors = true;
 		int count = colors->count;
 		int bsize = colors->buffer.size_bytes();
-		data.ColorBuffer = CreateBufferCPU<uchar4>(count);
-		std::memcpy(data.ColorBuffer->Data(), colors->buffer.get(), bsize);
+		data->ColorBuffer = CreateBufferCPU<uchar4>(count);
+		std::memcpy(data->ColorBuffer->Data(), colors->buffer.get(), bsize);
 	}
 	if (faces)
 	{
-		data.HasFaces = true;
+		data->HasFaces = true;
 		int count = faces->count;
 		int bsize = faces->buffer.size_bytes();
-		data.TIndexBuffer = CreateBufferCPU<uint3>(count);
-		std::memcpy(data.TIndexBuffer->Data(), faces->buffer.get(), bsize);
+		data->TIndexBuffer = CreateBufferCPU<uint3>(count);
+		std::memcpy(data->TIndexBuffer->Data(), faces->buffer.get(), bsize);
 	}
 	if (texcoords)
 	{
-		data.HasTexcoords = true;
+		data->HasTexcoords = true;
 		int count = texcoords->count;
 		int bsize = texcoords->buffer.size_bytes();
-		data.TexcoordBuffer = CreateBufferCPU<float2>(count);
-		std::memcpy(data.TexcoordBuffer->Data(), texcoords->buffer.get(), bsize);
+		data->TexcoordBuffer = CreateBufferCPU<float2>(count);
+		std::memcpy(data->TexcoordBuffer->Data(), texcoords->buffer.get(), bsize);
 	}
 	return data;
 }

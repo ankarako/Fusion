@@ -12,15 +12,17 @@ class WidgetRepo;
 namespace fusion {
 class SequencerView;
 class PlayerModel;
+class PerfcapPlayerModel;
 
 class SequencerPresenter	: public app::Initializable
 {
 public:
-	using view_ptr_t = std::shared_ptr<SequencerView>;
-	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
-	using player_ptr_t = std::shared_ptr<PlayerModel>;
+	using view_ptr_t			= std::shared_ptr<SequencerView>;
+	using wrepo_ptr_t			= std::shared_ptr<app::WidgetRepo>;
+	using player_ptr_t			= std::shared_ptr<PlayerModel>;
+	using perfcap_player_ptr_t	= std::shared_ptr<PerfcapPlayerModel>;
 
-	SequencerPresenter(view_ptr_t view, wrepo_ptr_t wrepo, player_ptr_t player_model);
+	SequencerPresenter(view_ptr_t view, wrepo_ptr_t wrepo, player_ptr_t player_model, perfcap_player_ptr_t perfcap_player);
 	void Init() override;
 
 private:

@@ -170,7 +170,7 @@ void RayTracingModel::Init()
 	m_Impl->m_MeshDataFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](io::MeshData data) 
 	{
-		if (!data.HasFaces)
+		if (!data->HasFaces)
 		{
 			/// create a point cloud component
 			rt::PointCloudComp pcComp = rt::CreatePointCloudComponent();
@@ -193,6 +193,19 @@ void RayTracingModel::Init()
 			rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(trComp, m_Impl->m_AccelerationComp);
 			m_Impl->m_TriangleMeshComps.emplace_back(trComp);
 			this->OnLaunch().on_next(nullptr);
+		}
+	}, [this](std::exception_ptr& ptr) 
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception & ex)
+			{
+				LOG_ERROR << ex.what();
+			}
 		}
 	});
 }

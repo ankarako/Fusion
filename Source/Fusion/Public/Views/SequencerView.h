@@ -30,6 +30,8 @@ public:
 	rxcpp::observable<void*>		OnSeekForwardButtonClicked();
 
 	rxcpp::observable<int>			OnTransportPositionChanged();
+	rxcpp::observable<void*>		OnVideoStartPlayback();
+	rxcpp::observable<void*>		OnAnimationStartPlayback();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
