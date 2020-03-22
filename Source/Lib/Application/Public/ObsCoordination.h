@@ -10,6 +10,7 @@ namespace app {
 class ObsCoordination
 {
 public:
+	ObsCoordination() { }
 	///	\typedef UICoordinationType
 	///	\brief UICoordination callables should be scheduled on one thread only
 	using UICoordinationType = typename rxcpp::observe_on_one_worker;

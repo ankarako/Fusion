@@ -86,9 +86,9 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 		if (color)
 			*color = 0xFFAA8080;
 		if (start)
-			*start = &item.FrameStart;
+			*start = &item.SeqFrameStart;
 		if (end)
-			*end = &item.FrameEnd;
+			*end = &item.SeqFrameEnd;
 		if (type)
 			*type = static_cast<int>(item.Type);
 	}
@@ -182,8 +182,7 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 	void BeginEdit(int index) override
 	{
 		//LOG_DEBUG << "BeginEdit";
-		
-		
+
 	}
 
 	void BeginEdit(int index, int movingPart, int offset) override
@@ -207,24 +206,30 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 		{
 			if (m_CurrentItemEditState.EditMode == 1)
 			{
+				LOG_DEBUG << "Expanded/Shrinked from front: " << diff;
 				item.FrameStart += diff;
-				LOG_DEBUG << "Expanded/Shrinked from start: "
-					<< m_CurrentItemEditState.EndEditValue - m_CurrentItemEditState.BeginEditValue;
 			}
 			else if (m_CurrentItemEditState.EditMode == 2)
 			{
+				LOG_DEBUG << "Expanded/Shrinked from back: " << diff;
 				item.FrameEnd += diff;
-				LOG_DEBUG << "Expanded/Shrinked from end: "
-					<< m_CurrentItemEditState.EndEditValue - m_CurrentItemEditState.BeginEditValue;
 			}
 			else if (m_CurrentItemEditState.EditMode == 3)
 			{
+				LOG_DEBUG << "Moved item: " << diff;
 				item.SeqFrameStart += diff;
 				item.SeqFrameEnd += diff;
-				LOG_DEBUG << "Moved hole item frames: "
-					<< m_CurrentItemEditState.EndEditValue - m_CurrentItemEditState.BeginEditValue;
+				if (item.SeqFrameEnd > m_FrameMax)
+				{
+					m_FrameMax = item.SeqFrameEnd;
+				}
 			}
 		}
+		LOG_DEBUG << "Item properties";
+		LOG_DEBUG << "Sequence frame start: " << item.SeqFrameStart;
+		LOG_DEBUG << "Sequence frame end  : " << item.SeqFrameEnd;
+		LOG_DEBUG << "Frame start         : " << item.FrameStart;
+		LOG_DEBUG << "Frame end           : " << item.FrameEnd;
 	}
 private:
 	struct EditState
@@ -251,7 +256,7 @@ struct SequencerView::Impl
 		Paused,
 		Stopped,
 		SeekForw,
-		SeekBack
+		SeekBack,
 	};
 
 	fman_ptr_t		m_FontManager;
@@ -335,6 +340,9 @@ void SequencerView::Render()
 	auto flags = ImGuiWindowFlags_HorizontalScrollbar;
 	ImGui::Begin("Sequencer", &isActive, flags);
 	{
+		///=======================
+		/// Seek Backwards Button
+		///=======================
 		if (m_Impl->m_State == Impl::SequencerState::Playing)
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
@@ -360,15 +368,22 @@ void SequencerView::Render()
 		ImGui::SameLine();
 		if (checkPlayButton)
 		{
+			///=============
+			/// Play Button
+			///=============
 			if (ImGui::Button(ICON_MD_PLAY_ARROW "##seq"))
 			{
 				m_Impl->m_StartTime = std::chrono::high_resolution_clock::now();
 				m_Impl->m_State = Impl::SequencerState::Playing;
 				m_Impl->m_OnPlayButtonClickedSubj.get_subscriber().on_next(nullptr);
+
 			}
 		}
 		else
 		{
+			///=============
+			/// Pause Button
+			///=============
 			if (ImGui::Button(ICON_MD_PAUSE "##seq"))
 			{
 				m_Impl->m_State = Impl::SequencerState::Paused;
@@ -384,25 +399,52 @@ void SequencerView::Render()
 				}
 			}
 		}
+		///================
+		/// Playback Logic
+		///================
 		if (m_Impl->m_State == Impl::SequencerState::Playing)
 		{
 			auto now = std::chrono::high_resolution_clock::now();
 			auto dur = std::chrono::duration_cast<std::chrono::nanoseconds>(now - m_Impl->m_StartTime).count();
 			if (dur >= m_Impl->m_FramePeriod.count())
 			{
-				m_Impl->m_CurrentFrame++;
+				
 				m_Impl->m_StartTime = now;
+				int current = m_Impl->m_CurrentFrame;
 				for (int i = 0; i < count; i++)
 				{
 					auto& item = m_Impl->m_Sequence.GetItem(i);
-					if (item.SeqFrameStart == m_Impl->m_CurrentFrame)
+					int frame = current - item.SeqFrameStart + item.FrameStart;
+					LOG_DEBUG << "frame  : " << frame;
+					LOG_DEBUG << "current: " << current;
+					LOG_DEBUG << "seq    : " << item.SeqFrameStart;
+					if (item.SeqFrameStart == current)
+					{
+						if (frame < 0)
+						{
+							item.OnSeekFrame.get_subscriber().on_next(0);
+						}
+						else if (frame > 0)
+						{
+							item.OnSeekFrame.get_subscriber().on_next(item.FrameStart);
+						}
+						else
+						{
+							//item.OnStartPlayback.get_subscriber().on_next(nullptr);
+						}
+					}
+					if (frame == 0)
 					{
 						item.OnStartPlayback.get_subscriber().on_next(nullptr);
 					}
 				}
+				m_Impl->m_CurrentFrame++;
 			}
 		}
 		ImGui::SameLine();
+		///=============
+		/// STOP Button
+		///=============
 		if (ImGui::Button(ICON_MD_STOP "##seq"))
 		{
 			m_Impl->m_State = Impl::SequencerState::Stopped;
@@ -419,6 +461,9 @@ void SequencerView::Render()
 			m_Impl->m_CurrentFrame = 0;
 		}
 		ImGui::SameLine();
+		///====================
+		/// Seek Forward Button
+		///=====================
 		if (m_Impl->m_State == Impl::SequencerState::Playing)
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);

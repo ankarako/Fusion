@@ -22,6 +22,9 @@ struct MainToolbarView::Impl
 	rxcpp::subjects::subject<void*> FiltersMenu_EstimateSurfNormalClickedSubj;
 
 	rxcpp::subjects::subject<void*> WindowsMenu_RayTracingControlClickedSubj;
+
+	rxcpp::subjects::subject<void*> Omniconnect_ShowVideoListClickedSubj;
+	rxcpp::subjects::subject<void*> Omniconnect_UploadMentorLayerClickedSubj;
 	/// Construction
 	Impl(fman_ptr_t fman)
 		: m_FontManager(fman)
@@ -88,6 +91,18 @@ void MainToolbarView::Render()
 			}
 			ImGui::EndMenu();
 		}
+		if (ImGui::BeginMenu("Omniconnect"))
+		{
+			if (ImGui::MenuItem("Get Available Media"))
+			{
+				m_Impl->Omniconnect_ShowVideoListClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			if (ImGui::MenuItem("Upload Mentor Layer"))
+			{
+				m_Impl->Omniconnect_UploadMentorLayerClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			ImGui::EndMenu();
+		}
 	}
 	ImGui::EndMainMenuBar();
 	ImGui::PopFont();
@@ -132,5 +147,9 @@ rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFileMenu_OpenPerfcapFile
 	return m_Impl->FileMenu_OpenPerfcapFileClickedSubj.get_observable().as_dynamic();
 }
 
+rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFiltersMenu_EstimateNormalsClicked()
+{
+	return m_Impl->FiltersMenu_EstimateSurfNormalClickedSubj.get_observable().as_dynamic();
+}
 }	///	!namespce fusion
 }	///	!namespace fu

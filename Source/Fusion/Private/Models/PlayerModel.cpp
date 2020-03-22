@@ -185,6 +185,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	item.FrameStart = 0;
 	item.Duration = m_Impl->m_DecodingNode->GetFrameCount();
 	item.FrameEnd = item.Duration;
+	item.Expanded = false;
 	item.SeqFrameStart = 0;
 	item.SeqFrameEnd = item.Duration;
 	item.Id = 1;

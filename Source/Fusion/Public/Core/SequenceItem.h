@@ -44,6 +44,7 @@ struct SequenceItem
 	subj<void*>			OnStop;
 	subj<void*>			OnSeekForward;
 	subj<void*>			OnSeekBackward;
+	subj<int>			OnSeekFrame;
 };
 }	///	!namespace fusion
 }	///	!namesapce fu

@@ -86,6 +86,14 @@ void SequencerPresenter::Init()
 		{
 			m_Impl->m_PlayerModel->SeekBackward();
 		});
+		///======
+		///	Seek
+		///======
+		item.OnSeekFrame.get_observable().as_dynamic()
+			.subscribe([this](int idx) 
+		{
+			m_Impl->m_PlayerModel->Seek(idx);
+		});
 		return item;
 	}).subscribe(m_Impl->m_View->SequencerItemFlowIn());
 

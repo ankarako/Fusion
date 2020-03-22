@@ -10,13 +10,8 @@ class WidgetRepo;
 }
 namespace fusion {
 ///
-class MainToolbarView;
-class FileExplorerView;
-class PlayerModel;
-class ProjectModel;
-class DepthEstimationSettingsView;
-class DepthEstimationModel;
-class Coordination;
+class FileMenuPresenter;
+class FiltersMenuPresenter;
 class RayTracingControlView;
 class PerfcapPlayerModel;
 ///	\class MainToolbarPresenter
@@ -24,28 +19,14 @@ class PerfcapPlayerModel;
 class MainToolbarPresenter	: public app::Initializable
 {
 public:
-	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
-	using player_model_ptr_t = std::shared_ptr<PlayerModel>;
-	using view_ptr_t = std::shared_ptr<MainToolbarView>;
-	using fexp_view_ptr_t = std::shared_ptr<FileExplorerView>;
-	using prj_model_ptr_t = std::shared_ptr<ProjectModel>;
-	using dest_set_view_ptr_t = std::shared_ptr<DepthEstimationSettingsView>;
-	using dest_model_ptr_t = std::shared_ptr<DepthEstimationModel>;
-	using coord_ptr_t = std::shared_ptr<Coordination>;
-	using rt_ctrl_view_ptr_t = std::shared_ptr<RayTracingControlView>;
-	using perfcap_model_ptr_t = std::shared_ptr<PerfcapPlayerModel>;
+	using file_menu_ptr_t = std::shared_ptr<FileMenuPresenter>;
+	using filters_menu_ptr_t = std::shared_ptr<FiltersMenuPresenter>;
+	using rt_ctrl_view_ptr_t	= std::shared_ptr<RayTracingControlView>;
+	using perfcap_model_ptr_t	= std::shared_ptr<PerfcapPlayerModel>;
 	/// Construction
 	MainToolbarPresenter(
-		player_model_ptr_t decoder_model, 
-		view_ptr_t view, 
-		fexp_view_ptr_t fexp_view, 
-		wrepo_ptr_t wrepo, 
-		prj_model_ptr_t prj_model, 
-		dest_set_view_ptr_t dest_view, 
-		dest_model_ptr_t dest_model, 
-		coord_ptr_t coord,
-		rt_ctrl_view_ptr_t rt_ctrl_view,
-		perfcap_model_ptr_t perfcap_model);
+		file_menu_ptr_t		file_menu,
+		filters_menu_ptr_t	filters_menu);
 	/// \brief Initialization
 	void Init() override;
 private:

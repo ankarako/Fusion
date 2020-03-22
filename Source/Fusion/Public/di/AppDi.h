@@ -1,6 +1,9 @@
 #ifndef	__FUSION_PUBLIC_DI_APPDI_H__
 #define __FUSION_PUBLIC_DI_APPDI_H__
 
+//#define __has_builtin(...)	1
+#define BOOST_DI_CFG_CTOR_LIMIT_SIZE 12
+
 #include <boost/di.hpp>
 /// Interfaces
 #include <Initializable.h>
@@ -27,6 +30,7 @@
 #include <Models/RayTracingModel.h>
 #include <Models/ProjectModel.h>
 #include <Models/DepthEstimationModel.h>
+#include <Models/NormalsEstimationModel.h>
 #include <Models/AssetLoadingModel.h>
 #include <Models/SequencerModel.h>
 #include <Models/PerfcapPlayerModel.h>
@@ -38,6 +42,8 @@
 #include <Presenters/RayTracingPresenter.h>
 #include <Presenters/SequencerPresenter.h>
 #include <Presenters/PerfcapPlayerPresenter.h>
+#include <Presenters/FileMenuPresenter.h>
+#include <Presenters/FiltersMenuPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -64,7 +70,6 @@ namespace di {
 			FileExplorerView,
 			FileExplorerPresenter,
 			FileExplorerModel,
-			MainToolbarPresenter,
 			PlayerViewportView,
 			PlayerModel,
 			PlayerControllerPresenter,
@@ -75,9 +80,13 @@ namespace di {
 			RayTracingView,
 			ProjectModel,
 			DepthEstimationModel,
+			NormalsEstimationModel,
 			SequencerModel,
 			SequencerPresenter,
-			PerfcapPlayerPresenter
+			PerfcapPlayerPresenter,
+			FileMenuPresenter,
+			FiltersMenuPresenter,
+			MainToolbarPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,
