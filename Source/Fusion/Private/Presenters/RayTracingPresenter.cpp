@@ -8,6 +8,7 @@
 #include <Models/DepthEstimationModel.h>
 #include <Models/AssetLoadingModel.h>
 #include <Views/RayTracingControlView.h>
+#include <Views/SequencerView.h>
 
 namespace fu {
 namespace fusion {
@@ -27,6 +28,7 @@ struct RayTracingPresenter::Impl
 	dest_model_ptr_t	m_DepthEstModel;
 	rt_ctrl_view_ptr_t	m_RayControlView;
 	asset_model_ptr_t	m_AssetModel;
+	seq_view_ptr_t		m_SequencerView;
 	/// Construction
 	Impl(fexp_view_ptr_t fexpView, 
 		model_ptr_t model, 
@@ -36,7 +38,8 @@ struct RayTracingPresenter::Impl
 		srepo_ptr_t	srepo,
 		dest_model_ptr_t dest_model,
 		rt_ctrl_view_ptr_t rt_ctrl_view,
-		asset_model_ptr_t asset_model)
+		asset_model_ptr_t asset_model,
+		seq_view_ptr_t seq_view)
 		: m_FexpView(fexpView)
 		, m_Model(model)
 		, m_View(view)
@@ -46,6 +49,7 @@ struct RayTracingPresenter::Impl
 		, m_DepthEstModel(dest_model)
 		, m_RayControlView(rt_ctrl_view)
 		, m_AssetModel(asset_model)
+		, m_SequencerView(seq_view)
 	{ }
 };	///	!struct Impl
 /// Construction
@@ -58,8 +62,9 @@ RayTracingPresenter::RayTracingPresenter(
 	srepo_ptr_t srepo,
 	dest_model_ptr_t dest_model,
 	rt_ctrl_view_ptr_t rt_ctrl_view,
-	asset_model_ptr_t asset_model)
-	: m_Impl(spimpl::make_unique_impl<Impl>(fexpView, model, view, wrepo, coord, srepo, dest_model, rt_ctrl_view, asset_model))
+	asset_model_ptr_t asset_model,
+	seq_view_ptr_t seq_view)
+	: m_Impl(spimpl::make_unique_impl<Impl>(fexpView, model, view, wrepo, coord, srepo, dest_model, rt_ctrl_view, asset_model, seq_view))
 { }
 ///	\brief initialize the presenter
 ///	Sets view model tasks
@@ -160,6 +165,8 @@ void RayTracingPresenter::Init()
 		.subscribe(m_Impl->m_Model->PointcloudPointSizeFlowIn());
 	/// activate 3D viewport
 	m_Impl->m_View->Activate();
+
+	
 }
 }	///	!namespace fusion
 }	///	!namespace fu

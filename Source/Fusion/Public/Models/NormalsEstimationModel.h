@@ -24,8 +24,8 @@ public:
 	void Init() override;
 	rxcpp::observer<std::pair<uint2, BufferCPU<uchar4>>> FrameFlowIn();
 
-	rxcpp::observable<std::string> NormalsFilepathFlowOutExr();
-	rxcpp::observable<std::string> NormalsFilePathFlowOutPng();
+	rxcpp::observable<BufferCPU<uchar4>> NormalsBufferRGBAFlowOut();
+	rxcpp::observable<BufferCPU<float3>> NormalsBufferFloatFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

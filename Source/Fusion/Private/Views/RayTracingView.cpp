@@ -5,6 +5,7 @@
 #include <GL/gl3w.h>
 #include <plog/Log.h>
 #include <Utils/Arcball.h>
+#include <imgui_internal.h>
 #include <ImGuizmo.h>
 
 namespace fu {
@@ -86,12 +87,10 @@ void RayTracingView::Render()
 	if (!isActive)
 		return;
 
-	
 	ImGui::SetNextWindowSize({ m_Impl->m_ViewportSize.x + 20.0f, m_Impl->m_ViewportSize.y + 50.0f });
 	ImGui::SetNextWindowPos({ 0.0f, 20.0f });
 	auto winflags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysAutoResize;
 	auto& io = ImGui::GetIO();
-	
 	ImGui::PushFont(m_Impl->m_FMan->GetFont(app::FontManager::FontType::Regular));
 	ImGui::Begin("3D Viewport", &isActive, winflags);
 	{
@@ -159,6 +158,7 @@ void RayTracingView::Render()
 				LOG_DEBUG << "Middle Mouse down.";
 			}
 		}
+
 	}
 	ImGui::End();
 	ImGui::PopFont();

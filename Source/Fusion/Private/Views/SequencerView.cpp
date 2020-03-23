@@ -147,20 +147,21 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 	///	\param	legendClippingrect
 	void CustomDraw(int index, ImDrawList* draw_list, const ImRect& rc, const ImRect& legendRect, const ImRect& clippingRect, const ImRect& legendClippingRect) override
 	{
-		//auto& item = m_SequenceItems[index];
-		//if (item.Type == SequenceItemType::Animation)
-		//{
-		//	/// legend
-		//	ImVec2 pta(legendRect.Min.x, legendRect.Min.y);
-		//	ImVec2 ptb(legendRect.Max.x, legendRect.Max.y);
-		//	ImGui::SetCursorScreenPos(pta);
-		//	ImGui::PushItemWidth(100.f);
-		//	if (ImGui::SliderFloat("Translation", &trans, 0.0f, 10.0f))
-		//	{
-
-		//	}
-		//	ImGui::PopItemWidth();
-		//}
+		auto& item = m_SequenceItems[index];
+		if (item.Type == SequenceItemType::Animation)
+		{
+			draw_list->PushClipRect(legendClippingRect.Min, legendClippingRect.Max, true);
+			
+			ImVec2 pta(legendRect.Min.x + 30, legendRect.Min.y + 0 * 14.f);
+			ImVec2 ptb(legendRect.Max.x, legendRect.Min.y + (0 + 1) * 14.f);
+			draw_list->AddText(pta, 0xFFFFFFFF, "Transform");
+			if (ImRect(pta, ptb).Contains(ImGui::GetMousePos()) && ImGui::IsMouseClicked(0))
+			{
+				m_OnTranslationClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			
+			draw_list->PopClipRect();
+		}
 	}
 	/// \brief Custom draw compact
 	///	custom draw when an item is not expanded
@@ -231,6 +232,10 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 		LOG_DEBUG << "Frame start         : " << item.FrameStart;
 		LOG_DEBUG << "Frame end           : " << item.FrameEnd;
 	}
+public:
+	rxcpp::subjects::subject<void*>			m_OnTranslationClickedSubj;
+	rxcpp::subjects::subject<void*>			m_OnRotationClickedSubj;
+	rxcpp::subjects::subject<void*>			m_OnScaleClickedSubj;
 private:
 	struct EditState
 	{
@@ -547,6 +552,21 @@ rxcpp::observable<void*> fu::fusion::SequencerView::OnVideoStartPlayback()
 rxcpp::observable<void*> fu::fusion::SequencerView::OnAnimationStartPlayback()
 {
 	return m_Impl->m_OnAnimationStartPlaybackSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::SequencerView::OnTranslationClicked()
+{
+	return m_Impl->m_Sequence.m_OnTranslationClickedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::SequencerView::OnRotationClicked()
+{
+	return m_Impl->m_Sequence.m_OnRotationClickedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::SequencerView::OnScaleClicked()
+{
+	return m_Impl->m_Sequence.m_OnScaleClickedSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

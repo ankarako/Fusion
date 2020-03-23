@@ -3,17 +3,23 @@
 
 #include <Buffer.h>
 #include <Widget.h>
+#include <Initializable.h>
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
 
 namespace fu {
 namespace fusion {
 
-class NormalsResultView : public app::Widget
+class Coordination;
+
+class NormalsResultView : public app::Widget, public app::Initializable
 {
 public:
-	NormalsResultView();
+	using coord_ptr_t = std::shared_ptr<Coordination>;
 
+	NormalsResultView(coord_ptr_t coord);
+
+	void Init() override;
 	void Render() override;
 
 	rxcpp::observer<BufferCPU<uchar4>> NormalsImageFlowIn();

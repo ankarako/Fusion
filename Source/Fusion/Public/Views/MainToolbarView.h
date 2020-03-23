@@ -29,6 +29,7 @@ public:
 	rxcpp::observable<void*> OnFiltersMenu_EstimateDepthClicked();
 	rxcpp::observable<void*> OnFiltersMenu_EstimateNormalsClicked();
 	rxcpp::observable<void*> OnWindowsMenu_RayTracingControlClicked();
+	rxcpp::observable<void*> OnWindowsMenu_NormalsResultClicked();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

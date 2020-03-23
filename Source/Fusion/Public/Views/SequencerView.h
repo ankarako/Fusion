@@ -32,6 +32,10 @@ public:
 	rxcpp::observable<int>			OnTransportPositionChanged();
 	rxcpp::observable<void*>		OnVideoStartPlayback();
 	rxcpp::observable<void*>		OnAnimationStartPlayback();
+
+	rxcpp::observable<void*>		OnTranslationClicked();
+	rxcpp::observable<void*>		OnRotationClicked();
+	rxcpp::observable<void*>		OnScaleClicked();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

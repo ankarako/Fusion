@@ -50,6 +50,10 @@ struct RayTracingModel::Impl
 	rxcpp::subjects::subject<float>					m_CullingPlanePositionFlowInSubj;
 	rxcpp::subjects::subject<float>					m_PclSizeFlowInSubj;
 	rxcpp::subjects::subject<io::MeshData>			m_MeshDataFlowInSubj;
+
+	rxcpp::subjects::subject<vec_t>					m_PerfcapTranslationFlowInSubj;
+	rxcpp::subjects::subject<vec_t>					m_PerfcapRotationFlowInSubj;
+	rxcpp::subjects::subject<float>					m_PerfcapScaleFlowInSubj;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -208,6 +212,37 @@ void RayTracingModel::Init()
 			}
 		}
 	});
+	///=================================
+	/// Perfcap translation flow in Task
+	///==================================
+	m_Impl->m_PerfcapTranslationFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const vec_t& trans) 
+	{
+		rt::MeshMappingSystem::SetTriangleMeshComponentTranslation(m_Impl->m_TriangleMeshComps.back(), trans[0], trans[1], trans[2]);
+		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelerationComp);
+		this->OnLaunch().on_next(nullptr);
+	});
+	///==================
+	/// Perfcap rotation
+	///==================
+	m_Impl->m_PerfcapRotationFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const vec_t& rot) 
+	{
+		rt::MeshMappingSystem::SetTriangleMeshComponentRotation(m_Impl->m_TriangleMeshComps.back(), rot[0], rot[1], rot[2]);
+		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelerationComp);
+		this->OnLaunch().on_next(nullptr);
+	});
+	///===============
+	/// perfcap scale
+	///===============
+	m_Impl->m_PerfcapScaleFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](float scale) 
+	{
+		rt::MeshMappingSystem::SetTriangleMeshComponentScale(m_Impl->m_TriangleMeshComps.back(), scale);
+		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelerationComp);
+		this->OnLaunch().on_next(nullptr);
+	});
+
 }
 ///	\brief update the model
 ///	if the scene is valid it launches the context
@@ -269,9 +304,24 @@ rxcpp::observer<io::MeshData> fu::fusion::RayTracingModel::MeshDataFlowIn()
 	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
+rxcpp::observer<RayTracingModel::vec_t> RayTracingModel::PerfcapTranslationFlowIn()
+{
+	return m_Impl->m_PerfcapTranslationFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
 rxcpp::observer<float> fu::fusion::RayTracingModel::PointcloudPointSizeFlowIn()
 {
 	return m_Impl->m_PclSizeFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<RayTracingModel::vec_t> fu::fusion::RayTracingModel::PerfcapRotationFlowIn()
+{
+	return m_Impl->m_PerfcapRotationFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<float> fu::fusion::RayTracingModel::PerfcapScaleFlowIn()
+{
+	return m_Impl->m_PerfcapScaleFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 }	///	!namespace fusion

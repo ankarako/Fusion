@@ -43,6 +43,9 @@ public:
 	rxcpp::observer<float>			CullingPlanePositionFlowIn();
 	rxcpp::observer<float>			PointcloudPointSizeFlowIn();
 	rxcpp::observer<io::MeshData>	MeshDataFlowIn();
+	rxcpp::observer<vec_t>			PerfcapTranslationFlowIn();
+	rxcpp::observer<vec_t>			PerfcapRotationFlowIn();
+	rxcpp::observer<float>			PerfcapScaleFlowIn();
 	///
 	rxcpp::observable<BufferCPU<uchar4>> FrameFlowOut();
 private:

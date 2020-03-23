@@ -20,6 +20,7 @@ class SettingsRepo;
 class DepthEstimationModel;
 class RayTracingControlView;
 class AssetLoadingModel;
+class SequencerView;
 ///	\class RayTracingPresenter
 ///	\brief Ray tracing model's presenter
 class RayTracingPresenter : public app::Initializable
@@ -34,6 +35,7 @@ public:
 	using dest_model_ptr_t		= std::shared_ptr<DepthEstimationModel>;
 	using rt_ctrl_view_ptr_t	= std::shared_ptr<RayTracingControlView>;
 	using asset_model_ptr_t		= std::shared_ptr<AssetLoadingModel>;
+	using seq_view_ptr_t		= std::shared_ptr<SequencerView>;
 	/// Construction
 	RayTracingPresenter(
 		fexp_view_ptr_t fexpView, 
@@ -44,7 +46,8 @@ public:
 		srepo_ptr_t srepo, 
 		dest_model_ptr_t dest_model,
 		rt_ctrl_view_ptr_t rt_ctrl_view,
-		asset_model_ptr_t asset_model);
+		asset_model_ptr_t asset_model,
+		seq_view_ptr_t seq_view);
 	///
 	void Init() override;
 private:

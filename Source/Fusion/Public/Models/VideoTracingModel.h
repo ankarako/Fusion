@@ -10,6 +10,7 @@
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
 #include <GL/gl3w.h>
+#include <array>
 
 namespace fu {
 namespace fusion {
@@ -22,6 +23,7 @@ public:
 	///	\brief the input frame type
 	using input_frame_t = BufferCPU<uchar4>;
 	using output_frame_t = BufferCPU<uchar4>;
+	using vec_t = std::array<float, 3>;
 	///	Construction
 	VideoTracingModel();
 	///	\brief initialize the model
@@ -34,8 +36,10 @@ public:
 	rxcpp::observable<output_frame_t>	FrameFlowOut();
 	///	\brief frame input
 	rxcpp::observer<input_frame_t>	FrameFlowIn();
-
-	rxcpp::observer<io::MeshData> MeshDataFlowIn();
+	rxcpp::observer<io::MeshData>	MeshDataFlowIn();
+	rxcpp::observer<vec_t>			PerfcapTranslationFlowIn();
+	rxcpp::observer<vec_t>			PerfcapRotationFlowIn();
+	rxcpp::observer<float>			PerfcapScaleFlowIn();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

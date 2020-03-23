@@ -49,6 +49,10 @@ struct VideoTracingModel::Impl
 	rxcpp::subjects::subject<input_frame_t>		m_FrameFlowinSubj;
 	///
 	rxcpp::subjects::subject<io::MeshData>		m_MeshDataFlowInSubj;
+
+	rxcpp::subjects::subject<vec_t>				m_PerfcapTranslationFlowInSubj;
+	rxcpp::subjects::subject<vec_t>				m_PerfcapRotationFlowInSubj;
+	rxcpp::subjects::subject<float>				m_PerfcapScaleFlowInSubj;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -129,11 +133,14 @@ void VideoTracingModel::Init()
 			}
 			rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(trComp, m_Impl->m_AccelrationComp);
 			m_Impl->m_TriangleMeshComps.emplace_back(trComp);
-			rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
-			/// copy output buffer
-			rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
-			/// send frame to output
-			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+			if (m_Impl->m_FrameBuffer)
+			{
+				rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
+				/// copy output buffer
+				rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
+				/// send frame to output
+				m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+			}
 		}
 	}, [this](std::exception_ptr exptr) 
 	{
@@ -147,6 +154,57 @@ void VideoTracingModel::Init()
 			{
 				LOG_ERROR << ex.what();
 			}
+		}
+	});
+	///=============================
+	/// perfcap translation flow in
+	///=============================
+	m_Impl->m_PerfcapTranslationFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const vec_t& trans) 
+	{
+		rt::MeshMappingSystem::SetTriangleMeshComponentTranslation(m_Impl->m_TriangleMeshComps.back(), trans[0], trans[1], trans[2]);
+		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelrationComp);
+		if (m_Impl->m_FrameBuffer)
+		{
+			rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
+			/// copy output buffer
+			rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
+			/// send frame to output
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+		}
+	});
+	///=============================
+	/// perfcap rotation flow in
+	///=============================
+	m_Impl->m_PerfcapRotationFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const vec_t& rot) 
+	{
+		rt::MeshMappingSystem::SetTriangleMeshComponentRotation(m_Impl->m_TriangleMeshComps.back(), rot[0], rot[1], rot[2]);
+		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelrationComp);
+		if (m_Impl->m_FrameBuffer)
+		{
+			rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
+			/// copy output buffer
+			rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
+			/// send frame to output
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+		}
+	});
+	///=============================
+	/// perfcap scale flow in
+	///=============================
+	m_Impl->m_PerfcapScaleFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](float scale) 
+	{
+		rt::MeshMappingSystem::SetTriangleMeshComponentScale(m_Impl->m_TriangleMeshComps.back(), scale);
+		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelrationComp);
+		if (m_Impl->m_FrameBuffer)
+		{
+			rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
+			/// copy output buffer
+			rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
+			/// send frame to output
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 		}
 	});
 }
@@ -176,6 +234,20 @@ rxcpp::observer<VideoTracingModel::input_frame_t> fu::fusion::VideoTracingModel:
 rxcpp::observer<io::MeshData> fu::fusion::VideoTracingModel::MeshDataFlowIn()
 {
 	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<VideoTracingModel::vec_t> fu::fusion::VideoTracingModel::PerfcapTranslationFlowIn()
+{
+	return m_Impl->m_PerfcapTranslationFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observer<VideoTracingModel::vec_t> fu::fusion::VideoTracingModel::PerfcapRotationFlowIn()
+{
+	return m_Impl->m_PerfcapRotationFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<float> fu::fusion::VideoTracingModel::PerfcapScaleFlowIn()
+{
+	return m_Impl->m_PerfcapScaleFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

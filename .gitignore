@@ -6,6 +6,7 @@
 # peruk
 Temp
 Resources/Caffe
+Resources/Python/HSSR/weights
 
 # User-specific files
 *.rsuser

@@ -30,7 +30,7 @@ struct TriangleMeshCompObj
 	optix::Transform		Transform;
 	optix::Acceleration		Acceleration;
 	optix::GeometryGroup	GGroup;
-	
+	optix::Matrix4x4		TransMat;
 };	///	!struct MeshGeometryComp
 ///	\typedef MeshGeometryComp
 ///	\brief a reference counted MeshGeometryCompObj

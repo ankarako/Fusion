@@ -117,6 +117,7 @@ void ImGuiWindow::Render()
 	/// start imgui frame
 	m_Impl->m_GLRenderer.NewFrame();
 	ImGui_ImplGlfw_NewFrame();
+	
 	///
 	ImGui::NewFrame();
 

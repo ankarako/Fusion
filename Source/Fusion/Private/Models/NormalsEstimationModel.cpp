@@ -19,8 +19,8 @@ struct NormalsEstimationModel::Impl
 	coord_ptr_t		m_Coordination;
 
 	rxcpp::subjects::subject<std::pair<uint2, BufferCPU<uchar4>>>	m_FrameFlowInSubj;
-	rxcpp::subjects::subject<std::string>							m_NormalsFilepathFlowOutExrSubj;
-	rxcpp::subjects::subject<std::string>							m_NormalsFilepathFlowOutPngSubj;
+	rxcpp::subjects::subject<BufferCPU<uchar4>>						m_NormalsBufferRGBAFlowOutSubj;
+	rxcpp::subjects::subject<BufferCPU<float3>>						m_NormalsBufferFloatFlowOutSubj;
 
 	Impl(prj_model_ptr_t prj_model, coord_ptr_t coord)
 		: m_ProjectModel(prj_model), m_Coordination(coord)
@@ -73,6 +73,26 @@ void NormalsEstimationModel::Init()
 		/// run normals estimation script
 		std::system(cli.c_str());
 		/// load the images to buffers and send them out
+		/// load png
+		cv::Mat normals_rgba = cv::Mat::zeros(256, 512, CV_8UC4);
+		normals_rgba = cv::imread(outfpath_png, cv::IMREAD_ANYCOLOR);
+		cv::cvtColor(normals_rgba, normals_rgba, cv::COLOR_BGR2RGBA);
+		/// create buffer
+		BufferCPU<uchar4> normalsbuf_rgba = CreateBufferCPU<uchar4>(256 * 512);
+		std::memcpy(normalsbuf_rgba->Data(), normals_rgba.data, normalsbuf_rgba->ByteSize());
+		/// send the buffer
+		m_Impl->m_NormalsBufferRGBAFlowOutSubj.get_subscriber().on_next(normalsbuf_rgba);
+		/// load exr
+		cv::Mat normals_exr = cv::Mat::zeros(256, 512, CV_32FC3);
+		normals_exr = cv::imread(outfpath_exr, cv::IMREAD_UNCHANGED);
+		
+		//cv::cvtColor(normals_exr, normals_exr, cv::COLOR_)
+		//LOG_DEBUG << normals_exr.channels();
+		///// create buffer
+		//BufferCPU<float3> normalsbuf_float = CreateBufferCPU<float3>(256 * 512);
+		//std::memcpy(normalsbuf_float->Data(), normals_exr.data, normalsbuf_float->ByteSize());
+		///// send the buffer
+		//m_Impl->m_NormalsBufferFloatFlowOutSubj.get_subscriber().on_next(normalsbuf_float);
 	});
 }
 
@@ -81,14 +101,14 @@ rxcpp::observer<std::pair<uint2, BufferCPU<uchar4>>> fu::fusion::NormalsEstimati
 	return m_Impl->m_FrameFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
-rxcpp::observable<std::string> fu::fusion::NormalsEstimationModel::NormalsFilepathFlowOutExr()
+rxcpp::observable<BufferCPU<uchar4>> fu::fusion::NormalsEstimationModel::NormalsBufferRGBAFlowOut()
 {
-	return m_Impl->m_NormalsFilepathFlowOutExrSubj.get_observable().as_dynamic();
+	return m_Impl->m_NormalsBufferRGBAFlowOutSubj.get_observable().as_dynamic();
 }
 
-rxcpp::observable<std::string> fu::fusion::NormalsEstimationModel::NormalsFilePathFlowOutPng()
+rxcpp::observable<BufferCPU<float3>> fu::fusion::NormalsEstimationModel::NormalsBufferFloatFlowOut()
 {
-	return m_Impl->m_NormalsFilepathFlowOutPngSubj.get_observable().as_dynamic();
+	return m_Impl->m_NormalsBufferFloatFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

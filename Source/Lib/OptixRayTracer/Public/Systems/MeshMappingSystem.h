@@ -133,7 +133,8 @@ public:
 	///	\param	accelComp	the acceleration component to attach the triangle mesh to
 	static void AttachTriangleMeshToAcceleration(TriangleMeshComp& trComp, AccelerationComp& accelComp)
 	{
-		accelComp->Group->addChild(trComp->GGroup);
+		accelComp->Group->addChild(trComp->Transform);
+		accelComp->Acceleration->markDirty();
 		//accelComp->GGroup->setChild(0, trComp->GInstance);
 	}
 	///	\brief attach point cloud to acceleration
@@ -539,25 +540,73 @@ public:
 		trComp->GInstance->setMaterialCount(1);
 		trComp->GInstance->setMaterial(0, trComp->Material);
 		trComp->GGroup->addChild(trComp->GInstance);
+		trComp->TransMat = optix::Matrix4x4::identity();
 		trComp->Transform->setChild(trComp->GGroup);
+		trComp->Transform->setMatrix(false, trComp->TransMat.getData(), nullptr);
 		trComp->GGroup->setAcceleration(trComp->Acceleration);
 	}
 
 	static void AttachTriangleMeshToTopLevelAcceleration(TriangleMeshComp& trComp, AccelerationComp& accelComp)
 	{
-		accelComp->Group->addChild(trComp->GGroup);
+		accelComp->Group->addChild(trComp->Transform);
+		//accelComp->Transform->setChild(trComp->Transform);
 		accelComp->Acceleration->markDirty();
 	}
 
 	static void DetachTriangleMeshToTopLevelAcceleration(TriangleMeshComp& trComp, AccelerationComp& accelComp)
 	{
-		accelComp->Group->removeChild(trComp->GGroup);
+		accelComp->Group->removeChild(trComp->Transform);
 		accelComp->Acceleration->markDirty();
 	}
 
 	static void SetPointcloudCompPointSize(PointCloudComp& pcComp, float size)
 	{
 		pcComp->GInstance["radius"]->setFloat(size);
+	}
+
+	static void SetTriangleMeshComponentTranslation(TriangleMeshComp& trComp, float x, float y, float z)
+	{
+		/*optix::Matrix4x4 trans;
+		trComp->Transform->getMatrix(false, trans.getData(), nullptr);*/
+		trComp->TransMat *= trComp->TransMat.translate(make_float3(x, -y, z));
+		trComp->Transform->setMatrix(false, trComp->TransMat.getData(), nullptr);
+		trComp->Acceleration->markDirty();
+	}
+
+	static void SetTriangleMeshComponentRotation(TriangleMeshComp& trComp, float x_rot, float y_rot, float z_rot)
+	{
+		optix::Matrix4x4 mat;
+		trComp->Transform->getMatrix(false, mat.getData(), nullptr);
+		optix::float3 axis = optix::normalize(optix::make_float3(x_rot, y_rot, z_rot));
+		float xrad = x_rot * M_PIf / 180.0f;
+		float yrad = y_rot * M_PIf / 180.0f;
+		float zrad = z_rot * M_PIf / 180.0f;
+		float rot;
+		
+		if (xrad != 0.0f)
+		{
+			rot = xrad;
+		}
+		else if (yrad != 0.0f)
+		{
+			rot = yrad;
+		}
+		else if (zrad != 0.0f)
+		{
+			rot = zrad;
+		}
+		trComp->TransMat *= trComp->TransMat.rotate(rot, axis);
+		trComp->Transform->setMatrix(false, trComp->TransMat.getData(), nullptr);
+		trComp->Acceleration->markDirty();
+	}
+
+	static void SetTriangleMeshComponentScale(TriangleMeshComp& trComp, float scale)
+	{
+		optix::Matrix4x4 mat;
+		trComp->Transform->getMatrix(false, mat.getData(), nullptr);
+		trComp->TransMat *= trComp->TransMat.scale(optix::make_float3(scale, scale, scale));
+		trComp->Transform->setMatrix(false, trComp->TransMat.getData(), nullptr);
+		trComp->Acceleration->markDirty();
 	}
 private:
 	static constexpr const char* k_TriangleMeshPTxFilepath			= "FusionLib/Resources/Programs/TriangleMesh.ptx";

@@ -44,6 +44,9 @@
 #include <Presenters/PerfcapPlayerPresenter.h>
 #include <Presenters/FileMenuPresenter.h>
 #include <Presenters/FiltersMenuPresenter.h>
+#include <Presenters/NormalsResultPresenter.h>
+#include <Presenters/WindowsMenuPresenter.h>
+#include <Presenters/TransformationsPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -53,6 +56,8 @@
 #include <Views/DepthEstimationSettingsView.h>
 #include <Views/RayTracingControlView.h>
 #include <Views/SequencerView.h>
+#include <Views/NormalsResultView.h>
+#include <Views/TransformationView.h>
 
 namespace fu {
 namespace fusion {
@@ -86,7 +91,11 @@ namespace di {
 			PerfcapPlayerPresenter,
 			FileMenuPresenter,
 			FiltersMenuPresenter,
-			MainToolbarPresenter
+			MainToolbarPresenter,
+			NormalsResultView,
+			WindowsMenuPresenter,
+			NormalsResultPresenter,
+			TransformationsPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,
@@ -110,7 +119,9 @@ namespace di {
 			RayTracingView,
 			DepthEstimationSettingsView,
 			RayTracingControlView,
-			SequencerView
+			SequencerView,
+			NormalsResultView,
+			TransformationView
 			>(),
 			boost::di::bind<Settings<WriterType::File>>().to<SettingsRepo>()
 		);

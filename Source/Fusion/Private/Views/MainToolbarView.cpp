@@ -22,6 +22,7 @@ struct MainToolbarView::Impl
 	rxcpp::subjects::subject<void*> FiltersMenu_EstimateSurfNormalClickedSubj;
 
 	rxcpp::subjects::subject<void*> WindowsMenu_RayTracingControlClickedSubj;
+	rxcpp::subjects::subject<void*> WindowsMenu_NormalsResultClickedSubj;
 
 	rxcpp::subjects::subject<void*> Omniconnect_ShowVideoListClickedSubj;
 	rxcpp::subjects::subject<void*> Omniconnect_UploadMentorLayerClickedSubj;
@@ -89,6 +90,10 @@ void MainToolbarView::Render()
 			{
 				m_Impl->WindowsMenu_RayTracingControlClickedSubj.get_subscriber().on_next(nullptr);
 			}
+			if (ImGui::MenuItem("Surface Normal Estimation Result"))
+			{
+				m_Impl->WindowsMenu_NormalsResultClickedSubj.get_subscriber().on_next(nullptr);
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Omniconnect"))
@@ -150,6 +155,10 @@ rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFileMenu_OpenPerfcapFile
 rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFiltersMenu_EstimateNormalsClicked()
 {
 	return m_Impl->FiltersMenu_EstimateSurfNormalClickedSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<void*> fu::fusion::MainToolbarView::OnWindowsMenu_NormalsResultClicked()
+{
+	return m_Impl->WindowsMenu_NormalsResultClickedSubj.get_observable().as_dynamic();
 }
 }	///	!namespce fusion
 }	///	!namespace fu
