@@ -28,8 +28,10 @@ public:
 	rxcpp::observable<void*> OnFileMenu_OpenPerfcapFileClicked();
 	rxcpp::observable<void*> OnFiltersMenu_EstimateDepthClicked();
 	rxcpp::observable<void*> OnFiltersMenu_EstimateNormalsClicked();
+	rxcpp::observable<void*> OnFiltersMenu_EstimateIlluminationClicked();
 	rxcpp::observable<void*> OnWindowsMenu_RayTracingControlClicked();
 	rxcpp::observable<void*> OnWindowsMenu_NormalsResultClicked();
+	rxcpp::observable<void*> OnWindowsMenu_IlluminationResultClicked();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

@@ -20,9 +20,12 @@ struct MainToolbarView::Impl
 	rxcpp::subjects::subject<void*> FiltersMenu_ClickedSubj;
 	rxcpp::subjects::subject<void*> FiltersMenu_EstimateDepthClickedSubj;
 	rxcpp::subjects::subject<void*> FiltersMenu_EstimateSurfNormalClickedSubj;
+	rxcpp::subjects::subject<void*> FiltersMenu_EstimateIlluminationClickedSubj;
+
 
 	rxcpp::subjects::subject<void*> WindowsMenu_RayTracingControlClickedSubj;
 	rxcpp::subjects::subject<void*> WindowsMenu_NormalsResultClickedSubj;
+	rxcpp::subjects::subject<void*> WindowsMenu_IlluminationResultClickedSubj;
 
 	rxcpp::subjects::subject<void*> Omniconnect_ShowVideoListClickedSubj;
 	rxcpp::subjects::subject<void*> Omniconnect_UploadMentorLayerClickedSubj;
@@ -82,6 +85,10 @@ void MainToolbarView::Render()
 			{
 				m_Impl->FiltersMenu_EstimateSurfNormalClickedSubj.get_subscriber().on_next(nullptr);
 			}
+			if (ImGui::MenuItem("Illumination Estimation"))
+			{
+				m_Impl->FiltersMenu_EstimateIlluminationClickedSubj.get_subscriber().on_next(nullptr);
+			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Windows"))
@@ -93,6 +100,10 @@ void MainToolbarView::Render()
 			if (ImGui::MenuItem("Surface Normal Estimation Result"))
 			{
 				m_Impl->WindowsMenu_NormalsResultClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			if (ImGui::MenuItem("Illumination Estimation Result"))
+			{
+				m_Impl->WindowsMenu_IlluminationResultClickedSubj.get_subscriber().on_next(nullptr);
 			}
 			ImGui::EndMenu();
 		}
@@ -159,6 +170,16 @@ rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFiltersMenu_EstimateNorm
 rxcpp::observable<void*> fu::fusion::MainToolbarView::OnWindowsMenu_NormalsResultClicked()
 {
 	return m_Impl->WindowsMenu_NormalsResultClickedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFiltersMenu_EstimateIlluminationClicked()
+{
+	return m_Impl->FiltersMenu_EstimateIlluminationClickedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::MainToolbarView::OnWindowsMenu_IlluminationResultClicked()
+{
+	return m_Impl->WindowsMenu_IlluminationResultClickedSubj.get_observable().as_dynamic();
 }
 }	///	!namespce fusion
 }	///	!namespace fu

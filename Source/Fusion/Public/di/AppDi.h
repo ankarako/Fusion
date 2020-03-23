@@ -34,6 +34,7 @@
 #include <Models/AssetLoadingModel.h>
 #include <Models/SequencerModel.h>
 #include <Models/PerfcapPlayerModel.h>
+#include <Models/IlluminationEstimationModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -47,6 +48,7 @@
 #include <Presenters/NormalsResultPresenter.h>
 #include <Presenters/WindowsMenuPresenter.h>
 #include <Presenters/TransformationsPresenter.h>
+#include <Presenters/IlluminationResultPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -58,6 +60,7 @@
 #include <Views/SequencerView.h>
 #include <Views/NormalsResultView.h>
 #include <Views/TransformationView.h>
+#include <Views/IlluminationResultView.h>
 
 namespace fu {
 namespace fusion {
@@ -95,7 +98,10 @@ namespace di {
 			NormalsResultView,
 			WindowsMenuPresenter,
 			NormalsResultPresenter,
-			TransformationsPresenter
+			TransformationsPresenter,
+			IlluminationEstimationModel,
+			IlluminationResultView,
+			IlluminationResultPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,
@@ -121,7 +127,8 @@ namespace di {
 			RayTracingControlView,
 			SequencerView,
 			NormalsResultView,
-			TransformationView
+			TransformationView,
+			IlluminationResultView
 			>(),
 			boost::di::bind<Settings<WriterType::File>>().to<SettingsRepo>()
 		);

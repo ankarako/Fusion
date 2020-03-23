@@ -82,7 +82,7 @@ void TransformationsPresenter::Init()
 	m_Impl->m_TransformationView->UniformScaleFlowOut()
 		.subscribe(m_Impl->m_RayTracingModel->PerfcapScaleFlowIn());
 	m_Impl->m_TransformationView->UniformScaleFlowOut()
-		.subscribe(m_Impl->m_RayTracingModel->PerfcapScaleFlowIn());
+		.subscribe(m_Impl->m_VideoTracingModel->PerfcapScaleFlowIn());
 }
 }	///	!namespace fusion
 }	///	!namespace fu

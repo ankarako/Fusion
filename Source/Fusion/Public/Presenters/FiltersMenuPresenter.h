@@ -16,6 +16,7 @@ class ProjectModel;
 class DepthEstimationSettingsView;
 class DepthEstimationModel;
 class NormalsEstimationModel;
+class IlluminationEstimationModel;
 class Coordination;
 
 class FiltersMenuPresenter : public app::Initializable
@@ -27,6 +28,7 @@ public:
 	using depth_est_model_ptr_t		= std::shared_ptr<DepthEstimationModel>;
 	using depth_est_view_ptr_t		= std::shared_ptr<DepthEstimationSettingsView>;
 	using normal_est_model_ptr_t	= std::shared_ptr<NormalsEstimationModel>;
+	using illum_model_ptr_t			= std::shared_ptr<IlluminationEstimationModel>;
 	using wrepo_ptr_t				= std::shared_ptr<app::WidgetRepo>;
 	using coord_ptr_t				= std::shared_ptr<Coordination>;
 
@@ -37,6 +39,7 @@ public:
 		depth_est_model_ptr_t	depth_est_model,
 		depth_est_view_ptr_t	depth_est_view,
 		normal_est_model_ptr_t	normal_est_model,
+		illum_model_ptr_t		illum_model,
 		wrepo_ptr_t				wrepo,
 		coord_ptr_t				coord);
 

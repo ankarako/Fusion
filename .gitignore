@@ -7,6 +7,8 @@
 Temp
 Resources/Caffe
 Resources/Python/HSSR/weights
+Resources/Python/Illum/ldr2hdr.pth
+Resources/Python/Illum/model.pth
 
 # User-specific files
 *.rsuser

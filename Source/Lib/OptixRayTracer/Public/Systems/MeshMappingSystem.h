@@ -589,7 +589,7 @@ public:
 		}
 		else if (yrad != 0.0f)
 		{
-			rot = yrad;
+			rot = -yrad;
 		}
 		else if (zrad != 0.0f)
 		{

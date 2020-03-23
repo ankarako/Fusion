@@ -120,7 +120,7 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 	///
 	size_t GetCustomHeight(int index)
 	{
-		return m_SequenceItems[index].Expanded ? 100 : 0;
+		return m_SequenceItems[index].Expanded ? 30 : 0;
 	}
 	///	\brief expand the selected item
 	///	\param	index	the item to expand
@@ -152,7 +152,7 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 		{
 			draw_list->PushClipRect(legendClippingRect.Min, legendClippingRect.Max, true);
 			
-			ImVec2 pta(legendRect.Min.x + 30, legendRect.Min.y + 0 * 14.f);
+			ImVec2 pta(legendRect.Min.x + 10, legendRect.Min.y + 0 * 14.f);
 			ImVec2 ptb(legendRect.Max.x, legendRect.Min.y + (0 + 1) * 14.f);
 			draw_list->AddText(pta, 0xFFFFFFFF, "Transform");
 			if (ImRect(pta, ptb).Contains(ImGui::GetMousePos()) && ImGui::IsMouseClicked(0))
