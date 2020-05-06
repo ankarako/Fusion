@@ -28,13 +28,6 @@ void PerfcapPlayerPresenter::Init()
 	///===========================
 	m_Impl->m_Model->TemplateMeshDataFlowOut()
 		.subscribe(m_Impl->m_RayTracingModel->MeshDataFlowIn());
-	///======================
-	/// sequence Loaded task
-	///======================
-	m_Impl->m_Model->SequenceItemFlowOut()
-		.subscribe(m_Impl->m_SequencerView->SequencerItemFlowIn());
-
-	
 }
 }	///	!namespace fusion
 }	///	!namespace fu

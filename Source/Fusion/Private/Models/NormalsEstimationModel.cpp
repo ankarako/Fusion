@@ -1,6 +1,8 @@
 #include <Models/NormalsEstimationModel.h>
 #include <Models/ProjectModel.h>
 #include <Core/Coordination.h>
+#include <Core/SettingsRepo.h>
+#include <Settings/NormalEstimationSettings.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -13,22 +15,25 @@ namespace fusion {
 
 struct NormalsEstimationModel::Impl
 {
+	using settings_ptr_t = std::shared_ptr<NormalEstimationSettings>;
+
 	static constexpr const char* k_PythonInferScriptPath	= "Resources/Python/HSSR/infer.py";
 	static constexpr const char* k_ModelWeightPath			= "Resources/Python/HSSR/weights/vgg16_unet_quaternion_smoothness_model_e50.chkp";
 	prj_model_ptr_t m_ProjectModel;
 	coord_ptr_t		m_Coordination;
-
+	srepo_ptr_t		m_SettingsRepo;
+	settings_ptr_t	m_Settings;
 	rxcpp::subjects::subject<std::pair<uint2, BufferCPU<uchar4>>>	m_FrameFlowInSubj;
 	rxcpp::subjects::subject<BufferCPU<uchar4>>						m_NormalsBufferRGBAFlowOutSubj;
 	rxcpp::subjects::subject<BufferCPU<float3>>						m_NormalsBufferFloatFlowOutSubj;
 
-	Impl(prj_model_ptr_t prj_model, coord_ptr_t coord)
-		: m_ProjectModel(prj_model), m_Coordination(coord)
+	Impl(prj_model_ptr_t prj_model, coord_ptr_t coord, srepo_ptr_t srepo)
+		: m_ProjectModel(prj_model), m_Coordination(coord), m_SettingsRepo(srepo), m_Settings(std::make_shared<NormalEstimationSettings>())
 	{ }
 };	///	!struct Impl
 /// Construction
-NormalsEstimationModel::NormalsEstimationModel(prj_model_ptr_t prj_model, coord_ptr_t coord)
-	: m_Impl(spimpl::make_unique_impl<Impl>(prj_model, coord))
+NormalsEstimationModel::NormalsEstimationModel(prj_model_ptr_t prj_model, coord_ptr_t coord, srepo_ptr_t srepo)
+	: m_Impl(spimpl::make_unique_impl<Impl>(prj_model, coord, srepo))
 { 
 
 }
@@ -54,6 +59,8 @@ void NormalsEstimationModel::Init()
 		std::string filepath = m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/color_normal_est_input.png";
 		std::string outfpath_exr = m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/est_normals_output.exr";
 		std::string outfpath_png = m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/est_normals_output.png";
+		m_Impl->m_Settings->NormalFilepathEXR = outfpath_exr;
+		m_Impl->m_Settings->NormalFilepathPNG = outfpath_png;
 		cv::imwrite(filepath, tosave);
 		/// make cli
 		std::string absscriptpath = std::filesystem::absolute(std::filesystem::path(m_Impl->k_PythonInferScriptPath)).generic_string();
@@ -85,15 +92,51 @@ void NormalsEstimationModel::Init()
 		/// load exr
 		cv::Mat normals_exr = cv::Mat::zeros(256, 512, CV_32FC3);
 		normals_exr = cv::imread(outfpath_exr, cv::IMREAD_UNCHANGED);
-		
-		//cv::cvtColor(normals_exr, normals_exr, cv::COLOR_)
-		//LOG_DEBUG << normals_exr.channels();
-		///// create buffer
-		//BufferCPU<float3> normalsbuf_float = CreateBufferCPU<float3>(256 * 512);
-		//std::memcpy(normalsbuf_float->Data(), normals_exr.data, normalsbuf_float->ByteSize());
-		///// send the buffer
-		//m_Impl->m_NormalsBufferFloatFlowOutSubj.get_subscriber().on_next(normalsbuf_float);
+		BufferCPU<float3> normalsbuf_float = CreateBufferCPU<float3>(256 * 512);
+		std::memcpy(normalsbuf_float->Data(), normals_exr.data, normalsbuf_float->ByteSize());
+		m_Impl->m_NormalsBufferFloatFlowOutSubj.get_subscriber().on_next(normalsbuf_float);
 	});
+	///=======================
+	/// Settings Loaded Task
+	///=======================
+	m_Impl->m_Settings->OnSettingsLoaded()
+		.subscribe([this](auto _) 
+	{
+		/// load png
+		cv::Mat normals_rgba = cv::Mat::zeros(256, 512, CV_8UC4);
+		LOG_DEBUG << "Loaded PNG: " << m_Impl->m_Settings->NormalFilepathPNG;
+		normals_rgba = cv::imread(m_Impl->m_Settings->NormalFilepathPNG, cv::IMREAD_ANYCOLOR);
+		cv::cvtColor(normals_rgba, normals_rgba, cv::COLOR_BGR2RGBA);
+		/// create buffer
+		BufferCPU<uchar4> normalsbuf_rgba = CreateBufferCPU<uchar4>(256 * 512);
+		std::memcpy(normalsbuf_rgba->Data(), normals_rgba.data, normalsbuf_rgba->ByteSize());
+		/// send the buffer
+		m_Impl->m_NormalsBufferRGBAFlowOutSubj.get_subscriber().on_next(normalsbuf_rgba);
+		/// load exr
+		LOG_DEBUG << "Loaded EXR: " << m_Impl->m_Settings->NormalFilepathEXR;
+		cv::Mat normals_exr = cv::Mat::zeros(256, 512, CV_32FC3);
+		normals_exr = cv::imread(m_Impl->m_Settings->NormalFilepathEXR, cv::IMREAD_UNCHANGED);
+		BufferCPU<float3> normalsbuf_float = CreateBufferCPU<float3>(256 * 512);
+		std::memcpy(normalsbuf_float->Data(), normals_exr.data, normalsbuf_float->ByteSize());
+		m_Impl->m_NormalsBufferFloatFlowOutSubj.get_subscriber().on_next(normalsbuf_float);
+	}, [this](std::exception_ptr ptr) 
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception & ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
+	});
+	///=======================
+	/// Register our settings
+	///=======================
+	m_Impl->m_SettingsRepo->RegisterSettings(m_Impl->m_Settings);
 }
 
 rxcpp::observer<std::pair<uint2, BufferCPU<uchar4>>> fu::fusion::NormalsEstimationModel::FrameFlowIn()

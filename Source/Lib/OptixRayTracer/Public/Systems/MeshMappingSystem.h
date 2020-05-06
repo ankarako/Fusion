@@ -350,6 +350,7 @@ public:
 			std::memcpy(pcComp->NormalBuffer->map(), data->NormalBuffer->Data(), bsize);
 			pcComp->NormalBuffer->unmap();
 			pcComp->GInstance["normal_buffer"]->setBuffer(pcComp->NormalBuffer);
+			pcComp->Geometry["render_normals"]->setInt(0);
 			if (attributes == "NoAttrib")
 			{
 				attributes = "Normal";
@@ -607,6 +608,26 @@ public:
 		trComp->TransMat *= trComp->TransMat.scale(optix::make_float3(scale, scale, scale));
 		trComp->Transform->setMatrix(false, trComp->TransMat.getData(), nullptr);
 		trComp->Acceleration->markDirty();
+	}
+
+	static void AttachNormalsToPointcloudComponent(PointCloudComp& pcComp, ContextComp& ctxComp, const BufferCPU<float3>& normalsBuffer)
+	{
+		unsigned int count = normalsBuffer->Count();
+		unsigned int bsize = normalsBuffer->ByteSize();
+		pcComp->NormalBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
+		std::memcpy(pcComp->NormalBuffer->map(), normalsBuffer->Data(), bsize);
+	}
+
+	static void RenderPointCloudNormals(PointCloudComp& pcComp, bool render)
+	{
+		if (render)
+		{
+			pcComp->Geometry["render_normals"]->setInt(1);
+		}
+		else
+		{
+			pcComp->Geometry["render_normals"]->setInt(0);
+		}
 	}
 private:
 	static constexpr const char* k_TriangleMeshPTxFilepath			= "FusionLib/Resources/Programs/TriangleMesh.ptx";

@@ -16,6 +16,7 @@ struct ProjectModel::Impl
 
 	rxcpp::subjects::subject<DirEntry> m_CreateNewProjectFlowInSubj;
 	rxcpp::subjects::subject<DirEntry> m_LoadProjectFlowInSubj;
+	
 	/// Construction
 	Impl(srepo_ptr_t srepo)
 		: m_Settings(std::make_shared<ProjectSettings>())

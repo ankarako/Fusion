@@ -6,27 +6,37 @@
 #include <opencv2/videoio.hpp>
 #include <filesystem>
 #include <plog/Log.h>
+#include <Core/SettingsRepo.h>
+#include <Settings/IlluminationEstimationSettings.h>
+
 namespace fu {
 namespace fusion {
 
 struct IlluminationEstimationModel::Impl
 {
+	/// typedefs
+	using settings_ptr_t = std::shared_ptr<IlluminationEstimationSettings>;
+	/// constants
 	static constexpr const char* k_PythonInferScriptPath = "Resources/Python/Illum/inference_mod.py";
 	static constexpr const char* k_Ldr2ModelPath = "Resources/Python/Illum/ldr2hdr.pth";
 	static constexpr const char* k_CheckpointPath = "Resources/Python/Illum/model.pth";
-
+	/// state
 	prj_model_ptr_t		m_ProjectModel;
+	srepo_ptr_t			m_SettingsRepo;
+	settings_ptr_t		m_Settings;
 
 	rxcpp::subjects::subject<std::pair<uint2, BufferCPU<uchar4>>>	m_FrameFlowInSubj;
 	rxcpp::subjects::subject<BufferCPU<uchar4>>						m_IlluminationMapFlowOutSubj;
 
-	Impl(prj_model_ptr_t prj_model)
+	Impl(prj_model_ptr_t prj_model, srepo_ptr_t srepo)
 		: m_ProjectModel(prj_model)
+		, m_SettingsRepo(srepo)
+		, m_Settings(std::make_shared<IlluminationEstimationSettings>())
 	{ }
 };
 /// Constriction
-IlluminationEstimationModel::IlluminationEstimationModel(prj_model_ptr_t prj_model)
-	: m_Impl(spimpl::make_unique_impl<Impl>(prj_model))
+IlluminationEstimationModel::IlluminationEstimationModel(prj_model_ptr_t prj_model, srepo_ptr_t srepo)
+	: m_Impl(spimpl::make_unique_impl<Impl>(prj_model, srepo))
 { }
 
 void IlluminationEstimationModel::Init()
@@ -50,6 +60,7 @@ void IlluminationEstimationModel::Init()
 		std::string absscriptpath = std::filesystem::absolute(std::filesystem::path(m_Impl->k_PythonInferScriptPath)).generic_string();
 		std::string absinputfpath = std::filesystem::absolute(std::filesystem::path(filepath)).generic_string();
 		std::string absoutputpath = std::filesystem::absolute(std::filesystem::path(outfpath_exr)).generic_string();
+		m_Impl->m_Settings->IlluminationFilepathEXR = absoutputpath + ".exr";
 		std::string modelabsfpath = std::filesystem::absolute(std::filesystem::path(m_Impl->k_Ldr2ModelPath)).generic_string();
 		std::string abschkpntpath = std::filesystem::absolute(std::filesystem::path(m_Impl->k_CheckpointPath)).generic_string();
 		std::string cli = std::string("python")
@@ -79,6 +90,30 @@ void IlluminationEstimationModel::Init()
 		std::memcpy(frame->Data(), illum_exr.data, frame->ByteSize());
 		m_Impl->m_IlluminationMapFlowOutSubj.get_subscriber().on_next(frame);
 	});
+	///======================
+	/// Settings loaded task
+	///======================
+	m_Impl->m_Settings->OnSettingsLoaded()
+		.subscribe([this](auto _) 
+	{
+		/// open result image
+		cv::Mat illum_exr = cv::imread(m_Impl->m_Settings->IlluminationFilepathEXR, cv::IMREAD_UNCHANGED);
+		/// convert to ldr
+		double max = -1e16;
+		double min = 1e16;
+		cv::minMaxLoc(illum_exr, &min, &max);
+		cv::normalize(illum_exr, illum_exr, 0.0f, 1.0f, cv::NORM_MINMAX);
+		cv::convertScaleAbs(illum_exr, illum_exr, 255.0, 0.0);
+		cv::cvtColor(illum_exr, illum_exr, cv::COLOR_BGR2RGBA);
+
+		BufferCPU<uchar4> frame = CreateBufferCPU<uchar4>(illum_exr.cols * illum_exr.rows);
+		std::memcpy(frame->Data(), illum_exr.data, frame->ByteSize());
+		m_Impl->m_IlluminationMapFlowOutSubj.get_subscriber().on_next(frame);
+	});
+	///=======================
+	/// Register our settings
+	///=======================
+	m_Impl->m_SettingsRepo->RegisterSettings(m_Impl->m_Settings);
 }
 
 rxcpp::observer<std::pair<uint2, BufferCPU<uchar4>>> fu::fusion::IlluminationEstimationModel::FrameFlowIn()

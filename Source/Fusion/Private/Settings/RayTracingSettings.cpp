@@ -34,8 +34,9 @@ void RayTracingSettings::Load(rapidjson::Document& doc)
 				LoadedFiles.emplace_back(arr[i].GetString());
 			}
 		}
+		this->m_OnSettingsLoadedSubj.get_subscriber().on_next(nullptr);
 	}
-	this->m_OnSettingsLoadedSubj.get_subscriber().on_next(nullptr);
+	
 }
 
 rxcpp::observable<void*> RayTracingSettings::OnSettingsSaved()

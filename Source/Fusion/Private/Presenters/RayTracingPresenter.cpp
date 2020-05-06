@@ -156,17 +156,16 @@ void RayTracingPresenter::Init()
 	///=====================================
 	m_Impl->m_DepthEstModel->PointCloudFilepathFlowOut()
 		.subscribe(m_Impl->m_AssetModel->FilepathFlowIn());
-
+	///========================================
+	/// Normals Flow In from normals estimation
+	///=========================================
 	m_Impl->m_RayControlView->OnCullingPlanePositionChanged()
 		.subscribe(m_Impl->m_Model->CullingPlanePositionFlowIn());
-
 	/// 
 	m_Impl->m_RayControlView->OnPclSizeChanged()
 		.subscribe(m_Impl->m_Model->PointcloudPointSizeFlowIn());
 	/// activate 3D viewport
 	m_Impl->m_View->Activate();
-
-	
 }
 }	///	!namespace fusion
 }	///	!namespace fu

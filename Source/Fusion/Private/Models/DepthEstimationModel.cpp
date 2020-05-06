@@ -8,11 +8,13 @@
 #include <filesystem>
 #include <plog/Log.h>
 #include <Core/DepthColorToPCL.h>
-
+#include <Core/SettingsRepo.h>
+#include <Settings/DepthEstimationSettings.h>
 namespace fu {
 namespace fusion {
 struct DepthEstimationModel::Impl
 {
+	using settings_ptr_t = std::shared_ptr<DepthEstimationSettings>;
 	/// 
 	static constexpr const char* k_CaffeExecutablePath	= "Resources/Caffe/bin/caffe.exe";
 	static constexpr const char* k_CaffeCommand			= "infer";
@@ -21,18 +23,22 @@ struct DepthEstimationModel::Impl
 
 	prj_model_ptr_t	m_ProjectModel;
 	coord_ptr_t		m_Coord;
+	srepo_ptr_t		m_SettingsRepo;
+	settings_ptr_t	m_Settings;
 
 	rxcpp::subjects::subject<std::pair<uint2, BufferCPU<uchar4>>>	m_FrameFlowInSubj;
 	rxcpp::subjects::subject<std::string>							m_PointcloudFilepathFlowOut;
 	/// Construction
-	Impl(prj_model_ptr_t prj_model, coord_ptr_t coord)
+	Impl(prj_model_ptr_t prj_model, coord_ptr_t coord, srepo_ptr_t srepo)
 		: m_ProjectModel(prj_model)
 		, m_Coord(coord)
+		, m_SettingsRepo(srepo)
+		, m_Settings(std::make_shared<DepthEstimationSettings>())
 	{ }
 };
 /// Construction
-DepthEstimationModel::DepthEstimationModel(prj_model_ptr_t prj_model, coord_ptr_t coord)
-	: m_Impl(spimpl::make_unique_impl<Impl>(prj_model, coord))
+DepthEstimationModel::DepthEstimationModel(prj_model_ptr_t prj_model, coord_ptr_t coord, srepo_ptr_t srepo)
+	: m_Impl(spimpl::make_unique_impl<Impl>(prj_model, coord, srepo))
 { }
 
 void DepthEstimationModel::Init()
@@ -57,6 +63,7 @@ void DepthEstimationModel::Init()
 		std::string absexe = std::filesystem::absolute(std::filesystem::path(m_Impl->k_CaffeExecutablePath)).generic_string();
 		std::string absinputimg = std::filesystem::absolute(std::filesystem::path(filepath)).generic_string();
 		std::string absoutimg = std::filesystem::absolute(std::filesystem::path(m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_output")).generic_string();
+		m_Impl->m_Settings->DepthFilepathEXR = absoutimg;
 		std::string cli = absexe + " " + std::string(m_Impl->k_CaffeCommand)
 			+ " " + "--model"
 			+ " " + m_Impl->m_ModelFilepath
@@ -71,10 +78,25 @@ void DepthEstimationModel::Init()
 		/// run depth estimation network
 		std::system(cli.c_str());
 		std::string absoutply = std::filesystem::absolute(std::filesystem::path(m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_pcl.ply")).generic_string();
+		m_Impl->m_Settings->PointCloudFilepathPLY = absoutply;
 		/// send filepath to pcl loader
 		DepthColorToPCL(absinputimg, absoutimg + ".exr", 10.0f, absoutply);
 		m_Impl->m_PointcloudFilepathFlowOut.get_subscriber().on_next(absoutply);
 	});
+	///=====================
+	/// Settings loaded Task
+	///=====================
+	m_Impl->m_Settings->OnSettingsLoaded()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe([this](auto _) 
+	{
+		/// we just want to load the point cloud
+		m_Impl->m_PointcloudFilepathFlowOut.get_subscriber().on_next(m_Impl->m_Settings->PointCloudFilepathPLY);
+	});
+	///======================
+	/// Register our settings
+	///=======================
+	m_Impl->m_SettingsRepo->RegisterSettings(m_Impl->m_Settings);
 }
 
 rxcpp::observer<std::pair<uint2, BufferCPU<uchar4>>> fu::fusion::DepthEstimationModel::FrameFlowIn()

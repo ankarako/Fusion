@@ -10,14 +10,15 @@ namespace fu {
 namespace fusion {
 
 class ProjectModel;
-
+class SettingsRepo;
 
 class IlluminationEstimationModel : public app::Initializable
 {
 public:
-	using prj_model_ptr_t = std::shared_ptr<ProjectModel>;
+	using prj_model_ptr_t	= std::shared_ptr<ProjectModel>;
+	using srepo_ptr_t		= std::shared_ptr<SettingsRepo>;
 
-	IlluminationEstimationModel(prj_model_ptr_t prj_model);
+	IlluminationEstimationModel(prj_model_ptr_t prj_model, srepo_ptr_t srepo);
 	///
 	void Init() override;
 	rxcpp::observer<std::pair<uint2, BufferCPU<uchar4>>> 	FrameFlowIn();

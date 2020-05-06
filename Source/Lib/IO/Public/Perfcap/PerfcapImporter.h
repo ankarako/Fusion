@@ -26,9 +26,13 @@ public:
 	/// \brief Get the template mesh data
 	///	\return the template mesh data
 	const TemplateMesh& GetTemplateMesh() const;
+
+	//const template_mesh_ptr_t GetTemplateMeshPtr() const;
 	///	\brief get the total frame count of the animation
 	///	\return the number of frames in the animation sequence
 	size_t GetFrameCount() const;
+
+	size_t GetCurrentFrameId() const;
 	///	\brief close the reader
 	void Close();
 private:

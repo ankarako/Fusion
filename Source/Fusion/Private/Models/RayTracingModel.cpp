@@ -16,6 +16,9 @@
 #include <LoadPly.h>
 #include <LoadObj.h>
 
+#include <Core/SettingsRepo.h>
+#include <Settings/RayTracingViewportSettings.h>
+
 #include <vector>
 
 namespace fu {
@@ -24,6 +27,8 @@ namespace fusion {
 ///	\brief RayTracer Implementation
 struct RayTracingModel::Impl
 {
+	using view_settings_ptr_t = std::shared_ptr<RayTracingViewportSettings>;
+
 	bool					m_IsValid{ false };
 	BufferCPU<uchar4>		m_FrameBuffer;
 	/// ray tracing context component
@@ -42,8 +47,12 @@ struct RayTracingModel::Impl
 	unsigned int m_LaunchWidth;
 	unsigned int m_LaunchHeight;
 
+	srepo_ptr_t										m_SettingsRepo;
+	view_settings_ptr_t								m_Settings;
+	
 	rxcpp::subjects::subject<uint2>					m_LaunchSizeFlowInSubj;
 	rxcpp::subjects::subject<BufferCPU<uchar4>>		m_FrameFlowOutSubj;
+	rxcpp::subjects::subject<SequenceItem>			m_SequenceItemFlowOutSubj;
 	rxcpp::subjects::subject<void*>					m_OnLaunchSubj;
 	rxcpp::subjects::subject<mat_t>					m_RotationTransgformRaygenFlowInSubj;
 	rxcpp::subjects::subject<vec_t>					m_TranslationRaygenFlowInSubj;
@@ -54,12 +63,18 @@ struct RayTracingModel::Impl
 	rxcpp::subjects::subject<vec_t>					m_PerfcapTranslationFlowInSubj;
 	rxcpp::subjects::subject<vec_t>					m_PerfcapRotationFlowInSubj;
 	rxcpp::subjects::subject<float>					m_PerfcapScaleFlowInSubj;
+
+	rxcpp::subjects::subject<BufferCPU<float3>>		m_PointcloudNormalsFlowInSubj;
+	rxcpp::subjects::subject<bool>					m_RenderNormalsFlowInSubj;
 	/// Construction
-	Impl() { }
+	Impl(srepo_ptr_t srepo) 
+		: m_SettingsRepo(srepo)
+		, m_Settings(std::make_shared<RayTracingViewportSettings>())
+	{ }
 };	///	!struct Impl
 /// Construction
-RayTracingModel::RayTracingModel()
-	: m_Impl(spimpl::make_unique_impl<Impl>())
+RayTracingModel::RayTracingModel(srepo_ptr_t srepo)
+	: m_Impl(spimpl::make_unique_impl<Impl>(srepo))
 { }
 ///	\brief initialize the model
 void RayTracingModel::Init()
@@ -145,6 +160,7 @@ void RayTracingModel::Init()
 	m_Impl->m_CullingPlanePositionFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](float cullPlanePos) 
 	{
+		m_Impl->m_Settings->CeilingCulling = cullPlanePos;
 		for (int i = 0; i < m_Impl->m_PointCloudComps.size(); i++)
 		{
 			rt::MeshMappingSystem::SetCullingPlanePos(m_Impl->m_PointCloudComps[i], cullPlanePos);
@@ -159,6 +175,7 @@ void RayTracingModel::Init()
 	m_Impl->m_PclSizeFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](float size) 
 	{
+		m_Impl->m_Settings->PointSize = size;
 		for (auto& pcomp : m_Impl->m_PointCloudComps)
 		{
 			rt::MeshMappingSystem::SetPointcloudCompPointSize(pcomp, size);
@@ -182,6 +199,15 @@ void RayTracingModel::Init()
 			/// attach component to top level acceleration
 			rt::MeshMappingSystem::AttachPointCloudCompToTopLevelAcceleration(pcComp, m_Impl->m_AccelerationComp);
 			m_Impl->m_PointCloudComps.emplace_back(pcComp);
+			/// create a sequence item
+			//SequenceItem seqItem;
+			//seqItem.Duration = 10;
+			//seqItem.FrameStart = 0;
+			//seqItem.FrameEnd = seqItem.Duration;
+			//seqItem.Name = " data ";
+			//seqItem.Expanded = false;
+			//seqItem.Type = SequenceItemType::Static3D;
+			//m_Impl->m_SequenceItemFlowOutSubj.get_subscriber().on_next(seqItem);
 			this->OnLaunch().on_next(nullptr);
 		}
 		else
@@ -196,6 +222,7 @@ void RayTracingModel::Init()
 			}
 			rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(trComp, m_Impl->m_AccelerationComp);
 			m_Impl->m_TriangleMeshComps.emplace_back(trComp);
+			/// create a seuqnce item
 			this->OnLaunch().on_next(nullptr);
 		}
 	}, [this](std::exception_ptr& ptr) 
@@ -210,6 +237,17 @@ void RayTracingModel::Init()
 			{
 				LOG_ERROR << ex.what();
 			}
+		}
+	});
+	///=================================
+	/// PointCloudNormals Flow In Task
+	///==================================
+	m_Impl->m_PointcloudNormalsFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const BufferCPU<float3>& normalBuf) 
+	{
+		if (m_Impl->m_PointCloudComps.size() == 1)
+		{
+			rt::MeshMappingSystem::AttachNormalsToPointcloudComponent(m_Impl->m_PointCloudComps.back(), m_Impl->m_ContextComp, normalBuf);
 		}
 	});
 	///=================================
@@ -242,7 +280,24 @@ void RayTracingModel::Init()
 		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelerationComp);
 		this->OnLaunch().on_next(nullptr);
 	});
-
+	///=======================
+	/// Settings Loaded Task
+	///=======================
+	m_Impl->m_Settings->OnSettingsLoaded()
+		.with_latest_from(m_Impl->m_MeshDataFlowInSubj.get_observable().as_dynamic())
+		.subscribe([this](auto _) 
+	{
+		for (int i = 0; i < m_Impl->m_PointCloudComps.size(); i++)
+		{
+			rt::MeshMappingSystem::SetCullingPlanePos(m_Impl->m_PointCloudComps[i], m_Impl->m_Settings->CeilingCulling);
+			rt::MeshMappingSystem::SetPointcloudCompPointSize(m_Impl->m_PointCloudComps[i], m_Impl->m_Settings->PointSize);
+		}
+		this->OnLaunch().on_next(nullptr);
+	});
+	///=======================
+	/// Register our settings
+	///=======================
+	m_Impl->m_SettingsRepo->RegisterSettings(m_Impl->m_Settings);
 }
 ///	\brief update the model
 ///	if the scene is valid it launches the context
@@ -324,5 +379,14 @@ rxcpp::observer<float> fu::fusion::RayTracingModel::PerfcapScaleFlowIn()
 	return m_Impl->m_PerfcapScaleFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
+rxcpp::observable<SequenceItem> fu::fusion::RayTracingModel::SequenceItemFlowOut()
+{
+	return m_Impl->m_SequenceItemFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observer<BufferCPU<float3>> RayTracingModel::PointcloudNormalsFlowIn()
+{
+	return m_Impl->m_PointcloudNormalsFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
 }	///	!namespace fusion
 }	///	!namespace fu

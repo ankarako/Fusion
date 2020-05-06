@@ -5,15 +5,17 @@ namespace fusion {
 
 struct RayTracingControlView::Impl
 {
-	float m_CullMin = -10.0f;
-	float m_CullMax = 10.0f;
-	float m_CullPos = 10.0f;
-	float m_PclSizeMin = 0.0f;
-	float m_PclSizeMax = 0.02f;
-	float m_PclSize = 0.01f;
+	float	m_CullMin = -10.0f;
+	float	m_CullMax = 10.0f;
+	float	m_CullPos = 10.0f;
+	float	m_PclSizeMin = 0.0f;
+	float	m_PclSizeMax = 0.02f;
+	float	m_PclSize = 0.01f;
+	bool	m_RenderNormals = false;
 
 	rxcpp::subjects::subject<float> m_OnCullingPlanePositionChangedSubj;
 	rxcpp::subjects::subject<float> m_OnPclSizeChangedSubj;
+	rxcpp::subjects::subject<bool>	m_OnRenderNormalsFlowOutSubj;
 	Impl() { }
 };	///	!struct Impl
 /// Construction
@@ -37,6 +39,10 @@ void RayTracingControlView::Render()
 		{
 			m_Impl->m_OnPclSizeChangedSubj.get_subscriber().on_next(m_Impl->m_PclSize);
 		}
+		if (ImGui::Checkbox("Render Normals", &m_Impl->m_RenderNormals))
+		{
+			m_Impl->m_OnRenderNormalsFlowOutSubj.get_subscriber().on_next(m_Impl->m_RenderNormals);
+		}
 	}
 	ImGui::End();
 	ImGui::PopItemWidth();
@@ -50,6 +56,11 @@ rxcpp::observable<float> fu::fusion::RayTracingControlView::OnCullingPlanePositi
 rxcpp::observable<float> fu::fusion::RayTracingControlView::OnPclSizeChanged()
 {
 	return m_Impl->m_OnPclSizeChangedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<bool> RayTracingControlView::OnRenderNormalsFlowOut()
+{
+	return m_Impl->m_OnRenderNormalsFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

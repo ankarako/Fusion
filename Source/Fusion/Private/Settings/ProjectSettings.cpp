@@ -43,8 +43,9 @@ void fu::fusion::ProjectSettings::Load(rapidjson::Document& doc)
 		{
 			this->ProjectName = member["ProjectName"].GetString();
 		}
+		this->m_OnSettingsLoadedSubj.get_subscriber().on_next(nullptr);
 	}
-	this->m_OnSettingsLoadedSubj.get_subscriber().on_next(nullptr);
+	
 }
 
 rxcpp::observable<void*> fu::fusion::ProjectSettings::OnSettingsLoaded()
