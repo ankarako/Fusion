@@ -1,0 +1,10 @@
+prefix=E:/_dev/_Libraries/libjpeg-turbo-master/build/vc16/install
+exec_prefix=E:/_dev/_Libraries/libjpeg-turbo-master/build/vc16/install
+libdir=E:/_dev/_Libraries/libjpeg-turbo-master/build/vc16/install/lib
+includedir=E:/_dev/_Libraries/libjpeg-turbo-master/build/vc16/install/include
+
+Name: libturbojpeg
+Description: A SIMD-accelerated JPEG codec that provides the TurboJPEG API
+Version: 2.0.5
+Libs: -L${libdir} -lturbojpeg
+Cflags: -I${includedir}

@@ -34,11 +34,14 @@ struct FileExplorerView::Impl
 	rxcpp::subjects::subject<drive_letter_array>	DriveLettersFlowInSubj;
 	rxcpp::subjects::subject<std::string>			CurrentSelectedDriveFlowInSubj;
 	/// outputs
-	rxcpp::subjects::subject<std::string>		OpenProjectFileSubj;
-	rxcpp::subjects::subject<std::string>		SaveProjectFileSubj;
+	rxcpp::subjects::subject<DirEntry>			OpenProjectFileSubj;
+	rxcpp::subjects::subject<DirEntry>			SaveProjectFileSubj;
 	rxcpp::subjects::subject<std::string>		OpenVideoFileSubj;
+	rxcpp::subjects::subject<std::string>		Open3DFileSubj;
+	rxcpp::subjects::subject<std::string>		OpenPerfcapFileSubj;
 	rxcpp::subjects::subject<void*>				OnMoveUpButtonClickedSubj;
 	rxcpp::subjects::subject<std::string>		OnMoveIntoClickedSubj;
+	
 
 	Impl(fman_ptr_t fman)
 		: m_FontManager(fman)
@@ -181,13 +184,25 @@ void FileExplorerView::Render()
 						m_Impl->m_SelectedEntry = m_Impl->m_CurrentDirEntries[de].second;
 						if (m_Impl->m_Mode == FileExplorerMode::OpenProject)
 						{
-							m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+							m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry);
 							memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 							this->Deactivate();
 						}
 						else if (m_Impl->m_Mode == FileExplorerMode::OpenVideoFile)
 						{
 							m_Impl->OpenVideoFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+							memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+							this->Deactivate();
+						}
+						else if (m_Impl->m_Mode == FileExplorerMode::Open3DFile)
+						{
+							m_Impl->Open3DFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+							memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+							this->Deactivate();
+						}
+						else if (m_Impl->m_Mode == FileExplorerMode::OpenPerfcapFile)
+						{
+							m_Impl->OpenPerfcapFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
 							memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 							this->Deactivate();
 						}
@@ -202,7 +217,7 @@ void FileExplorerView::Render()
 		{
 			if (ImGui::Button("Open"))
 			{
-				m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+				m_Impl->OpenProjectFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry);
 				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 				this->Deactivate();
 			}
@@ -216,10 +231,36 @@ void FileExplorerView::Render()
 				this->Deactivate();
 			}
 		}
+		else if (m_Impl->m_Mode == FileExplorerMode::Open3DFile)
+		{
+			if (ImGui::Button("Open"))
+			{
+				m_Impl->Open3DFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+				this->Deactivate();
+			}
+		}
+		else if (m_Impl->m_Mode == FileExplorerMode::OpenPerfcapFile)
+		{
+			if (ImGui::Button("Open"))
+			{
+				m_Impl->OpenPerfcapFileSubj.get_subscriber().on_next(m_Impl->m_SelectedEntry.AbsPath);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+				this->Deactivate();
+			}
+		}
 		else if (m_Impl->m_Mode == FileExplorerMode::SaveProject)
 		{
 			if (ImGui::Button("Save"))
 			{
+				std::string name = std::string(m_Impl->m_InputTextBuffer);
+				std::string abspath = m_Impl->m_CurrentDirectory + "/" + name;
+				DirEntry projectEntry;
+				projectEntry.EntryType = DirEntry::Type::File;
+				projectEntry.AbsPath = abspath;
+				projectEntry.Name = name;
+				m_Impl->SaveProjectFileSubj.get_subscriber().on_next(projectEntry);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 				this->Deactivate();
 			}
 		}
@@ -264,12 +305,12 @@ rxcpp::observer<FileExplorerView::drive_letter_array> fusion::FileExplorerView::
 	return m_Impl->DriveLettersFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
-rxcpp::observable<std::string> fusion::FileExplorerView::OpenProjectFileFlowOut()
+rxcpp::observable<DirEntry> fusion::FileExplorerView::OpenProjectFileFlowOut()
 {
 	return m_Impl->OpenProjectFileSubj.get_observable().as_dynamic();
 }
 
-rxcpp::observable<std::string> fusion::FileExplorerView::SaveProjectFileFlowOut()
+rxcpp::observable<DirEntry> fusion::FileExplorerView::SaveProjectFileFlowOut()
 {
 	return m_Impl->SaveProjectFileSubj.get_observable().as_dynamic();
 }
@@ -292,6 +333,14 @@ rxcpp::observable<std::string> fusion::FileExplorerView::OnMoveIntoDirectory()
 rxcpp::observer<std::string> fusion::FileExplorerView::CurrentSelectedDriveFlowIn()
 {
 	return m_Impl->CurrentSelectedDriveFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observable<std::string> fu::fusion::FileExplorerView::Open3DFileFlowOut()
+{
+	return m_Impl->Open3DFileSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<std::string> fu::fusion::FileExplorerView::OpenPerfcapFileFlowOut()
+{
+	return m_Impl->OpenPerfcapFileSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

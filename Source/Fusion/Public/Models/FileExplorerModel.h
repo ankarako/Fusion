@@ -30,6 +30,14 @@ public:
 	///	\brief Destruction
 	///	Saves .ini file
 	void Destroy() noexcept override;
+	/// \brief create a new folder in the current directory
+	///	\param	directory	the directory that the folder is in
+	///	\param	foldername	the name of the folder to create
+	void CreateFolder(const std::string& directory, const std::string& foldername);
+	///	\brief delete a folder in a specified directory
+	///	\param	directory	the directory of the folder
+	///	\param	foldername	the name of the folder to delete
+	void DeleteFolder(const std::string& directory, const std::string& foldername);
 	///	\brief get the current directory
 	///	\return the current directory
 	rxcpp::observable<std::string>		CurrentDirectoryFlowOut();

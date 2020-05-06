@@ -25,6 +25,7 @@ public:
 	rxcpp::observable<void*>	OnPauseButtonClicked();
 	rxcpp::observable<void*>	OnStopButtonClicked();
 	rxcpp::observable<void*>	OnSeekForwardButtonClicked();
+	rxcpp::observable<int>		OnSliderValueChanged();
 	rxcpp::observer<int>		FrameIdFlowIn();
 private:
 	struct Impl;

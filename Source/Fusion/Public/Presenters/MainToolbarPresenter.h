@@ -10,20 +10,23 @@ class WidgetRepo;
 }
 namespace fusion {
 ///
-class MainToolbarView;
-class FileExplorerView;
-class PlayerModel;
+class FileMenuPresenter;
+class FiltersMenuPresenter;
+class RayTracingControlView;
+class PerfcapPlayerModel;
 ///	\class MainToolbarPresenter
 ///	\brief responsible for interacting with the main toolbar
 class MainToolbarPresenter	: public app::Initializable
 {
 public:
-	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
-	using player_model_ptr_t = std::shared_ptr<PlayerModel>;
-	using view_ptr_t = std::shared_ptr<MainToolbarView>;
-	using fexp_view_ptr_t = std::shared_ptr<FileExplorerView>;
+	using file_menu_ptr_t = std::shared_ptr<FileMenuPresenter>;
+	using filters_menu_ptr_t = std::shared_ptr<FiltersMenuPresenter>;
+	using rt_ctrl_view_ptr_t	= std::shared_ptr<RayTracingControlView>;
+	using perfcap_model_ptr_t	= std::shared_ptr<PerfcapPlayerModel>;
 	/// Construction
-	MainToolbarPresenter(player_model_ptr_t decoder_model, view_ptr_t view, fexp_view_ptr_t fexp_view, wrepo_ptr_t wrepo);
+	MainToolbarPresenter(
+		file_menu_ptr_t		file_menu,
+		filters_menu_ptr_t	filters_menu);
 	/// \brief Initialization
 	void Init() override;
 private:

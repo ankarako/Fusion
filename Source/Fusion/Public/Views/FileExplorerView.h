@@ -17,8 +17,11 @@ namespace fusion {
 enum class FileExplorerMode
 {
 	OpenProject,
+	SaveProjectAs,
 	SaveProject,
 	OpenVideoFile,
+	Open3DFile,
+	OpenPerfcapFile
 };	///	!enum FileExplorerCommand
 ///	\class FileExplorerView
 ///	\brief the file exploer widget
@@ -42,12 +45,14 @@ public:
 	rxcpp::observer<unsigned int>		DriveCountFlowIn();
 	rxcpp::observer<drive_letter_array> DriveLettersFlowIn();
 	rxcpp::observer<std::string>		CurrentSelectedDriveFlowIn();
-	///	Outputs
-	rxcpp::observable<std::string>		OpenProjectFileFlowOut();
-	rxcpp::observable<std::string>		SaveProjectFileFlowOut();
-	rxcpp::observable<std::string>		OpenVideoFileFlowOut();
 	rxcpp::observable<void*>			OnMoveUpButtonClicked();
 	rxcpp::observable<std::string>		OnMoveIntoDirectory();
+	///	Outputs
+	rxcpp::observable<DirEntry>			OpenProjectFileFlowOut();
+	rxcpp::observable<DirEntry>			SaveProjectFileFlowOut();
+	rxcpp::observable<std::string>		OpenVideoFileFlowOut();
+	rxcpp::observable<std::string>		Open3DFileFlowOut();
+	rxcpp::observable<std::string>		OpenPerfcapFileFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

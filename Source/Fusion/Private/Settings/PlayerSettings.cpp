@@ -19,6 +19,8 @@ void PlayerSettings::Save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& wr
 	writer.StartObject();
 	writer.Key("LoadedFilepath");
 	writer.String(this->LoadedVideoFilepath.c_str());
+	writer.Key("CurrentFrameId");
+	writer.Uint64(this->CurrentFrameId);
 	writer.EndObject();
 	this->m_OnSettingsSavedSubj.get_subscriber().on_next(nullptr);
 }
@@ -29,10 +31,14 @@ void PlayerSettings::Load(rapidjson::Document& doc)
 	auto obj = doc.GetObject();
 	if (obj.HasMember("PlayerSettings"))
 	{
-		obj = obj["PlayerSettings"].GetObject();
-		if (obj.HasMember("LoadedFilepath"))
+		auto member = obj["PlayerSettings"].GetObject();
+		if (member.HasMember("LoadedFilepath"))
 		{
-			this->LoadedVideoFilepath = obj["LoadedFilepath"].GetString();
+			this->LoadedVideoFilepath = member["LoadedFilepath"].GetString();
+		}
+		if (member.HasMember("CurrentFrameId"))
+		{
+			this->CurrentFrameId = member["CurrentFrameId"].GetUint64();
 		}
 	}
 	this->m_OnSettingsLoadedSubj.get_subscriber().on_next(nullptr);

@@ -40,32 +40,46 @@ PlayerControllerPresenter::PlayerControllerPresenter(
 ///	\brief Initialize the presenter
 void PlayerControllerPresenter::Init()
 {
+	///==========================
 	/// view activated event task
+	///==========================
 	m_Impl->m_View->OnActivated().subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_WidgetRepo->RegisterWidget(m_Impl->m_View);
 	});
+	///============================
 	/// view deactivated event task
+	///============================
 	m_Impl->m_View->OnDeactivated().subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_WidgetRepo->UnregisterWidget(m_Impl->m_View);
 	});
+	///==========================================
 	///	file explorer view open video event task
+	///===========================================
 	m_Impl->m_FexpView->OpenVideoFileFlowOut().subscribe(
 		[this](auto filepath)
 	{
+		if (m_Impl->m_Model->IsOpen())
+		{
+			m_Impl->m_Model->Destroy();
+		}
 		m_Impl->m_Model->LoadFile(filepath);
 		m_Impl->m_View->Activate();
 	});
+	///======================
 	///	seek back event task
+	///======================
 	m_Impl->m_View->OnSeekBackwardButtonClicked().subscribe(
 		[this](auto _)
 	{
-		
+		m_Impl->m_Model->SeekBackward();
 	});
+	///================
 	/// play event task
+	///================
 	m_Impl->m_View->OnPlayButtonClicked().observe_on(m_Impl->m_Coord->ModelCoordination())
 		.subscribe([this](auto _)
 	{
@@ -85,31 +99,58 @@ void PlayerControllerPresenter::Init()
 		}
 			
 	});
+	///=====================
+	/// player loaded video
+	///=====================
+	m_Impl->m_Model->OnVideoLoaded()
+		.subscribe([this](auto _) 
+	{
+		if (!m_Impl->m_View->IsActive())
+			m_Impl->m_View->Activate();
+	});
+	///==================
 	/// pause event task
+	///==================
 	m_Impl->m_View->OnPauseButtonClicked().subscribe(
 		[this](auto _) 
 	{
 		m_Impl->m_Model->Pause();
 	});
+	///=================
 	/// stop event task
+	///=================
 	m_Impl->m_View->OnStopButtonClicked().subscribe(
 		[this](auto _)
 	{
 		m_Impl->m_Model->Stop();
 	});
+	///========================
 	/// seek forward event task
+	///========================
 	m_Impl->m_View->OnSeekForwardButtonClicked().subscribe(
 		[this](auto _)
 	{
-
+		m_Impl->m_Model->SeekForward();
 	});
-
+	///============================
+	/// Slider value changed Task
+	///============================
+	m_Impl->m_View->OnSliderValueChanged()
+		.subscribe([this](int value) 
+	{
+		m_Impl->m_Model->Seek(value);
+	});
+	///===================================
+	/// Model -> FrameCount Flow out task
+	///===================================
 	m_Impl->m_Model->FrameCountFlowOut().subscribe(
 		[this](size_t count) 
 	{
 		m_Impl->m_View->SetMaxSliderValue(count);
 	});
-
+	///================================
+	///	Model -> Frame id flow out task
+	///================================
 	m_Impl->m_Model->CurrentFrameIdFlowOut().subscribe(
 		[this](size_t pos) 
 	{

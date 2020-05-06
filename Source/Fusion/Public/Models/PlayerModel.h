@@ -4,6 +4,7 @@
 #include <Initializable.h>
 #include <Destroyable.h>
 #include <Buffer.h>
+#include <Core/SequenceItem.h>
 #include <spimpl.h>
 #include <string>
 #include <rxcpp/rx.hpp>
@@ -39,9 +40,25 @@ public:
 	void Pause();
 	///	\brief stop playback
 	void Stop();
+	///	\brief seek to a specified frame position
+	///	\param	framePos	the frame position to seek
+	void Seek(int framePos);
+	///	\brief seek forward one frame
+	void SeekForward();
+	///	\brief seek backward one frame
+	void SeekBackward();
 	///	\brief set the number of frames to prefetch
 	///	\param	frameCount	the number of frames to prefetch
 	void SetFramePrefetchCount(size_t frameCount);
+	///	\brief set scaling size
+	void SetScalingSize(uint2 size);
+	/// \brief checj if the model has opened a file
+	///	\return true if the video player is opened
+	bool IsOpen() const;
+
+	uint2 GetFrameSize() const;
+
+	const BufferCPU<uchar4>& GetCurrentFrame();
 	///	\brief current frame id output
 	rxcpp::observable<size_t> CurrentFrameIdFlowOut();
 	///	\brief frame duration output
@@ -54,6 +71,10 @@ public:
 	rxcpp::observable<int>	FrameHeightFlowOut();
 	///	\brief frame size flow out
 	rxcpp::observable<uint2> FrameSizeFlowOut();
+
+	rxcpp::observable<void*> OnVideoLoaded();
+
+	rxcpp::observable<SequenceItem> SequenceItemFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
