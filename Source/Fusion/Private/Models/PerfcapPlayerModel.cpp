@@ -3,6 +3,7 @@
 #include <Core/Helpers.h>
 #include <plog/Log.h>
 #include <filesystem>
+#include <chrono>
 
 namespace fu {
 namespace fusion {
@@ -11,10 +12,18 @@ struct PerfcapPlayerModel::Impl
 {
 	using importer_t = std::shared_ptr<io::PerfcapImporter>;
 
-	importer_t	m_PerfcapImporter;
-	rxcpp::subjects::subject<std::string>	m_PerfcapFilepathFlowInSubj;
-	rxcpp::subjects::subject<io::MeshData>	m_TemplateMeshDataFlowOutSubj;
-	rxcpp::subjects::subject<SequenceItem>	m_SequenceItemFlowOutSubj;
+	importer_t											m_PerfcapImporter;
+	io::AnimationFrame									m_CurrentAnimationFrame;
+	rxcpp::subjects::subject<std::string>				m_PerfcapFilepathFlowInSubj;
+	rxcpp::subjects::subject<io::MeshData>				m_TemplateMeshDataFlowOutSubj;
+	rxcpp::subjects::subject<SequenceItem>				m_SequenceItemFlowOutSubj;
+	rxcpp::subjects::subject<io::TemplateMesh>			m_TemplateMeshFlowOutSubj;
+	rxcpp::subjects::subject<io::AnimationFrame>		m_AnimationFrameFlowOutSubj;
+	
+
+	rxcpp::composite_subscription						m_PlaybackLifetime;
+	rxcpp::observable<long>								m_PlaybackObservable;
+	std::chrono::milliseconds							m_FramePeriod;
 	/// Construction
 	Impl() { }
 };	///	!struct Impl
@@ -83,6 +92,7 @@ PerfcapPlayerModel::PerfcapPlayerModel()
 			std::memcpy(data->TIndexBuffer->Data(), tmp_mesh.Faces.data(), bsize);
 		}
 		m_Impl->m_TemplateMeshDataFlowOutSubj.get_subscriber().on_next(data);
+		m_Impl->m_TemplateMeshFlowOutSubj.get_subscriber().on_next(m_Impl->m_PerfcapImporter->GetTemplateMesh());
 		/// create a sequence item
 		SequenceItem item;
 		item.Name = std::filesystem::path(filepath).filename().generic_string();
@@ -95,6 +105,66 @@ PerfcapPlayerModel::PerfcapPlayerModel()
 		item.Type = SequenceItemType::Animation;
 		m_Impl->m_SequenceItemFlowOutSubj.get_subscriber().on_next(item);
 	});
+
+	double fps = 25.0;
+	double periodSecs = 1.0 / fps;
+	m_Impl->m_FramePeriod =
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs));
+
+	std::chrono::nanoseconds periodNano =
+		std::chrono::duration_cast<std::chrono::nanoseconds>(m_Impl->m_FramePeriod);
+
+	m_Impl->m_PlaybackObservable = rxcpp::observable<>::interval(periodNano).as_dynamic();
+	
+}
+
+
+void PerfcapPlayerModel::Start()
+{
+	m_Impl->m_PlaybackLifetime.add(
+		m_Impl->m_PlaybackObservable.subscribe([this](auto _) 
+	{
+		m_Impl->m_PerfcapImporter->ReadNextAnimationFrame(m_Impl->m_CurrentAnimationFrame);
+		m_Impl->m_AnimationFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentAnimationFrame);
+	}, [this](std::exception_ptr ptr) 
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception & ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
+	}));
+}
+
+void PerfcapPlayerModel::Pause()
+{
+	m_Impl->m_PlaybackLifetime.clear();
+}
+
+void PerfcapPlayerModel::Stop()
+{
+	m_Impl->m_PlaybackLifetime.clear();
+}
+
+void PerfcapPlayerModel::SeekFrame(size_t frameId)
+{
+
+}
+
+void PerfcapPlayerModel::SeekForward()
+{
+
+}
+
+void PerfcapPlayerModel::SeekBackward()
+{
+
 }
 rxcpp::observer<std::string> fu::fusion::PerfcapPlayerModel::PerfcapFilepathFlowIn()
 {
@@ -108,6 +178,16 @@ rxcpp::observable<io::MeshData> fu::fusion::PerfcapPlayerModel::TemplateMeshData
 rxcpp::observable<SequenceItem> fu::fusion::PerfcapPlayerModel::SequenceItemFlowOut()
 {
 	return m_Impl->m_SequenceItemFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<io::TemplateMesh> fu::fusion::PerfcapPlayerModel::TemplateMeshFlowOut()
+{
+	return m_Impl->m_TemplateMeshFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<io::AnimationFrame> fu::fusion::PerfcapPlayerModel::AnimationFrameFlowOut()
+{
+	return m_Impl->m_AnimationFrameFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

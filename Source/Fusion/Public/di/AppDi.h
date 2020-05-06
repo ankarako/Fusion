@@ -35,6 +35,8 @@
 #include <Models/SequencerModel.h>
 #include <Models/PerfcapPlayerModel.h>
 #include <Models/IlluminationEstimationModel.h>
+#include <Models/AnimationModel.h>
+#include <Models/WindowsMenuModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -96,12 +98,14 @@ namespace di {
 			FiltersMenuPresenter,
 			MainToolbarPresenter,
 			NormalsResultView,
-			WindowsMenuPresenter,
 			NormalsResultPresenter,
 			TransformationsPresenter,
 			IlluminationEstimationModel,
 			IlluminationResultView,
-			IlluminationResultPresenter
+			IlluminationResultPresenter,
+			AnimationModel,
+			WindowsMenuModel,
+			WindowsMenuPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,

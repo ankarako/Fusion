@@ -24,9 +24,7 @@ struct MainToolbarPresenter::Impl
 MainToolbarPresenter::MainToolbarPresenter(
 	file_menu_ptr_t		file_menu,
 	filters_menu_ptr_t	filters_menu)
-	: m_Impl(spimpl::make_unique_impl<Impl>(
-		file_menu,
-		filters_menu))
+	: m_Impl(spimpl::make_unique_impl<Impl>(file_menu, filters_menu))
 { }
 ///	\brief Initialization
 void MainToolbarPresenter::Init()

@@ -15,6 +15,7 @@ public:
 	void Render() override;
 	rxcpp::observable<float> OnCullingPlanePositionChanged();
 	rxcpp::observable<float> OnPclSizeChanged();
+	rxcpp::observable<bool>	OnRenderNormalsFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

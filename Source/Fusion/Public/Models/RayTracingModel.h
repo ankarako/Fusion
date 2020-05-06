@@ -8,6 +8,7 @@
 #include <Components/ContextComp.h>
 #include <Components/TriangleMeshComp.h>
 #include <Components/PointCloudComp.h>
+#include <Core/SequenceItem.h>
 #include <MeshData.h>
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
@@ -16,6 +17,7 @@
 
 namespace fu {
 namespace fusion {
+class SettingsRepo;
 ///	\class RayTracingModel
 ///	\brief 3D ray tracing
 class RayTracingModel : public app::Initializable, public app::Updateable, public app::Destroyable
@@ -23,8 +25,10 @@ class RayTracingModel : public app::Initializable, public app::Updateable, publi
 public:
 	using mat_t = std::array<float, 16>;
 	using vec_t = std::array<float, 3>;
+
+	using srepo_ptr_t = std::shared_ptr<SettingsRepo>;
 	/// Construction
-	RayTracingModel();
+	RayTracingModel(srepo_ptr_t srepo);
 	/// \brief initialize the model
 	void Init() override;
 	///	\brief update the model
@@ -46,8 +50,10 @@ public:
 	rxcpp::observer<vec_t>			PerfcapTranslationFlowIn();
 	rxcpp::observer<vec_t>			PerfcapRotationFlowIn();
 	rxcpp::observer<float>			PerfcapScaleFlowIn();
+	rxcpp::observer<BufferCPU<float3>> PointcloudNormalsFlowIn();
 	///
 	rxcpp::observable<BufferCPU<uchar4>> FrameFlowOut();
+	rxcpp::observable<SequenceItem> SequenceItemFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

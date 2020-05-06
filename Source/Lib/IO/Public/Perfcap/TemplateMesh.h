@@ -4,6 +4,7 @@
 #include <Perfcap/Vec3.h>
 #include <Perfcap/Skeleton.h>
 #include <vector>
+#include <memory>
 
 namespace fu {
 namespace io {
@@ -40,6 +41,8 @@ struct TemplateMesh
 			&& SkinningWeights == other.SkinningWeights;
 	}
 };	///	!struct TemplateMesh
+
+using template_mesh_ptr_t = std::shared_ptr<TemplateMesh>;
 }	///	!namespace io
 }	///	!namespace fu
 #endif	///	!__IO_PUBLIC_PERFCAP_TEMPLATEMESH_H__

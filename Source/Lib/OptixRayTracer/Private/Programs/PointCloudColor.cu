@@ -9,6 +9,7 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(fu::rt::PerRayData_Radiance, prd_radiance, rtPayload, );
 rtDeclareVariable(int, flat_shaded, , );
 rtDeclareVariable(float, culling_plane_pos, , );
+rtDeclareVariable(unsigned int, render_normals, , );
 
 rtBuffer<optix::float3> vertex_positions;
 rtBuffer<optix::uchar4> vertex_colors;

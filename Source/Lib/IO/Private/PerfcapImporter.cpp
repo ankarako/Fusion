@@ -90,5 +90,13 @@ void PerfcapImporter::Close()
 	if (m_Impl->m_FStream.is_open())
 		m_Impl->m_FStream.close();
 }
+size_t fu::io::PerfcapImporter::GetCurrentFrameId() const
+{
+	return m_Impl->m_CurrentFrameIndex;
+}
+//const template_mesh_ptr_t PerfcapImporter::GetTemplateMeshPtr() const
+//{
+//	return std::make_shared<TemplateMesh>(&m_Impl->m_TemplateMesh);
+//}
 }	///	!namespace io
 }	///	!namespace fu

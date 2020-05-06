@@ -40,8 +40,9 @@ void PlayerSettings::Load(rapidjson::Document& doc)
 		{
 			this->CurrentFrameId = member["CurrentFrameId"].GetUint64();
 		}
+		this->m_OnSettingsLoadedSubj.get_subscriber().on_next(nullptr);
 	}
-	this->m_OnSettingsLoadedSubj.get_subscriber().on_next(nullptr);
+	
 }
 ///	\brief on settings saved event output
 rxcpp::observable<void*> PlayerSettings::OnSettingsSaved()
