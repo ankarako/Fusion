@@ -94,7 +94,6 @@ void PlayerModel::Init()
 	{
 		LOG_DEBUG << "Set finished generating on thread: " << std::this_thread::get_id();
 		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 	});
 
 	/// create out settings
@@ -140,13 +139,18 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	/// create the interval observable according to the frame rate
 	std::chrono::nanoseconds periodNano = std::chrono::duration_cast<std::chrono::nanoseconds>(m_Impl->m_FramePeriod);
 	m_Impl->m_PlaybackObs = rxcpp::observable<>::interval(periodNano).as_dynamic();
+	///=========================================================
+	/// Check Prefetch Task
+	/// Periodical task (every 2 frame periods)
+	/// It will check the queue's size and if it's bellow 
+	/// the prefetch threshold, it will signal a prefetch event
+	///==========================================================
 	m_Impl->m_CheckPrefetchObs = rxcpp::observable<>::interval(periodNano * 2).as_dynamic();
 	m_Impl->m_CheckPrefetchObs.subscribe(
 		[this](auto _)
 	{
 		if (m_Impl->m_FrameQueue.size() < m_Impl->m_Settings->PrefetchThreshold && !m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
 		{
-			LOG_DEBUG << "Checked prefetch";
 			m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 		}
 	});
@@ -159,15 +163,13 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	///	scaling node Frame flow in Task
 	///	push frame in buffer
 	///=================================
-	static int pushed_frame_counter = 0;
 	m_Impl->m_ScalingNode->FrameFlowOut()/*.observe_on(m_Impl->m_Coord->ModelCoordination())*/
 		.subscribe([this](frame_t frame)
 	{
-		LOG_DEBUG << "Pushed frame." << pushed_frame_counter++;
+		
 		m_Impl->m_FrameQueue.emplace_back(frame);
 	});
 	/// start prefetching
-	//LOG_DEBUG << "Called Prefetch on thread: " << std::this_thread::get_id();
 	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 }
 ///	\brief start playback
@@ -190,35 +192,22 @@ void PlayerModel::Start()
 			m_Impl->m_Settings->CurrentFrameId++;
 			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 			m_Impl->m_FrameQueue.pop_front();
-			LOG_DEBUG << "Current frame id: " << m_Impl->m_Settings->CurrentFrameId;
 		}
 	}));
 }
 ///	\brief pause playback
 void PlayerModel::Pause()
 {
-	/*while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
-	{
-
-	}*/
 	m_Impl->m_PlaybackLifetime.clear();
-	//m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 	m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
 }
 ///	\brief stio playback
 void PlayerModel::Stop()
 {
-	//while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
-	//{
-
-	//}
 	m_Impl->m_PlaybackLifetime.clear();
-	//m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
-	//m_Impl->m_DecodingNode->SetCurrentFramePos(0);
-	//m_Impl->m_DecodingNode->GenerateFrame();
-	//m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(0);
 	m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
+	/// we have to set the video to the begging
 }
 ///	\brief set the number of frames to prefetch
 ///	\param	frameCount	the number of frames to prefetch
@@ -240,7 +229,6 @@ rxcpp::observable<size_t> fu::fusion::PlayerModel::FrameCountFlowOut()
 rxcpp::observable<PlayerModel::frame_t> fu::fusion::PlayerModel::CurrentFrameFlowOut()
 {
 	return m_Impl->m_FrameFlowOutSubj.get_observable().as_dynamic();
-	//return m_Impl->m_DecodingNode->FrameFlowOut();
 }
 
 rxcpp::observable<int> fu::fusion::PlayerModel::FrameWidthFlowOut()

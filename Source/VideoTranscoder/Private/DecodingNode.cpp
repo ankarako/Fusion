@@ -15,9 +15,6 @@ namespace trans {
 struct DecodingNodeObj::Impl
 {
 	using dec_t = std::shared_ptr<cv::VideoCapture>;
-	/// loaded filepath
-	/// TODO: maybe redundant
-	std::string m_LoadedFile{ " " };
 	///	current frfame buffer
 	frame_t				m_CurrentFrame;
 	/// keep the cv::Mat frame too so we don't have 
@@ -109,12 +106,11 @@ void DecodingNodeObj::LoadFile(const std::string& filepath)
 	m_Impl->m_Decoder->open(filepath);
 	if (m_Impl->m_Decoder->isOpened())
 	{
-		m_Impl->m_LoadedFile = filepath;
-		m_Impl->m_FrameWidth = m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_WIDTH);
-		m_Impl->m_FrameHeight = m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_HEIGHT);
-		m_Impl->m_FrameCount = m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_COUNT);
-		m_Impl->m_FrameRate = m_Impl->m_Decoder->get(cv::CAP_PROP_FPS);
-		m_Impl->m_ScaledFrameWidth = m_Impl->m_FrameWidth;
+		m_Impl->m_FrameWidth	= m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_WIDTH);
+		m_Impl->m_FrameHeight	= m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_HEIGHT);
+		m_Impl->m_FrameCount	= m_Impl->m_Decoder->get(cv::CAP_PROP_FRAME_COUNT);
+		m_Impl->m_FrameRate		= m_Impl->m_Decoder->get(cv::CAP_PROP_FPS);
+		m_Impl->m_ScaledFrameWidth	= m_Impl->m_FrameWidth;
 		m_Impl->m_ScaledFrameHeight = m_Impl->m_FrameHeight;
 		/// output frame byte size
 		m_Impl->m_FrameByteSize = m_Impl->m_FrameWidth * m_Impl->m_FrameHeight * sizeof(uchar4);
@@ -221,7 +217,7 @@ void DecodingNodeObj::GenerateFrames(size_t frameCount)
 			counter++;
 			m_Impl->m_CurrentFramePosition++;
 		}
-		LOG_DEBUG << "Signalled generation fineshed event from thread: " << std::this_thread::get_id();
+		LOG_DEBUG << "Signaled generation finished event from thread: " << std::this_thread::get_id();
 		m_Impl->m_GenerateFramesTaskCompetedSubj.get_subscriber().on_next(nullptr);
 	}
 }
