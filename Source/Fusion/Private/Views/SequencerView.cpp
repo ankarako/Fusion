@@ -186,7 +186,7 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 
 	}
 
-	void BeginEdit(int index, int movingPart, int offset) override
+	void BeginEdit(int index, int movingPart, int offset) /*override*/
 	{
 		auto& item = m_SequenceItems[index];
 		m_CurrentItemEditState.EditMode = movingPart;
@@ -198,7 +198,7 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 		
 	}
 
-	void EndEdit(int index, int movingPart, int offset) override
+	void EndEdit(int index, int movingPart, int offset) /*override*/
 	{
 		m_CurrentItemEditState.EndEditValue = offset;
 		int diff = m_CurrentItemEditState.EndEditValue - m_CurrentItemEditState.BeginEditValue;
