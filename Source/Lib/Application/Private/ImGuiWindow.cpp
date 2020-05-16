@@ -22,7 +22,7 @@ struct ImGuiWindow::Impl
 	bool					m_Initialized{ false };
 	bool					m_ShutDown{ false };
 	bool 					m_Destroyed{ false };
-	Renderable& m_Renderable;
+	Renderable&				m_Renderable;
 	input::InputManager&	m_InputManager;
 	ImGuiOpenGLRenderer		m_GLRenderer;
 	std::string				m_WindowTitle{ "Application Window" };

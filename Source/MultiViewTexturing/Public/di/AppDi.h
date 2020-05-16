@@ -17,6 +17,19 @@
 /// Core
 #include <Core/Coordination.h>
 #include <Core/UIRxDispatcher.h>
+/// Models
+#include <Models/LoggerModel.h>
+#include <Models/PerformanceImportModel.h>
+#include <Models/FileExplorerModel.h>
+/// Presenters
+#include <Presenters/MainToolbarPresenter.h>
+#include <Presenters/FileMenuPresenter.h>
+#include <Presenters/FileExplorerPresenter.h>
+#include <Presenters/ViewportPresenter.h>
+/// Views
+#include <Views/MainToolbarView.h>
+#include <Views/FileExplorerView.h>
+#include <Views/ViewportView.h>
 
 namespace fu {
 namespace mvt {
@@ -29,7 +42,17 @@ namespace mvt {
 			/// Initializables
 			///===============
 			boost::di::bind<app::Initializable *[]>().to<
-				app::AppWindow
+				app::AppWindow,
+				app::FontManager,
+				LoggerModel,
+				MainToolbarPresenter,
+				FileMenuPresenter,
+				PerformanceImportModel,
+				FileExplorerView,
+				FileExplorerPresenter,
+				FileExplorerModel,
+				ViewportView,
+				ViewportPresenter
 			>(),
 			///============
 			/// Updateables
@@ -42,13 +65,23 @@ namespace mvt {
 			/// Destroyables
 			///=============
 			boost::di::bind<app::Destroyable *[]>().to<
-				app::AppWindow
+				app::AppWindow,
+				FileExplorerModel,
+				PerformanceImportModel
 			>(),
 			///============
 			///	Renderables
 			///============
 			boost::di::bind<app::Renderable>().to<
 				app::WidgetRepo
+			>(),
+			///=========
+			/// Widgets
+			///=========
+			boost::di::bind<app::Widget *[]>().to<
+				MainToolbarView,
+				FileExplorerView,
+				ViewportView
 			>()
 		);
 		return Injector;
