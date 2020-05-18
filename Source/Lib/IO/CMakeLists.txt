@@ -111,6 +111,10 @@ target_include_directories(FusionIO PRIVATE "${3rdPartyPath}/spimpl")
 #############################
 # include suffices
 target_include_directories(FusionIO PRIVATE "${3rdPartyPath}/hps/src")
+############
+# RapidJson
+############
+target_include_directories(FusionIO PRIVATE "${3rdPartyPath}/rapidjson/include")
 ##################################
 # TURBOJPEG (for perfcap importer)
 ##################################

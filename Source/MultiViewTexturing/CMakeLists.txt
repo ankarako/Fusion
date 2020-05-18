@@ -188,3 +188,16 @@ configure_file(
 configure_file(
 	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf"
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/MaterialIcons-Regular.ttf" COPYONLY)
+# Copy 7zip files
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7z.exe"
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7z.exe" COPYONLY)
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7z.dll"
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7z.dll" COPYONLY)
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7-zip.dll"
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7-zip.dll" COPYONLY)
+configure_file(
+	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7-zip32.dll"
+	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7-zip32.dll" COPYONLY)

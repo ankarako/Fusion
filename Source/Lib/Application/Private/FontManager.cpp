@@ -21,10 +21,10 @@ void FontManager::Init()
 {
 	ImGuiIO& io = ImGui::GetIO();
 	/// Default font BIG
-	auto font = io.Fonts->AddFontFromFileTTF("../Resources/Fonts/calibri.ttf", 16.0f);
+	auto font = io.Fonts->AddFontFromFileTTF("Resources/Fonts/calibri.ttf", 16.0f);
 	m_Impl->m_FontMap[FontType::Big] = font;
 	/// default font regular
-	font = io.Fonts->AddFontFromFileTTF("../Resources/Fonts/calibri.ttf", 14.0f);
+	font = io.Fonts->AddFontFromFileTTF("Resources/Fonts/calibri.ttf", 14.0f);
 	m_Impl->m_FontMap[FontType::Regular] = font;
 	/// MD icons
 	static const ImWchar iconsRange[] = { ICON_MIN_MD, ICON_MAX_MD };
@@ -32,9 +32,9 @@ void FontManager::Init()
 	iconsConfig.MergeMode = true;
 	iconsConfig.PixelSnapH = true;
 	iconsConfig.GlyphOffset.y = 5;	/// for vertical alignment with text
-	font = io.Fonts->AddFontFromFileTTF("../Resources/Fonts/" FONT_ICON_FILE_NAME_MD, 14.0f, &iconsConfig, iconsRange);
+	font = io.Fonts->AddFontFromFileTTF("Resources/Fonts/" FONT_ICON_FILE_NAME_MD, 14.0f, &iconsConfig, iconsRange);
 	m_Impl->m_FontMap[FontType::IconsMD_Regular] = font;
-	font = io.Fonts->AddFontFromFileTTF("../Resources/Fonts/" FONT_ICON_FILE_NAME_FAR, 14.0f, &iconsConfig, iconsRange);
+	font = io.Fonts->AddFontFromFileTTF("Resources/Fonts/" FONT_ICON_FILE_NAME_FAR, 14.0f, &iconsConfig, iconsRange);
 }
 /// \brief get the specified font type
 ImFont* FontManager::GetFont(const FontType name) const
