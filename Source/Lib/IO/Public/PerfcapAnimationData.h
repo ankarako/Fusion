@@ -27,11 +27,22 @@ using perfcap_joint_ptr_t = std::shared_ptr<PerfcapJoint>;
 ///	\brief create a perfcapp joint ptr
 static perfcap_joint_ptr_t CreatePerfcapJoint()
 {
-	return std::make_shared<PerfcaoJoint>();
+	return std::make_shared<PerfcapJoint>();
+}
+///	\typedef PerfcapSkeleton
+///	\brief a vector of perfcap joints
+using PerfcapSkeleton = std::vector<PerfcapJoint>;
+///	\typedef perfcap_skeleton_ptr_t
+///	\brief a shared pointer of to a perfcap skeleton
+using perfcap_skeleton_ptr_t = std::shared_ptr<PerfcapSkeleton>;
+///	\brief create a perfcap skeleton ptr
+static perfcap_skeleton_ptr_t CreatePerfcapSkeleton()
+{
+	return std::make_shared<PerfcapSkeleton>();
 }
 ///	\struct SkinningData
 ///	\brief A mesh's skinning weigts
-struct SkinningData
+struct PerfcapSkinningData
 {
 	///	\typedef VertexWeights
 	///	\brief  the weights for a vertex
@@ -44,20 +55,21 @@ struct SkinningData
 	typedef BufferCPU<VertexWeights>	weights_buf_t;
 	///	\typedef joints_buf_t
 	///	\brief a buffer of joints for every vertex
-	typedef BufferCPU<VertexJoints>		joints_buf_t;
+	typedef BufferCPU<VertexJoints>		index_buf_t;
 
 	int 			NumVertices;
 	int 			NumWeightsPerVertex;
 	weights_buf_t 	WeightData;
-	joints_buf_t	Jointdata;
+	index_buf_t		IndexData;
+
 };
 ///	\typedef perfcap_skin_data_ptr_t 
 ///	\brief a shared SkinningData object
-using perfcap_skin_data_ptr_t = std::shared_ptr<SkinningData>;
+using perfcap_skin_data_ptr_t = std::shared_ptr<PerfcapSkinningData>;
 ///	\brief create a perfcap_skin_data_ptr_t  object
 static perfcap_skin_data_ptr_t CreatePerfcapSkinData()
 {
-	return std::make_shared<SkinningData>();
+	return std::make_shared<PerfcapSkinningData>();
 }
 }	///	!namespace io
 }	///	!namespace fu

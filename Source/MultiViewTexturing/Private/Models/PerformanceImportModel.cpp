@@ -1,9 +1,9 @@
 #include <Models/PerformanceImportModel.h>
 #include <Core/ExternalApp.h>
-#include <filesystem>
+#include <PerfcapCalibrationImport.h>
+#include <DebugMsg.h>
 #include <plog/Log.h>
-#include <rapidjson/document.h>
-#include <fstream>
+#include <filesystem>
 
 namespace fu {
 namespace mvt {
@@ -31,9 +31,6 @@ struct PerformanceImportModel::Impl
 	{ 
 		m_7ZipApp->ExePath = k_7ZipExePath;
 	}
-	/// \brief import calibration json file
-	///	\param filename
-	/// \brief import skelelton file
 	///	\param	filepath
 	///	\return 
 };	///	!struct Impl
@@ -62,8 +59,27 @@ void PerformanceImportModel::Init()
 		}
 		m_Impl->m_7ZipApp->Cli = "e " + filepath + " -o" + targetDir;
 		m_Impl->m_7ZipApp->Run();
+		/// first delete the folder resulting unzipped folder
+		/// the folder name is the same as the filename
+		std::string strippedFname = filesystem::path(filepath).filename().replace_extension("").generic_string();
+		DebugMsg(strippedFname);
+		std::string pathToDelete = m_Impl->k_TempFolderPath + std::string("\\") + strippedFname;
+		if (filesystem::exists(pathToDelete))
+		{
+			filesystem::remove(pathToDelete);
+		}
 		/// so lets open the files one by one
+		///========================
 		/// import calibration file
+		///========================
+		std::string calibFilepath = m_Impl->k_TempFolderPath + std::string("\\") + m_Impl->k_CalibrationFilename;
+		std::vector<io::volcap_cam_data_ptr_t> calib = io::ImportPerfcapCalibration(calibFilepath);
+		DebugMsg("Loaded calibration file.");
+		///===============
+		/// Skinning file
+		///===============
+
+		/// delete temporary files
 	});
 }
 /// \brief destroy the model
