@@ -27,29 +27,27 @@ using perfcap_joint_ptr_t = std::shared_ptr<PerfcapJoint>;
 ///	\brief create a perfcapp joint ptr
 static perfcap_joint_ptr_t CreatePerfcapJoint()
 {
-	return std::make_shared<PerfcaoJoint>();
+	return std::make_shared<PerfcapJoint>();
+}
+///	\typedef PerfcapSkeleton
+///	\brief a vector of PerfcapJoints
+using PerfcapSkeleton = std::vector<perfcap_joint_ptr_t>;
+///	\typedef perfcap_skeleton_ptr_t
+///	\brief a shared PerfcapSkeleton
+using perfcap_skeleton_ptr_t = std::shared_ptr<PerfcapSkeleton>;
+///	\brief create a perfcap skeleton ptr
+static perfcap_skeleton_ptr_t CreatePerfcapSkeleton()
+{
+	return std::make_shared<PerfcapSkeleton>();
 }
 ///	\struct SkinningData
 ///	\brief A mesh's skinning weigts
 struct SkinningData
 {
-	///	\typedef VertexWeights
-	///	\brief  the weights for a vertex
-	typedef BufferCPU<float>	VertexWeights;
-	///	\typedef VertexJoints
-	///	\brief the joint that each of the weights is associated with
-	typedef BufferCPU<int>		VertexJoints;
-	///	\typedef weights_buf_t
-	///	\brief a buffer of weights for every vertex
-	typedef BufferCPU<VertexWeights>	weights_buf_t;
-	///	\typedef joints_buf_t
-	///	\brief a buffer of joints for every vertex
-	typedef BufferCPU<VertexJoints>		joints_buf_t;
-
-	int 			NumVertices;
-	int 			NumWeightsPerVertex;
-	weights_buf_t 	WeightData;
-	joints_buf_t	Jointdata;
+	int 				NumVertices;
+	int 				NumWeightsPerVertex;
+	std::vector<float> 	WeightData;
+	std::vector<int>	Jointdata;
 };
 ///	\typedef perfcap_skin_data_ptr_t 
 ///	\brief a shared SkinningData object

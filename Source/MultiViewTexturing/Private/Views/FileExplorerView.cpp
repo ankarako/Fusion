@@ -178,7 +178,7 @@ void FileExplorerView::Render()
 					{
 						m_Impl->m_SelectedEntry = m_Impl->m_CurrentDirEntries[de].second;
 						m_Impl->m_CurrentDirEntries[de].first = false;
-						strcpy(m_Impl->m_InputTextBuffer, m_Impl->m_SelectedEntry.Name.c_str());
+						strcpy_s(m_Impl->m_InputTextBuffer, m_Impl->m_SelectedEntry.Name.c_str());
 					}
 					if (ImGui::IsItemClicked(0) && ImGui::IsMouseDoubleClicked(0))
 					{

@@ -45,7 +45,9 @@ public:
 			out[12], out[13], out[14], out[15],
 		};
 	}
-
+	///	\brief get the heading matrix from a specified angle
+	///	\param	angle	the rotation angle
+	///	\return the heading matrix
 	static optix::Matrix4x4 GetHeadingMat(float angle)
 	{
 		float rad = angle * M_PIf / 180.0f;
@@ -58,6 +60,9 @@ public:
 		};
 		return optix::Matrix4x4(outMat.data());
 	}
+	///	\brief get the pitch matrix of the specified angle
+	///	\param	angle	the rotation angle
+	///	\return the heading matrix
 	static optix::Matrix4x4 GetPitchMat(float angle)
 	{
 		float rad = angle * M_PIf / 180.0f;
@@ -70,7 +75,9 @@ public:
 		};
 		return optix::Matrix4x4(outMat.data());
 	}
-
+	///	\brief get the bank matrix of a specified angle
+	///	\param	angle the rotation angle
+	///	\return the bank matrix
 	static optix::Matrix4x4 GetBankMat(float angle)
 	{
 		float rad = angle * M_PIf / 180.0f;
@@ -82,8 +89,6 @@ public:
 		};
 		return optix::Matrix4x4(outMat.data());
 	}
-
-	//static void GetJointTransform()
 };
 }	///	!namespace rt
 }	///	!namespace fu

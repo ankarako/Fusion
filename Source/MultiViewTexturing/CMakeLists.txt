@@ -144,6 +144,7 @@ target_include_directories(RayMVT PUBLIC "${3rdPartyPath}/boost-di/include")
 add_subdirectory("../Lib" FusionLib)
 target_link_libraries(RayMVT PRIVATE FusionApplication)
 target_link_libraries(RayMVT PRIVATE OptixRayTracer)
+target_link_libraries(RayMVT PRIVATE FusionTranscoder)
 target_link_libraries(RayMVT PRIVATE FusionIO)
 # ImGuizmo
 cmake_policy(SET CMP0079 NEW)

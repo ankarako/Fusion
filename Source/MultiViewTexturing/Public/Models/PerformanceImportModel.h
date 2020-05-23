@@ -6,6 +6,9 @@
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
 #include <string>
+#include <PerfcapAnimationData.h>
+#include <TrackedData.h>
+#include <VolcapCameraData.h>
 
 namespace fu {
 namespace mvt {
@@ -25,7 +28,13 @@ public:
 	///	\brief filepath input for importing
 	rxcpp::observer<std::string> ImportFilepathFlowIn();
 	/// outputs	
-	// rxcpp::observable<>
+	rxcpp::observable<std::string>								TemplateMeshFilepathFlowOut();
+	rxcpp::observable<std::vector<std::string>>					VideoTextureFilepathsFlowOut();
+	rxcpp::observable<std::string>								TextureAtlasFilepathFlowOut();
+	rxcpp::observable<io::perfcap_skeleton_ptr_t>				SkeletonFlowOut();
+	rxcpp::observable<io::perfcap_skin_data_ptr_t>				SkinDataFlowOut();
+	rxcpp::observable<std::vector<io::volcap_cam_data_ptr_t>>	ViewportDataFlowOut();
+	rxcpp::observable<io::tracked_seq_ptr_t>					TrackedSequenceDataFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;
