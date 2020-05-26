@@ -12,7 +12,7 @@ namespace fu {
 namespace io {
 ///	\brief import perfcap's calibration data from the sprcified file
 ///	\param	filepath	the file to load the data from
-///	\return	a vector with each device's calibration params
+///	\return	a vector with each device's calibration data
 static std::vector<volcap_cam_data_ptr_t> ImportPerfcapCalibration(const std::string& filepath)
 {
 	using namespace rapidjson;
@@ -21,75 +21,76 @@ static std::vector<volcap_cam_data_ptr_t> ImportPerfcapCalibration(const std::st
 	IStreamWrapper isWrapper(inFd);
 	Document doc;
 	doc.ParseStream(isWrapper);
-	/// each device calibrations params are in an array
-	auto arr = doc.GetArray();
-	/// iterate through the array
-	std::vector<volcap_cam_data_ptr_t> importedParams;
-	for (auto it = arr.begin(); it != arr.end(); it++)
+	/// initialize output
+	std::vector<volcap_cam_data_ptr_t> deviceData;
+	/// get device array
+	auto deviceArray = doc.GetArray();
+	size_t deviceCount = deviceArray.Size();
+	/// iterate through the device array
+	for (int d = 0; d < deviceCount; ++d)
 	{
-		volcap_cam_data_ptr_t params = CreateVolcapCameraData();
-		auto devObj = it->GetObject();
-		/// get device name
-		if (devObj.HasMember("name"))
+		volcap_cam_data_ptr_t camData = CreateVolcapCameraData();
+		if (deviceArray[d].HasMember("name"))
 		{
-			params->DeviceName = devObj["name"].GetString();
+			camData->DeviceName = deviceArray[d]["name"].GetString();
 		}
-		/// get depth params
-		if (devObj.HasMember("depth"))
+		/// Get depth camera data
+		if (deviceArray[d].HasMember("depth"))
 		{
-			auto depthObj = devObj["depth"].GetObject();
-			/// extrinsics lie indide an array
-			if (depthObj.HasMember("extrinsics"))
+			auto dObj = deviceArray[d]["depth"].GetObject();
+			/// get extrinsics
+			if (dObj.HasMember("extrinsics"))
 			{
-				auto extArray = depthObj["extrinsics"].GetArray();
-				size_t count = extArray.Size();
-				params->DepthExtrinsics = CreateBufferCPU<float>(count);
+				auto extr = dObj["extrinsics"].GetArray();
+				size_t count = extr.Size();
+				camData->DepthExtrinsics = CreateBufferCPU<float>(count);
 				for (int i = 0; i < count; ++i)
 				{
-					params->DepthExtrinsics->Data()[i] = (extArray.Begin() + i)->GetDouble();
+					camData->DepthExtrinsics->Data()[i] = extr[i].GetDouble();
 				}
 			}
-			/// intrinsics lie inside an array
-			if (depthObj.HasMember("intrinsics"))
+			/// get intrinsics
+			if (dObj.HasMember("intrinsics"))
 			{
-				auto intArray = depthObj["intrinsics"].GetArray();
-				size_t count = intArray.Size();
-				params->DepthIntrinsics = CreateBufferCPU<float>(count);
+				auto intr = dObj["intrinsics"].GetArray();
+				size_t count = intr.Size();
+				camData->DepthIntrinsics = CreateBufferCPU<float>(count);
 				for (int i = 0; i < count; ++i)
 				{
-					params->DepthIntrinsics->Data()[i] = (intArray.Begin() + i)->GetDouble();
+					camData->DepthIntrinsics->Data()[i] = intr[i].GetDouble();
 				}
 			}
 		}
-		/// get color params
-		if (devObj.HasMember("color"))
+		/// Get color camera data
+		if (deviceArray[d].HasMember("color"))
 		{
-			auto colorObj = devObj["color"].GetObject();
-			/// extrinsics lie inside an array
-			if (colorObj.HasMember("extrinsics"))
+			auto dObj = deviceArray[d]["color"].GetObject();
+			/// get extrinsics
+			if (dObj.HasMember("extrinsics"))
 			{
-				auto extArray = colorObj["extrinsics"].GetArray();
-				size_t count = extArray.Size();
-				params->ColorExtrinsics = CreateBufferCPU<float>(count);
+				auto extr = dObj["extrinsics"].GetArray();
+				size_t count = extr.Size();
+				camData->ColorExtrinsics = CreateBufferCPU<float>(count);
 				for (int i = 0; i < count; ++i)
 				{
-					params->ColorExtrinsics->Data()[i] = (extArray.Begin() + i)->GetDouble();
+					camData->ColorExtrinsics->Data()[i] = extr[i].GetDouble();
 				}
 			}
-			if (colorObj.HasMember("intrinsics"))
+			/// get intrinsics
+			if (dObj.HasMember("intrinsics"))
 			{
-				auto intArray = colorObj["intrinsics"].GetArray();
-				size_t count = intArray.Size();
-				params->ColorIntrinsics = CreateBufferCPU<float>(count);
+				auto intr = dObj["intrinsics"].GetArray();
+				size_t count = intr.Size();
+				camData->ColorIntrinsics = CreateBufferCPU<float>(count);
 				for (int i = 0; i < count; ++i)
 				{
-					params->ColorIntrinsics->Data()[i] = (intArray.Begin() + i)->GetDouble();
+					camData->ColorIntrinsics->Data()[i] = intr[i].GetDouble();
 				}
 			}
 		}
-		importedParams.emplace_back(params);
+		deviceData.emplace_back(camData);
 	}
-	return importedParams;
+	return deviceData;
 }
 }	///	!namespace io
 }	///	!namespace fu

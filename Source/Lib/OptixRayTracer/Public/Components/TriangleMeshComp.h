@@ -7,8 +7,8 @@
 
 namespace fu {
 namespace rt {
-	static constexpr optix::float3 k_BBoxMin{ 1.0e16, 1.0e16 , 1.0e16 };
-	static constexpr optix::float3 k_BBoxMax{ -1.0e16, -1.0e16 , -1.0e16 };
+	static constexpr optix::float3 k_BBoxMin{ 1.0e16f, 1.0e16f, 1.0e16f };
+	static constexpr optix::float3 k_BBoxMax{ -1.0e16f, -1.0e16f, -1.0e16f };
 ///	\struct MeshGeometryCompObj
 ///	\brief mesh geoemtry component
 struct TriangleMeshCompObj

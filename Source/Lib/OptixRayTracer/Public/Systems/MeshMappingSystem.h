@@ -7,6 +7,7 @@
 #include <Components/MeshMaterialComp.h>
 #include <Components/AccelerationComp.h>
 #include <Components/PointCloudComp.h>
+#include <Components/ViewportFrustrumComp.h>
 #include <Systems/ResourseDesc.h>
 #include <MeshData.h>
 #include <thread>
@@ -425,7 +426,7 @@ public:
 		trComp->Material		= ctxComp->Context->createMaterial();
 		trComp->GGroup			= ctxComp->Context->createGeometryGroup();
 		trComp->Acceleration	= ctxComp->Context->createAcceleration("Trbvh");
-		trComp->Transform	= ctxComp->Context->createTransform();
+		trComp->Transform		= ctxComp->Context->createTransform();
 		///==========
 		/// Copy data
 		///==========
@@ -629,20 +630,81 @@ public:
 			pcComp->Geometry["render_normals"]->setInt(0);
 		}
 	}
+	///	\brief map a viewport frustrum component
+	///	\param	viewComp	the viewportFrustrumComp to map
+	///	\param	ctxComp		the context component associated with the viewport frustrum
+	///	\param	trans		the transformation matrix of the frustrum
+	///	\param	plane
+	///	\param	v1
+	///	\param	v2
+	///	\param	anchor
+	///	\param	
+	static void MapViewportFrustrumComp(ViewportFrustrumComp& viewComp, ContextComp& ctxComp)
+	{
+		viewComp->Geometry 				= ctxComp->Context->createGeometry();
+		viewComp->Material 				= ctxComp->Context->createMaterial();
+		viewComp->GInstance 			= ctxComp->Context->createGeometryInstance();
+		viewComp->GGroup 				= ctxComp->Context->createGeometryGroup();
+		viewComp->Acceleration 			= ctxComp->Context->createAcceleration("Trbvh");
+		viewComp->Transform 			= ctxComp->Context->createTransform();
+		viewComp->IntersectionProgram 	= ctxComp->Context->createProgramFromPTXFile(k_ParallelogramPtxFilepath, k_ParallelogramIntersectionProgName);
+		viewComp->BoundingBoxProgram 	= ctxComp->Context->createProgramFromPTXFile(k_ParallelogramPtxFilepath, k_ParallelogramBoundingBoxProgName);
+		/// for now we will place a solid color hitgroup
+		viewComp->ClosestHitProgram		= ctxComp->Context->createProgramFromPTXFile(k_SolidColorPtxFilepath, k_TriangleMeshSolidColorClosestHitProgName);
+		viewComp->AnyhitProgram			= ctxComp->Context->createProgramFromPTXFile(k_SolidColorPtxFilepath, k_TriangleMeshSolidColorAnyHitProgName);
+		///
+		viewComp->GInstance["solid_color"]->setFloat(optix::make_float3(1.0f, 0.0f, 0.0f));
+		optix::float3 anchor = optix::make_float3(-13.0f, 0.0f, -25.0f);	
+		viewComp->V1 = optix::make_float3(-50.0f, 0.0f, -50.0f);
+		viewComp->V2			= optix::make_float3(50.0f, 0.0f, 50.0f );
+		optix::float3 normal	= optix::cross(viewComp->V1, viewComp->V2);
+		normal 					= optix::normalize(normal);
+		float d = optix::dot(normal, anchor);
+		viewComp->V1 *= 1.0f / optix::dot(viewComp->V1, viewComp->V1);
+		viewComp->V2 *= 1.0f / optix::dot(viewComp->V2, viewComp->V2);
+		optix::float4 plane = optix::make_float4(normal, d);
+		viewComp->GInstance["plane"]->setFloat(plane);
+		viewComp->GInstance["v1"]->setFloat(viewComp->V1);
+		viewComp->GInstance["v2"]->setFloat(viewComp->V2);
+		viewComp->GInstance["anchor"]->setFloat(anchor);
+		viewComp->Geometry->setBoundingBoxProgram(viewComp->BoundingBoxProgram);
+		viewComp->Geometry->setIntersectionProgram(viewComp->IntersectionProgram);
+		viewComp->Geometry->setPrimitiveCount(1u);
+		viewComp->Material->setClosestHitProgram(0, viewComp->ClosestHitProgram);
+		viewComp->Material->setAnyHitProgram(0, viewComp->AnyhitProgram);
+		viewComp->GInstance->setGeometry(viewComp->Geometry);
+		viewComp->GInstance->setMaterialCount(1);
+		viewComp->GInstance->setMaterial(0, viewComp->Material);
+		viewComp->GGroup->setChildCount(1);
+		viewComp->GGroup->setChild(0, viewComp->GInstance);
+		viewComp->TransMat = optix::Matrix4x4::identity();
+		viewComp->Transform->setChild(viewComp->GGroup);
+		viewComp->Transform->setMatrix(false, viewComp->TransMat.getData(), nullptr);
+		viewComp->GGroup->setAcceleration(viewComp->Acceleration);
+	}
+
+	static void AttachViewportCompToToLevelAcceleration(ViewportFrustrumComp& viewComp, AccelerationComp& acceleration)
+	{
+		acceleration->Group->addChild(viewComp->Transform);
+		acceleration->Acceleration->markDirty();
+	}
 private:
-	static constexpr const char* k_TriangleMeshPTxFilepath			= "FusionLib/Resources/Programs/TriangleMesh.ptx";
-	static constexpr const char* k_TriangleMeshIntersectionProgName = "triangle_mesh_intersect";
-	static constexpr const char* k_TriangleMeshBbboxProgName		= "triangle_mesh_bounds";
-	static constexpr const char* k_SolidColorPtxFilepath			= "FusionLib/Resources/Programs/SolidColorHitGroup.ptx";
+	static constexpr const char* k_TriangleMeshPTxFilepath					= "FusionLib/Resources/Programs/TriangleMesh.ptx";
+	static constexpr const char* k_TriangleMeshIntersectionProgName 		= "triangle_mesh_intersect";
+	static constexpr const char* k_TriangleMeshBbboxProgName				= "triangle_mesh_bounds";
+	static constexpr const char* k_SolidColorPtxFilepath					= "FusionLib/Resources/Programs/SolidColorHitGroup.ptx";
 	static constexpr const char* k_TriangleMeshSolidColorClosestHitProgName = "solid_color_closest_hit";
-	static constexpr const char* k_TriangleMeshSolidColorAnyHitProgName = "solid_color_any_hit";
-	static constexpr const char* k_TriangleMeshClosestHitProgName	= "phong_closest_hit";
-	static constexpr const char* k_TriangleMeshAnyHitProgName		= "phong_any_hit";
-	static constexpr const char* k_PointCloudPtxFilepath 			= "FusionLib/Resources/Programs/PointCloud.ptx";
-	static constexpr const char* k_PointCloudIntersectionProgName	= "pointcloud_intersect";
-	static constexpr const char* k_PointCloudBboxProgName			= "pointcloud_bounds";
-	static constexpr const char* k_PointCloudClosestHitProgName		= "pointcloud_closest_hit";
-	static constexpr const char* k_PointCloudAnyHitProgName 		= "pointcloud_any_hit";
+	static constexpr const char* k_TriangleMeshSolidColorAnyHitProgName 	= "solid_color_any_hit";
+	static constexpr const char* k_TriangleMeshClosestHitProgName			= "phong_closest_hit";
+	static constexpr const char* k_TriangleMeshAnyHitProgName				= "phong_any_hit";
+	static constexpr const char* k_PointCloudPtxFilepath 					= "FusionLib/Resources/Programs/PointCloud.ptx";
+	static constexpr const char* k_PointCloudIntersectionProgName			= "pointcloud_intersect";
+	static constexpr const char* k_PointCloudBboxProgName					= "pointcloud_bounds";
+	static constexpr const char* k_PointCloudClosestHitProgName				= "pointcloud_closest_hit";
+	static constexpr const char* k_PointCloudAnyHitProgName 				= "pointcloud_any_hit";
+	static constexpr const char* k_ParallelogramPtxFilepath 				= "FusionLib/Resources/Programs/Parallelogram.ptx";
+	static constexpr const char* k_ParallelogramIntersectionProgName		= "parallelogram_intersect";
+	static constexpr const char* k_ParallelogramBoundingBoxProgName			= "parallelogram_bounds";
 };	///	!class MeshMappingSystem
 }	///	!namespace rt
 }	///	!namespace fu

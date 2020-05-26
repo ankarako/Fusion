@@ -21,11 +21,15 @@
 #include <Models/LoggerModel.h>
 #include <Models/PerformanceImportModel.h>
 #include <Models/FileExplorerModel.h>
+#include <Models/MultiViewPlayerModel.h>
+#include <Models/ViewportTracingModel.h>
 /// Presenters
 #include <Presenters/MainToolbarPresenter.h>
 #include <Presenters/FileMenuPresenter.h>
 #include <Presenters/FileExplorerPresenter.h>
 #include <Presenters/ViewportPresenter.h>
+#include <Presenters/MultiViewPlayerPresenter.h>
+#include <Presenters/PerformanceImportPresenter.h>
 /// Views
 #include <Views/MainToolbarView.h>
 #include <Views/FileExplorerView.h>
@@ -52,7 +56,12 @@ namespace mvt {
 				FileExplorerPresenter,
 				FileExplorerModel,
 				ViewportView,
-				ViewportPresenter
+				ViewportTracingModel,	
+				ViewportPresenter,
+				
+				MultiViewPlayerModel,
+				MultiViewPlayerPresenter,
+				PerformanceImportPresenter
 			>(),
 			///============
 			/// Updateables
@@ -67,7 +76,9 @@ namespace mvt {
 			boost::di::bind<app::Destroyable *[]>().to<
 				app::AppWindow,
 				FileExplorerModel,
-				PerformanceImportModel
+				MultiViewPlayerModel,
+				PerformanceImportModel,	
+				ViewportTracingModel
 			>(),
 			///============
 			///	Renderables

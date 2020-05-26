@@ -10,6 +10,7 @@ class WidgetRepo;
 }
 namespace mvt {
 class ViewportView;
+class ViewportTracingModel;
 class Coordination;
 ///	\class ViewportPresenter
 ///	\brief Viewport-Models interaction
@@ -19,6 +20,9 @@ public:
 	///	\typedef view_ptr_t
 	///	\brief a shared pointer to a viewport view
 	using view_ptr_t = std::shared_ptr<ViewportView>;
+	///	\typedef model_ptr_t
+	///	\brief a shared pointer to a viewport tracing model
+	using model_ptr_t = std::shared_ptr<ViewportTracingModel>;
 	///	\typedef wrepo_ptr_t
 	///	\brief	a shared pointer to a widget repo
 	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
@@ -27,7 +31,7 @@ public:
 	using coord_ptr_t = std::shared_ptr<Coordination>;
 	/// Construction
 	///	\brief dependency injection
-	ViewportPresenter(view_ptr_t view, wrepo_ptr_t wrepo, coord_ptr_t coord);
+	ViewportPresenter(view_ptr_t view, model_ptr_t model, wrepo_ptr_t wrepo, coord_ptr_t coord);
 	///	\brief presenter initialization
 	void Init() override;
 private:
