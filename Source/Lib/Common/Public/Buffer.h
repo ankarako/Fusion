@@ -26,6 +26,9 @@ template <typename ElementType>
 class BufferObj<ElementType, Device::CPU>
 {
 private:
+	///	\typedef buffer_t
+	///	\brief the underlying data buffer type,. which is just an std::vector
+	using buffer_t = std::vector<ElementType>;
 	/// Construction and creation
 	///	buffers can only be created via factory method
 	struct Constructor { };
@@ -80,9 +83,6 @@ public:
 		return m_Data->data();
 	}
 private:
-	///	\typedef buffer_t
-	///	\brief the underlying data buffer type,. which is just an std::vector
-	using buffer_t = std::vector<ElementType>;
 	///	\typedef data_t
 	///	\brief the raw data type (not) :P. a shared pointer to the buffer vector
 	///	so we don't have to implement custom deleters

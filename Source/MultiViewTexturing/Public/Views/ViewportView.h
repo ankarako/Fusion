@@ -18,6 +18,8 @@ public:
 	/// \typedef viewport_size_t
 	///	\brief	the width and height of the viewport
 	using viewport_size_t = std::array<int, 2>;
+	using mat_t = std::array<float, 16>;
+	using trans_vec_t = std::array<float, 3>;
 	/// Construction
 	///	\brief default constructor
 	///	no dependencies
@@ -28,9 +30,11 @@ public:
 	void Render() override;
 	/// Input events
 	/// Output events
-	rxcpp::observable<viewport_size_t> 	ViewportSizeFlowOut();
-	rxcpp::observable<void*> 			OnCloseButtonClicked();
+	rxcpp::observable<viewport_size_t> 		ViewportSizeFlowOut();
+	rxcpp::observable<void*> 				OnCloseButtonClicked();
 	rxcpp::observer<BufferCPU<uchar4>>		FrameBufferFlowIn();
+	rxcpp::observable<mat_t>				RotationTransformFlowOut();
+	rxcpp::observable<trans_vec_t>			TranslationVectorFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

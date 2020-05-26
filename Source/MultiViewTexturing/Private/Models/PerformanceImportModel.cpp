@@ -4,6 +4,7 @@
 #include <PerfcapSkeletonImport.h>
 #include <PerfcapSkinningDataImport.h>
 #include <PerfcapTrackedParamsImport.h>
+#include <LoadObj.h>
 #include <filesystem>
 #include <plog/Log.h>
 
@@ -37,17 +38,13 @@ struct PerformanceImportModel::Impl
 	rxcpp::subjects::subject<io::perfcap_skin_data_ptr_t>				m_PerfcapSkinDataFlowOutSubj;
 	rxcpp::subjects::subject<std::vector<io::volcap_cam_data_ptr_t>> 	m_ViewportDataFlowOutSubj;
 	rxcpp::subjects::subject<io::tracked_seq_ptr_t>						m_TrackedSequenceFlowOutSubj;
+	rxcpp::subjects::subject<io::MeshData>								m_MeshDataFlowOutSubj;
 	/// Construction
 	Impl() 
 		: m_7ZipApp(std::make_shared<ExternalApp>())
 	{ 
 		m_7ZipApp->ExePath = k_7ZipExePath;
 	}
-	/// \brief import calibration json file
-	///	\param filename
-	/// \brief import skelelton file
-	///	\param	filepath
-	///	\return 
 };	///	!struct Impl
 /// Construction
 PerformanceImportModel::PerformanceImportModel()
@@ -75,32 +72,45 @@ void PerformanceImportModel::Init()
 		m_Impl->m_7ZipApp->Cli = "e " + filepath + " -o" + targetDir;
 		m_Impl->m_7ZipApp->Run();
 		/// so lets open the files one by one
+		///=========================
 		/// import calibration file
+		///=========================
 		std::string calibrationFilepath = targetDir + "\\" + m_Impl->k_CalibrationFilename;
 		std::vector<io::volcap_cam_data_ptr_t> deviceData = io::ImportPerfcapCalibration(calibrationFilepath);
 		m_Impl->m_ViewportDataFlowOutSubj.get_subscriber().on_next(deviceData);
+		///=================
 		/// import skeleton
+		///=================
 		std::string skeletonFilepath = targetDir + "\\" + m_Impl->k_SkeletonFilename;
 		io::perfcap_skeleton_ptr_t skeleton = io::ImportPerfcapSkeleton(skeletonFilepath);
 		m_Impl->m_PerfcapSkeletonFlowOutSubj.get_subscriber().on_next(skeleton);
+		///=====================
 		/// import skinning data
+		///=====================
 		std::string skinningDataFilepath = targetDir + "\\" + m_Impl->k_SkinningFilename;
 		io::perfcap_skin_data_ptr_t skinData = io::ImportPerfcapSkinningData(skinningDataFilepath);
 		m_Impl->m_PerfcapSkinDataFlowOutSubj.get_subscriber().on_next(skinData);
+		///=====================
 		/// find video filenames
+		///=====================
 		std::vector<std::string> videoFilepaths;
 		for (auto path : filesystem::directory_iterator(targetDir))
 		{
 			std::string ext = path.path().extension().generic_string();
-			if (ext == ".avi")
+			if (ext == ".avi" || ext == ".mp4")
 			{
 				videoFilepaths.emplace_back(filesystem::absolute(path.path()).generic_string());
 			}
 		}
 		m_Impl->m_TextureFilenamesFlowOutSubj.get_subscriber().on_next(videoFilepaths);
+		///==============
 		/// template mesh
+		///==============
 		std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilename).generic_string();
-		m_Impl->m_TemplateMeshFilepathFlowOutSubj.get_subscriber().on_next(templateMeshFilepath);
+		io::MeshData meshData = io::CreateMeshData();
+		io::LoadObj(templateMeshFilepath, meshData);
+		m_Impl->m_MeshDataFlowOutSubj.get_subscriber().on_next(meshData);
+		//m_Impl->m_TemplateMeshFilepathFlowOutSubj.get_subscriber().on_next(templateMeshFilepath);
 		/// texture atlas
 		std::string textureAtlasFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TextureAtlasFilename).generic_string();
 		m_Impl->m_TextureAtlasFilenameFlowOutSubj.get_subscriber().on_next(textureAtlasFilepath);
@@ -159,6 +169,10 @@ rxcpp::observable<std::vector<io::volcap_cam_data_ptr_t>> PerformanceImportModel
 rxcpp::observable<io::tracked_seq_ptr_t> PerformanceImportModel::TrackedSequenceDataFlowOut()
 {
 	return m_Impl->m_TrackedSequenceFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<io::MeshData> PerformanceImportModel::MeshDataFlowOut()
+{
+	return m_Impl->m_MeshDataFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace mvt
 }	///	!namespace fu

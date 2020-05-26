@@ -53,6 +53,13 @@ void ViewportPresenter::Init()
 	m_Impl->m_Model->FrameBufferFlowOut()
 		.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_View->FrameBufferFlowIn());
+	///========================
+	/// Camera transformations
+	///=========================
+	m_Impl->m_View->RotationTransformFlowOut()
+		.subscribe(m_Impl->m_Model->CameraRotationTransformFlowIn());
+	m_Impl->m_View->TranslationVectorFlowOut()
+		.subscribe(m_Impl->m_Model->CameraTranslationVectorFlowIn());
 	/// Activate the view
 	m_Impl->m_View->Activate();
 }
