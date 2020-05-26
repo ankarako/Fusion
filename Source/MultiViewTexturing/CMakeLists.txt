@@ -113,6 +113,7 @@ PrintList("${MVTSettingsSrcFiles}" "Gathered MVT Settings source files")
 #################
 ### optix need no min max on windows
 add_compile_options("-DNOMINMAX")
+add_compile_options("-D_ENABLE_EXTENDED_ALIGNED_STORAGE")
 add_executable(
 	RayMVT
 	"Source/main.cpp"

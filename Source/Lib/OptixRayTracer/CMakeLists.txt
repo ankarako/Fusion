@@ -219,7 +219,20 @@ add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E 
 add_custom_command(TARGET CompilePtxSolidColorHitGroupPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorHitGroup.ptx )
 # tedious command to rename the generated ptx file
 set_target_properties(CompilePtxSolidColorHitGroupPTX PROPERTIES FOLDER "CUDACustomTargets")
-
+# Parellelogram 
+cuda_compile_ptx(CompilePtxParallelogram "Private/Programs/Parallelogram.cu")
+add_custom_target(CompilePtxParallelogramPTX ALL DEPENDS "${CompilePtxParallelogram}" "Private/Programs/Parallelogram.cu" SOURCES "Private/Programs/Parallelogram.cu")
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxParallelogram} ${CUDA_GENERATED_OUTPUT_DIR}/Parallelogram.ptx )
+add_custom_command(TARGET CompilePtxParallelogramPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxParallelogram} ${CUDA_GENERATED_OUTPUT_DIR}/Parallelogram.ptx )
+# tedious command to rename the generated ptx file
+set_target_properties(CompilePtxParallelogramPTX PROPERTIES FOLDER "CUDACustomTargets")
+# ViewportMaterial
+cuda_compile_ptx(CompilePtxViewportMaterial "Private/Programs/ViewportMaterial.cu")
+add_custom_target(CompilePtxViewportMaterialPTX ALL DEPENDS "${CompilePtxViewportMaterial}" "Private/Programs/ViewportMaterial.cu" SOURCES "Private/Programs/ViewportMaterial.cu")
+add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxViewportMaterial} ${CUDA_GENERATED_OUTPUT_DIR}/ViewportMaterial.ptx )
+add_custom_command(TARGET CompilePtxViewportMaterialPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxViewportMaterial} ${CUDA_GENERATED_OUTPUT_DIR}/ViewportMaterial.ptx )
+# tedious command to rename the generated ptx file
+set_target_properties(CompilePtxViewportMaterialPTX PROPERTIES FOLDER "CUDACustomTargets")
 ########
 # RxCpp
 ########

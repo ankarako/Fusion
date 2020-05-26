@@ -47,6 +47,13 @@ static const ResourceDesc k_ResourceDesc =
 	{ { ResType::ProgramName,	{"TriangleMeshBoundingBox",		"NormalsColor" }}, 	"triangle_mesh_bounds" },
 	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"NormalsColor" }}, 	"closest_hit_radiance" },
 	{ { ResType::ProgramName,	{"TriangleMeshAnyHit",			"NormalsColor" }}, 	"any_hit" },
+	/// parallelogram
+	{ { ResType::Filepath,		{"Parallelogram",				"NoAttrib" }},	"FusionLib/Resources/Programs/Parallelogram.ptx" },
+	{ { ResType::ProgramName,	{"ParallelogramIntersection",	"NoAttrib" }}, 	"parallelogram_intersect" },
+	{ { ResType::ProgramName,	{"ParallelogramBoundingBox",	"NoAttrib" }}, 	"parallelogram_bounds" },
+	/// viewport material
+	{ { ResType::Filepath,		{"ViewportMaterial",			"NoAttrib" }},	"FusionLib/Resources/Programs/ViewportMaterial.ptx" },
+	{ { ResType::ProgramName,	{"ViewportMaterialClosestHit",	"NoAttrib" }}, 	"viewport_closest_hit" },
 };
 
 static std::string GetResourceFilepath(const std::string& intersectType, const std::string & attributes)

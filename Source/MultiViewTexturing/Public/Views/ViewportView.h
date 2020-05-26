@@ -4,6 +4,7 @@
 #include <Widget.h>
 #include <Initializable.h>
 #include <spimpl.h>
+#include <Buffer.h>
 #include <rxcpp/rx.hpp>
 #include <array>
 
@@ -29,6 +30,7 @@ public:
 	/// Output events
 	rxcpp::observable<viewport_size_t> 	ViewportSizeFlowOut();
 	rxcpp::observable<void*> 			OnCloseButtonClicked();
+	rxcpp::observer<BufferCPU<uchar4>>		FrameBufferFlowIn();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

@@ -112,6 +112,13 @@ public:
 		raygenComp->Eye += trans;
 		SetRaygenAttributes(raygenComp);
 	}
+
+	static void ChangePinholeRaygenDimensions(RaygenProgComp& raygenComp, const int width, const int height)
+	{
+		raygenComp->ViewWidth = width;
+		raygenComp->ViewHeight = height;
+		raygenComp->OutputBuffer->setSize(width, height);
+	}
 private:
 	///	\struct CameraPlaneBasis
 	///	\brief helper struct with the vectors that define a camera plane
