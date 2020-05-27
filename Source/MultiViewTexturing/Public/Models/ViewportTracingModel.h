@@ -5,6 +5,7 @@
 #include <Destroyable.h>
 #include <VolcapCameraData.h>
 #include <Buffer.h>
+#include <MeshData.h>
 #include <vector>
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
@@ -17,6 +18,8 @@ class ViewportTracingModel : public app::Initializable, public app::Destroyable
 {
 public:
 	using viewport_size_t = std::array<int, 2>;
+	using mat_t = std::array<float, 16>;
+	using trans_vec_t = std::array<float, 3>;
 	/// Construction
 	///	\brief default constructor (no dependencies)
 	ViewportTracingModel();
@@ -27,6 +30,9 @@ public:
 	/// IO
 	rxcpp::observer<viewport_size_t>						ViewportSizeFlowIn();
 	rxcpp::observer<std::vector<io::volcap_cam_data_ptr_t>>	CameraDataFlowIn();
+	rxcpp::observer<io::MeshData>							MeshDataFlowIn();
+	rxcpp::observer<mat_t>									CameraRotationTransformFlowIn();
+	rxcpp::observer<trans_vec_t>							CameraTranslationVectorFlowIn();
 	rxcpp::observable<BufferCPU<uchar4>>					FrameBufferFlowOut();
 private:
 	struct Impl;

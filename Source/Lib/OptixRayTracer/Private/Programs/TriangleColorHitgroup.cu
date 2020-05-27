@@ -14,6 +14,7 @@ RT_PROGRAM void closest_hit_radiance()
 	optix::float3 world_geometric_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, cur_shad_normal));
 
 	optix::float3 ffnormal = optix::faceforward(world_shading_normal, -ray.direction, world_geometric_normal);
+	printf("cur_color: %u\n", cur_color.x);
 	prd_radiance.Result = cur_color;
 }
 

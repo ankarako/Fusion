@@ -47,6 +47,13 @@ static const ResourceDesc k_ResourceDesc =
 	{ { ResType::ProgramName,	{"TriangleMeshBoundingBox",		"NormalsColor" }}, 	"triangle_mesh_bounds" },
 	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"NormalsColor" }}, 	"closest_hit_radiance" },
 	{ { ResType::ProgramName,	{"TriangleMeshAnyHit",			"NormalsColor" }}, 	"any_hit" },
+	/// triangle meshes with vertex colors
+	{ { ResType::Filepath,		{"TriangleMesh",				"NormalsColorTexcoord" }},	"FusionLib/Resources/Programs/TriangleMesh.ptx" },
+	{ { ResType::Filepath,		{"TriangleMeshHitgroup",		"NormalsColorTexcoord" }},	"FusionLib/Resources/Programs/TriangleColorHitGroup.ptx" },
+	{ { ResType::ProgramName,	{"TriangleMeshIntersection",	"NormalsColorTexcoord" }}, 	"triangle_mesh_intersect" },
+	{ { ResType::ProgramName,	{"TriangleMeshBoundingBox",		"NormalsColorTexcoord" }}, 	"triangle_mesh_bounds" },
+	{ { ResType::ProgramName,	{"TriangleMeshClosestHit",		"NormalsColorTexcoord" }}, 	"closest_hit_radiance" },
+	{ { ResType::ProgramName,	{"TriangleMeshAnyHit",			"NormalsColorTexcoord" }}, 	"any_hit" },
 	/// parallelogram
 	{ { ResType::Filepath,		{"Parallelogram",				"NoAttrib" }},	"FusionLib/Resources/Programs/Parallelogram.ptx" },
 	{ { ResType::ProgramName,	{"ParallelogramIntersection",	"NoAttrib" }}, 	"parallelogram_intersect" },

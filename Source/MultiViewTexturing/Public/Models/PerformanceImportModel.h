@@ -3,12 +3,13 @@
 
 #include <Initializable.h>
 #include <Destroyable.h>
-#include <spimpl.h>
-#include <rxcpp/rx.hpp>
-#include <string>
 #include <PerfcapAnimationData.h>
 #include <TrackedData.h>
 #include <VolcapCameraData.h>
+#include <MeshData.h>
+#include <spimpl.h>
+#include <rxcpp/rx.hpp>
+#include <string>
 
 namespace fu {
 namespace mvt {
@@ -35,6 +36,7 @@ public:
 	rxcpp::observable<io::perfcap_skin_data_ptr_t>				SkinDataFlowOut();
 	rxcpp::observable<std::vector<io::volcap_cam_data_ptr_t>>	ViewportDataFlowOut();
 	rxcpp::observable<io::tracked_seq_ptr_t>					TrackedSequenceDataFlowOut();
+	rxcpp::observable<io::MeshData>								MeshDataFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

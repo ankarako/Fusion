@@ -19,6 +19,8 @@ public:
 		ctxComp->Context->setEntryPointCount(entryPointCount);
 		ctxComp->Context->setRayTypeCount(rayTypeCount);
 		ctxComp->Context["scene_epsilon"]->setFloat(1.0e-3);
+		// TODO: set to false
+		ctxComp->Context->setPrintEnabled(true);
 	}
 	///	\brief destroy an optix context component
 	///	Destroys the optix context handle of the specified component

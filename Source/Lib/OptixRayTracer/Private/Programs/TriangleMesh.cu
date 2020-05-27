@@ -20,6 +20,7 @@ rtDeclareVariable(optix::float3, front_hit_point,	attribute FrontHitPoint, );
 ///==========================================
 RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 {
+	rtPrintf("intersect\n");
 	const uint3 vertexIdx = tindex_buffer[primIdx];
 
 	const float3 v0 = vertex_buffer[vertexIdx.x];

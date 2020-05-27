@@ -32,6 +32,12 @@ void PerformanceImportPresenter::Init()
 	m_Impl->m_Model->ViewportDataFlowOut()
 		.observe_on(m_Impl->m_Coord->ModelCoordination())
 		.subscribe(m_Impl->m_ViewTracingModel->CameraDataFlowIn());
+	///==========
+	/// MeshData
+	///==========
+	m_Impl->m_Model->MeshDataFlowOut()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe(m_Impl->m_ViewTracingModel->MeshDataFlowIn());
 }
 }	///	!namespace mvt
 }	///	!namespace fu

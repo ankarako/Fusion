@@ -55,10 +55,9 @@ namespace mvt {
 				FileExplorerView,
 				FileExplorerPresenter,
 				FileExplorerModel,
-				ViewportView,
 				ViewportTracingModel,	
+				ViewportView,
 				ViewportPresenter,
-				
 				MultiViewPlayerModel,
 				MultiViewPlayerPresenter,
 				PerformanceImportPresenter
