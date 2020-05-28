@@ -59,30 +59,61 @@ static void LoadObj(const std::string& filepath, io::MeshData& data)
 		LOG_ERROR << "Currently single shape loading is supported";
 		return;
 	}
+	std::vector<int> indices;
+	std::vector<float3> vertices;
+	std::vector<float2> texcoords;
+	std::vector<float3> normals;
+	tinyobj::shape_t shape = shapes[0];
+	int tid = 0;
+	for (const auto& index : shape.mesh.indices)
+	{
+		float3 vertex = make_float3(
+			attrib.vertices[3 * index.vertex_index + 0],
+			attrib.vertices[3 * index.vertex_index + 1],
+			attrib.vertices[3 * index.vertex_index + 2]
+		);
+
+		float2 texcoord = make_float2(
+			attrib.texcoords[2 * index.texcoord_index + 0],
+			attrib.texcoords[2 * index.texcoord_index + 1]
+		);
+
+		float3 normal = make_float3(
+			attrib.normals[3 * index.normal_index + 0],
+			attrib.normals[3 * index.normal_index + 1],
+			attrib.normals[3 * index.normal_index + 2]
+		);
+
+		vertices.emplace_back(vertex);
+		normals.emplace_back(normal);
+		texcoords.emplace_back(texcoord);
+		indices.emplace_back(tid);
+		tid++;
+	}
 	///
 	//MeshData data = CreateMeshData();
-	if (!attrib.vertices.empty())
+	if (!vertices.empty())
 	{
-		int count = attrib.vertices.size() / 3;
-		int bsize = attrib.vertices.size() * sizeof(float);
+		int count = vertices.size();
+		int bsize = vertices.size() * sizeof(float3);
 		data->VertexBuffer = CreateBufferCPU<float3>(count);
-		std::memcpy(data->VertexBuffer->Data(), attrib.vertices.data(), bsize);
+		std::memcpy(data->VertexBuffer->Data(), vertices.data(), bsize);
 	}
-	if (!shapes[0].mesh.indices.empty())
+	if (!indices.empty())
 	{
 		data->HasFaces = true;
-		int count = shapes[0].mesh.indices.size() / 3;
-		int bsize = shapes[0].mesh.indices.size() * sizeof(unsigned int);
+		int count = indices.size() / 3;
+		int bsize = indices.size() * sizeof(unsigned int);
 		data->TIndexBuffer = CreateBufferCPU<uint3>(count);
-		std::memcpy(data->TIndexBuffer->Data(), shapes[0].mesh.indices.data(), bsize);
+		std::memcpy(data->TIndexBuffer->Data(), indices.data(), bsize);
 	}
-	if (!attrib.normals.empty())
+	if (!normals.empty())
 	{
 		data->HasNormals = true;
-		int count = attrib.normals.size() / 3;
-		int bsize = attrib.normals.size() * sizeof(float);
+		int count = normals.size();
+		int bsize = normals.size() * sizeof(float3);
 		data->NormalBuffer = CreateBufferCPU<float3>(count);
-		std::memcpy(data->NormalBuffer->Data(), attrib.normals.data(), bsize);
+		std::memcpy(data->NormalBuffer->Data(), normals.data(), bsize);
 	}
 	// FIXME: Hack for colors
 	data->HasColors = true;
@@ -103,13 +134,13 @@ static void LoadObj(const std::string& filepath, io::MeshData& data)
 	//	data->ColorBuffer = CreateBufferCPU<uchar4>(count);
 	//	std::memcpy(data->ColorBuffer->Data(), attrib.colors.data(), bsize);
 	//}
-	if (!attrib.texcoords.empty())
+	if (!texcoords.empty())
 	{
 		data->HasTexcoords = true;
-		int count = attrib.texcoords.size() / 2;
-		int bsize = attrib.texcoords.size() * sizeof(float);
+		int count = texcoords.size();
+		int bsize = texcoords.size() * sizeof(float2);
 		data->TexcoordBuffer = CreateBufferCPU<float2>(count);
-		std::memcpy(data->TexcoordBuffer->Data(), attrib.texcoords.data(), bsize);
+		std::memcpy(data->TexcoordBuffer->Data(), texcoords.data(), bsize);
 	}
 }
 }	///	!namespace io

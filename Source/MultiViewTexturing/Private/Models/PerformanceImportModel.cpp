@@ -109,11 +109,11 @@ void PerformanceImportModel::Init()
 		/// template mesh
 		///==============
 		io::MeshData meshData = io::CreateMeshData();
-		/*std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilename).generic_string();
-		io::LoadObj(templateMeshFilepath, meshData);*/
+		std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilename).generic_string();
+		io::LoadObj(templateMeshFilepath, meshData);
 
-		std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenamePly).generic_string();
-		meshData = io::LoadPly(templateMeshFilepath);
+		/*std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenamePly).generic_string();
+		meshData = io::LoadPly(templateMeshFilepath);*/
 		m_Impl->m_MeshDataFlowOutSubj.get_subscriber().on_next(meshData);
 		/// texture atlas
 		std::string textureAtlasFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TextureAtlasFilename).generic_string();

@@ -17,10 +17,10 @@ namespace mvt {
 class ViewportTracingModel : public app::Initializable, public app::Destroyable
 {
 public:
-	using viewport_size_t = std::array<int, 2>;
-	using mat_t = std::array<float, 16>;
-	using trans_vec_t = std::array<float, 3>;
-	using mouse_pos_t = std::array<float, 2>;
+	using viewport_size_t	= std::array<int, 2>;
+	using mat_t				= std::array<float, 16>;
+	using trans_vec_t		= std::array<float, 3>;
+	using mouse_pos_t		= std::array<float, 2>;
 	/// Construction
 	///	\brief default constructor (no dependencies)
 	ViewportTracingModel();
@@ -40,6 +40,7 @@ public:
 	rxcpp::observer<void*>									RightMouseButtonStopTracking();
 	rxcpp::observer<mouse_pos_t>							LeftMouseButtonPosFlowIn();
 	rxcpp::observer<mouse_pos_t>							RightMouseButtonPosFlowIn();
+	rxcpp::observer<BufferCPU<uchar4>>						TriangleMeshTextureFlowIn();
 
 	rxcpp::observable<BufferCPU<uchar4>>					FrameBufferFlowOut();
 private:

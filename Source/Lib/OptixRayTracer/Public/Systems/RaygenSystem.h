@@ -3,7 +3,10 @@
 
 #include <Components/ContextComp.h>
 #include <Components/RaygenProgComp.h>
-#include <GL/gl3w.h>
+#include <Buffer.h>
+#include <Components/TexturingCameraComp.h>
+#include <Components/AccelerationComp.h>
+//#include <GL/gl3w.h>
 #include <optix_world.h>
 #include <optix_gl_interop.h>
 #include <string>
@@ -64,30 +67,30 @@ public:
 	///	\param	ctxComp		the context component
 	///	\param	size		the launchSize
 	///	\param	pboHandle	the pixel buffer handle
-	static void Create360RaygenProgWithPBO(RaygenProgComp& raygenComp, ContextComp& ctxComp, uint2 size, GLuint pboHandle)
-	{
-		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_360RaygenPtxFilepath, k_360RaygenProgName);
-		raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
-		raygenComp->Lookat	= optix::make_float3(1.0f, 0.0f, 0.0f);
-		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
-		raygenComp->ViewWidth	= size.x;
-		raygenComp->ViewHeight	= size.y;
-		raygenComp->AspectRatio = static_cast<float>(size.x) / static_cast<float>(size.y);
-		raygenComp->Transform = optix::Matrix4x4::identity();
-		ctxComp->Context->setRayTypeCount(1u);
-		ctxComp->Context->setRayGenerationProgram(0u, raygenComp->RaygenProg);
-		/// output from pbo
-		try {
-			raygenComp->OutputBuffer = ctxComp->Context->createBufferFromGLBO(RT_BUFFER_OUTPUT, pboHandle);
-		}
-		catch (optix::Exception& ex)
-		{
-			LOG_ERROR << ex.getErrorString();
-		}
-		raygenComp->OutputBuffer->setFormat(RT_FORMAT_UNSIGNED_BYTE4);
-		raygenComp->OutputBuffer->setSize(size.x, size.y);
-		raygenComp->RaygenProg["output_buffer"]->setBuffer(raygenComp->OutputBuffer);
-	}
+	//static void Create360RaygenProgWithPBO(RaygenProgComp& raygenComp, ContextComp& ctxComp, uint2 size, GLuint pboHandle)
+	//{
+	//	raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_360RaygenPtxFilepath, k_360RaygenProgName);
+	//	raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
+	//	raygenComp->Lookat	= optix::make_float3(1.0f, 0.0f, 0.0f);
+	//	raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
+	//	raygenComp->ViewWidth	= size.x;
+	//	raygenComp->ViewHeight	= size.y;
+	//	raygenComp->AspectRatio = static_cast<float>(size.x) / static_cast<float>(size.y);
+	//	raygenComp->Transform = optix::Matrix4x4::identity();
+	//	ctxComp->Context->setRayTypeCount(1u);
+	//	ctxComp->Context->setRayGenerationProgram(0u, raygenComp->RaygenProg);
+	//	/// output from pbo
+	//	try {
+	//		raygenComp->OutputBuffer = ctxComp->Context->createBufferFromGLBO(RT_BUFFER_OUTPUT, pboHandle);
+	//	}
+	//	catch (optix::Exception& ex)
+	//	{
+	//		LOG_ERROR << ex.getErrorString();
+	//	}
+	//	raygenComp->OutputBuffer->setFormat(RT_FORMAT_UNSIGNED_BYTE4);
+	//	raygenComp->OutputBuffer->setSize(size.x, size.y);
+	//	raygenComp->RaygenProg["output_buffer"]->setBuffer(raygenComp->OutputBuffer);
+	//}
 	///	\brief set the attributes of the raygen component
 	///	\param	eye		the camera's eye
 	///	\param	lookat	the camera's lookat
@@ -120,6 +123,55 @@ public:
 		raygenComp->ViewHeight = height;
 		raygenComp->AspectRatio = width / height;
 		raygenComp->OutputBuffer->setSize(width, height);
+	}
+
+	static void MapTexturingCamera(TexturingCameraComp& camComp, ContextComp& ctxComp, const optix::uint2& camPlaneSize, int camId)
+	{
+		camComp->Id = camId;
+		camComp->CamPlaneWidth = camPlaneSize.x;
+		camComp->CamPlaneHeight = camPlaneSize.y;
+		camComp->AspectRatio = (float)camComp->CamPlaneWidth / (float)camComp->CamPlaneHeight;
+		/// make camera's basis vectors
+		optix::float4 eyeHomo = optix::make_float4(0.0f, 0.0f, 0.0f, 1.0f);
+		optix::float4 upHomo = optix::make_float4(0.0f, -1.0f, 0.0f, 1.0f);
+		optix::float4 lookHomo = optix::make_float4(0.0f, 0.0f, 1.0f, 1.0f);
+		eyeHomo = camComp->Extrinsics * eyeHomo;
+		upHomo = camComp->Extrinsics * upHomo;
+		lookHomo = camComp->Extrinsics * lookHomo;
+		camComp->Eye = optix::normalize(optix::make_float3(eyeHomo.x / eyeHomo.w, eyeHomo.y / eyeHomo.w, eyeHomo.z / eyeHomo.w));
+		camComp->Up = optix::normalize(optix::make_float3(upHomo.x / upHomo.w, upHomo.y / upHomo.w, upHomo.z / upHomo.w));
+		camComp->LookAt = optix::normalize(optix::make_float3(lookHomo.x / lookHomo.w, lookHomo.y / lookHomo.w, lookHomo.z / lookHomo.w));
+		camComp->Left = optix::normalize(optix::cross(camComp->Up, camComp->LookAt));
+		
+		camComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_TexturingRaygenPtxFilepath, k_TexturingRaygenProgName);
+		camComp->TextureBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, camComp->CamPlaneWidth, camComp->CamPlaneHeight);
+		camComp->TextureSampler = ctxComp->Context->createTextureSampler();
+		camComp->TextureSampler->setBuffer(camComp->TextureBuffer);
+		camComp->TextureSampler->setFilteringModes(RT_FILTER_LINEAR, RT_FILTER_LINEAR, RT_FILTER_LINEAR);
+		camComp->TextureSampler->setMaxAnisotropy(1.0f);
+		camComp->TextureSampler->setIndexingMode(RT_TEXTURE_INDEX_NORMALIZED_COORDINATES);
+		camComp->RaygenProg["scene_epsilon"]->setFloat(1e-3f);
+		camComp->RaygenProg["TextureBuffer"]->setBuffer(camComp->TextureBuffer);
+		camComp->RaygenProg["TextureSampler"]->setTextureSampler(camComp->TextureSampler);
+		camComp->RaygenProg["eye"]->setFloat(camComp->Eye);
+		camComp->RaygenProg["up"]->setFloat(camComp->Up);
+		camComp->RaygenProg["left"]->setFloat(camComp->Left);
+		camComp->RaygenProg["lookat"]->setFloat(camComp->LookAt);
+		camComp->RaygenProg["camId"]->setInt(camComp->Id);
+		camComp->RaygenProg["extrinsics"]->setMatrix4x4fv(false, camComp->Extrinsics.getData());
+		camComp->RaygenProg["intrinsics"]->setMatrix3x3fv(false, camComp->Intrinsics.getData());
+	}
+
+	static void TexturingCameraUpdateTexture(TexturingCameraComp& camComp, const BufferCPU<optix::uchar4>& text)
+	{
+		int bsize = text->ByteSize();
+		std::memcpy(camComp->TextureBuffer->map(), text->Data(), bsize);
+		camComp->TextureBuffer->unmap();
+	}
+
+	static void AttachTopLevelAccelerationToTexturingRaygen(TexturingCameraComp& camComp, AccelerationComp& acc)
+	{
+		camComp->RaygenProg["top_object"]->set(acc->Group);
 	}
 private:
 	///	\struct CameraPlaneBasis
@@ -171,10 +223,12 @@ private:
 private:
 	/// system state
 	static constexpr float m_Fov = 35.0f;
-	static constexpr const char* k_360RaygenPtxFilepath		= "FusionLib/Resources/Programs/EnvMapRaygen.ptx";
-	static constexpr const char* k_360RaygenProgName		= "EnvMapRaygen";
-	static constexpr const char* k_PinholeRaygenPtxFilepath = "FusionLib/Resources/Programs/PinholeRaygen.ptx";
-	static constexpr const char* k_PinholeRaygenProgName	= "PinholeRaygen";
+	static constexpr const char* k_360RaygenPtxFilepath			= "FusionLib/Resources/Programs/EnvMapRaygen.ptx";
+	static constexpr const char* k_360RaygenProgName			= "EnvMapRaygen";
+	static constexpr const char* k_PinholeRaygenPtxFilepath		= "FusionLib/Resources/Programs/PinholeRaygen.ptx";
+	static constexpr const char* k_PinholeRaygenProgName		= "PinholeRaygen";
+	static constexpr const char* k_TexturingRaygenPtxFilepath	= "FusionLib/Resources/Programs/TexturingRaygen.ptx";
+	static constexpr const char* k_TexturingRaygenProgName		= "TexturingRaygen";
 };	///	!OptixPinholeRaygenSystem
 }	///	!namespace rt
 }	///	!namespace fu
