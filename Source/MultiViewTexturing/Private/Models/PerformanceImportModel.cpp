@@ -5,6 +5,7 @@
 #include <PerfcapSkinningDataImport.h>
 #include <PerfcapTrackedParamsImport.h>
 #include <LoadObj.h>
+#include <LoadPly.h>
 #include <filesystem>
 #include <plog/Log.h>
 
@@ -24,6 +25,7 @@ struct PerformanceImportModel::Impl
 	static constexpr const char* k_SkinningFilename			= "skinning.json";
 	static constexpr const char* k_SkeletonFilename			= "skeleton.json";
 	static constexpr const char* k_TemplateMeshFilename		= "template_mesh.obj";
+	static constexpr const char* k_TemplateMeshFilenamePly	= "template_mesh.ply";
 	static constexpr const char* k_TextureAtlasFilename		= "texture_atlas.jpg";
 	static constexpr const char* k_TrackedParamsFilename	= "tracked_params.json";
 	/// members
@@ -106,11 +108,13 @@ void PerformanceImportModel::Init()
 		///==============
 		/// template mesh
 		///==============
-		std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilename).generic_string();
 		io::MeshData meshData = io::CreateMeshData();
-		io::LoadObj(templateMeshFilepath, meshData);
+		/*std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilename).generic_string();
+		io::LoadObj(templateMeshFilepath, meshData);*/
+
+		std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenamePly).generic_string();
+		meshData = io::LoadPly(templateMeshFilepath);
 		m_Impl->m_MeshDataFlowOutSubj.get_subscriber().on_next(meshData);
-		//m_Impl->m_TemplateMeshFilepathFlowOutSubj.get_subscriber().on_next(templateMeshFilepath);
 		/// texture atlas
 		std::string textureAtlasFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TextureAtlasFilename).generic_string();
 		m_Impl->m_TextureAtlasFilenameFlowOutSubj.get_subscriber().on_next(textureAtlasFilepath);

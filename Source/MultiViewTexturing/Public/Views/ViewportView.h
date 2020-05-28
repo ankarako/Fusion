@@ -17,9 +17,10 @@ class ViewportView : public app::Widget, public app::Initializable
 public:
 	/// \typedef viewport_size_t
 	///	\brief	the width and height of the viewport
-	using viewport_size_t = std::array<int, 2>;
-	using mat_t = std::array<float, 16>;
-	using trans_vec_t = std::array<float, 3>;
+	using viewport_size_t	= std::array<int, 2>;
+	using mouse_pos_t		= std::array<int, 2>;
+	using mat_t				= std::array<float, 16>;
+	using trans_vec_t		= std::array<float, 3>;
 	/// Construction
 	///	\brief default constructor
 	///	no dependencies
@@ -35,6 +36,13 @@ public:
 	rxcpp::observer<BufferCPU<uchar4>>		FrameBufferFlowIn();
 	rxcpp::observable<mat_t>				RotationTransformFlowOut();
 	rxcpp::observable<trans_vec_t>			TranslationVectorFlowOut();
+
+	rxcpp::observable<void*>				LeftMouseButtonDownFlowOut();
+	rxcpp::observable<void*>				LeftMouseButtonReleasedFlowOut();
+	rxcpp::observable<void*>				RightMouseButtonDownFlowOut();
+	rxcpp::observable<void*>				RightMouseButtonReleasedFlowOut();
+	rxcpp::observable<mouse_pos_t>			LeftMouseButtonPosFlowOut();
+	rxcpp::observable<mouse_pos_t>			RightMouseButtonPosFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

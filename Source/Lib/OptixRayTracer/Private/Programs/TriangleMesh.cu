@@ -20,7 +20,6 @@ rtDeclareVariable(optix::float3, front_hit_point,	attribute FrontHitPoint, );
 ///==========================================
 RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 {
-	rtPrintf("intersect\n");
 	const uint3 vertexIdx = tindex_buffer[primIdx];
 
 	const float3 v0 = vertex_buffer[vertexIdx.x];
@@ -50,6 +49,7 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 				optix::float3 n2 = normal_buffer[vertexIdx.z];
 
 				cur_shad_normal = optix::normalize(n1 * beta + n2 * gamma + n0 * (1.0f - beta - gamma));
+				cur_color = fu::rt::make_color(cur_shad_normal);
 			}
 			///===========================
 			/// check for texcoord buffer
@@ -73,8 +73,11 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 				optix::uchar4 c0 = color_buffer[vertexIdx.x];
 				optix::uchar4 c1 = color_buffer[vertexIdx.y];
 				optix::uchar4 c2 = color_buffer[vertexIdx.z];
+				/// let's try to paint the normals
+
 				optix::float3 hitpoint = ray.origin + t * ray.direction;
-				cur_color = fu::rt::triangle_color(v0, v1, v2, hitpoint, c0, c1, c2);
+				//cur_color = fu::rt::triangle_color(v0, v1, v2, hitpoint, c0, c1, c2);
+				//cur_color = fu::rt::make_color(cur_shad_normal);
 			}
 			/// material is always zero
 			rtReportIntersection(0);
@@ -91,8 +94,9 @@ RT_PROGRAM void triangle_mesh_bounds(int primIdx, float result[6])
 	const float3 v0 = vertex_buffer[vertexIdx.x];
 	const float3 v1 = vertex_buffer[vertexIdx.y];
 	const float3 v2 = vertex_buffer[vertexIdx.z];
-	const float area = optix::length(optix::cross(v1 - v0, v2 - v0));
 
+	const float area = optix::length(optix::cross(v1 - v0, v2 - v0));
+	
 	optix::Aabb* aabb = (optix::Aabb*)result;
 
 	if (area > 0.0f && !isinf(area))

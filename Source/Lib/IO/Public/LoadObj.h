@@ -89,7 +89,7 @@ static void LoadObj(const std::string& filepath, io::MeshData& data)
 	int count = attrib.vertices.size() / 3;
 	data->ColorBuffer = CreateBufferCPU<uchar4>(count);
 	int bsize = count * sizeof(uchar4);
-	uchar4 color = make_uchar4(255, 255, 255, 255);
+	uchar4 color = make_uchar4(200, 200, 200, 255);
 	for (int i = 0; i < count; ++i)
 	{
 		data->ColorBuffer->Data()[i] = color;

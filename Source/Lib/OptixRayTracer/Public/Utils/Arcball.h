@@ -21,7 +21,7 @@ private:
 	static void ToVector(const float x, const float y, float v[3]);
 	static constexpr const float m_CenterX = 0.0f;
 	static constexpr const float m_CenterY = 0.0f;
-	static constexpr const float m_Radius = 10.0f;
+	static constexpr const float m_Radius = 2.0f;
 };	///	!class Arcballrtapp
 }	/// !namespace rt
 }	///	!namespace fu

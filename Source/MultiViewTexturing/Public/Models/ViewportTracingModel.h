@@ -20,6 +20,7 @@ public:
 	using viewport_size_t = std::array<int, 2>;
 	using mat_t = std::array<float, 16>;
 	using trans_vec_t = std::array<float, 3>;
+	using mouse_pos_t = std::array<float, 2>;
 	/// Construction
 	///	\brief default constructor (no dependencies)
 	ViewportTracingModel();
@@ -33,6 +34,13 @@ public:
 	rxcpp::observer<io::MeshData>							MeshDataFlowIn();
 	rxcpp::observer<mat_t>									CameraRotationTransformFlowIn();
 	rxcpp::observer<trans_vec_t>							CameraTranslationVectorFlowIn();
+	rxcpp::observer<void*>									LeftMouseButtonStartTracking();
+	rxcpp::observer<void*>									LeftMouseButtonStopTracking();
+	rxcpp::observer<void*>									RightMouseButtonStartTracking();
+	rxcpp::observer<void*>									RightMouseButtonStopTracking();
+	rxcpp::observer<mouse_pos_t>							LeftMouseButtonPosFlowIn();
+	rxcpp::observer<mouse_pos_t>							RightMouseButtonPosFlowIn();
+
 	rxcpp::observable<BufferCPU<uchar4>>					FrameBufferFlowOut();
 private:
 	struct Impl;

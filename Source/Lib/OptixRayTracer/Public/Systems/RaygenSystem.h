@@ -24,9 +24,9 @@ public:
 	static void CreatePinholeRaygenProg(RaygenProgComp& raygenComp, ContextComp& ctxComp, int width, int height)
 	{
 		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_PinholeRaygenPtxFilepath, k_PinholeRaygenProgName);
-		raygenComp->Eye		= optix::make_float3(-5.0f, 1.0f, 1.0f);
-		raygenComp->Lookat	= optix::make_float3(0.0f, 0.0f, 1.0f);
-		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
+		raygenComp->Eye		= optix::make_float3(-6.0f, 1.0f, 1.0f);
+		raygenComp->Lookat	= optix::make_float3(0.0f, 0.0f, 0.0f);
+		raygenComp->Up		= optix::make_float3(0.0f, -1.0f, 0.0f);
 		raygenComp->ViewWidth	= width;
 		raygenComp->ViewHeight	= height;
 		raygenComp->AspectRatio = static_cast<float>(width) / static_cast<float>(height);
@@ -37,6 +37,7 @@ public:
 		/// create output buffer
 		raygenComp->OutputBuffer = ctxComp->Context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_UNSIGNED_BYTE4, width, height);
 		raygenComp->RaygenProg["output_buffer"]->setBuffer(raygenComp->OutputBuffer);
+		SetRaygenAttributes(raygenComp);
 	}
 	/// \brief create a 360 ray generation component
 	///	for convenience
@@ -117,6 +118,7 @@ public:
 	{
 		raygenComp->ViewWidth = width;
 		raygenComp->ViewHeight = height;
+		raygenComp->AspectRatio = width / height;
 		raygenComp->OutputBuffer->setSize(width, height);
 	}
 private:
