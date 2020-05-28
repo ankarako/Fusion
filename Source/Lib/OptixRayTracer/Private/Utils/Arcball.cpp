@@ -15,7 +15,7 @@ void fu::rt::Arcball::Rotate(float prevx, float prevy, float curx, float cury, f
 	optix::float3 _a = optix::make_float3(a[0], a[1], a[2]);
 	optix::float3 _b = optix::make_float3(b[0], b[1], b[2]);
 	Quaternion q(_a, _b);
-	q.normalize();
+	q.normalize() * weight;
 	optix::Matrix4x4 mat = q.rotationMatrix();
 	std::memcpy(m.data(), mat.getData(), 16 * sizeof(float));
 }

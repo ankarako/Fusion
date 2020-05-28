@@ -18,6 +18,13 @@ struct ViewportView::Impl
 	rxcpp::subjects::subject<BufferCPU<uchar4>>	m_FrameBufferFlowInSubj;
 	rxcpp::subjects::subject<mat_t>				m_RotationTransformFlowOutSubj;
 	rxcpp::subjects::subject<trans_vec_t>		m_TranslationVectorFlowOutSubj;
+	rxcpp::subjects::subject<void*>				m_LeftMouseStartDraggingFlowOutSubj;
+	rxcpp::subjects::subject<void*>				m_RightMouseStartDraggingFlowOutSubj;
+	rxcpp::subjects::subject<void*>				m_LeftMouseStopDraggingFlowOutSubj;
+	rxcpp::subjects::subject<void*>				m_RightMouseStopDraggingFlowOutSubj;
+	rxcpp::subjects::subject<mouse_pos_t>		m_LeftMouseButtonPosFlowOutSubj;
+	rxcpp::subjects::subject<mouse_pos_t>		m_RightMouseButtonPosFlowOoutSubj;
+	rxcpp::subjects::subject<int>				m_WheelEventFlowOutSubj;
 	/// Construction
 	///	\brief default constructor
 	Impl() 
@@ -79,7 +86,7 @@ void ViewportView::Render()
 		ImVec2 windowSize = ImGui::GetWindowSize();
 		if (windowSize.x != m_Impl->m_ViewportSize[0] + m_Impl->m_ViewportSizeExpand.x || windowSize.y != m_Impl->m_ViewportSize[1] + m_Impl->m_ViewportSizeExpand.y)
 		{
-			m_Impl->m_ViewportSize = { (int)windowSize.x, (int)windowSize.y };
+			m_Impl->m_ViewportSize = { (int)windowSize.x, (int)windowSize.x / 2 };
 			m_Impl->m_ViewportSizeFlowOutSubj.get_subscriber().on_next(m_Impl->m_ViewportSize);
 		}
 		if (m_Impl->m_ViewportTextureHandle != 0)
@@ -92,19 +99,32 @@ void ViewportView::Render()
 			/// left mouse button
 			if (io.MouseDown[0])
 			{
+				m_Impl->m_LeftMouseStartDraggingFlowOutSubj.get_subscriber().on_next(nullptr);
+				ImVec2 pos = ImGui::GetMousePos();
+				mouse_pos_t mpos = { (int)pos.x, (int)pos.y };
+				m_Impl->m_LeftMouseButtonPosFlowOutSubj.get_subscriber().on_next(mpos);
+
 				ImVec2 delta = ImGui::GetMouseDragDelta(0);
 				if (delta.x != 0.0f || delta.y != 0.0f)
 				{
 					ImVec2 curMousePos = ImGui::GetMousePos();
-					delta = ImVec2(delta.x / m_Impl->m_ViewportSize[0], delta.y / m_Impl->m_ViewportSize[1]);
+					delta = ImVec2(delta.x /*/ m_Impl->m_ViewportSize[0]*/, delta.y /*/ m_Impl->m_ViewportSize[1]*/);
 					mat_t mat;
-					rt::Arcball::Rotate(curMousePos.x, curMousePos.y, curMousePos.x + delta.x, curMousePos.y + delta.y, 0.01f, mat);
+					rt::Arcball::Rotate(curMousePos.x, curMousePos.y, curMousePos.x + delta.x, curMousePos.y + delta.y, 5.0f, mat);
 					m_Impl->m_RotationTransformFlowOutSubj.get_subscriber().on_next(mat);
 				}
+			}
+			if (io.MouseReleased[0])
+			{
+				m_Impl->m_LeftMouseStopDraggingFlowOutSubj.get_subscriber().on_next(nullptr);
 			}
 			/// right mouse button
 			if (io.MouseDown[1])
 			{
+				m_Impl->m_RightMouseStartDraggingFlowOutSubj.get_subscriber().on_next(nullptr);
+				ImVec2 pos = ImGui::GetMousePos();
+				mouse_pos_t mpos = { (int)pos.x, (int)pos.y };
+				m_Impl->m_RightMouseButtonPosFlowOoutSubj.get_subscriber().on_next(mpos);
 				ImVec2 delta = ImGui::GetMouseDragDelta(1);
 				if (delta.x != 0.0f || delta.y != 0.0f)
 				{
@@ -114,6 +134,10 @@ void ViewportView::Render()
 					rt::Arcball::Translate(curMousePos.x, curMousePos.y, curMousePos.x + delta.x, curMousePos.y + delta.y, vec);
 					m_Impl->m_TranslationVectorFlowOutSubj.get_subscriber().on_next(vec);
 				}
+			}
+			if (io.MouseReleased[1])
+			{
+				m_Impl->m_RightMouseStopDraggingFlowOutSubj.get_subscriber().on_next(nullptr);
 			}
 		}
 	}
@@ -138,6 +162,30 @@ rxcpp::observable<ViewportView::mat_t> ViewportView::RotationTransformFlowOut()
 rxcpp::observable<ViewportView::trans_vec_t> ViewportView::TranslationVectorFlowOut()
 {
 	return m_Impl->m_TranslationVectorFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<void*> ViewportView::LeftMouseButtonDownFlowOut()
+{
+	return m_Impl->m_LeftMouseStartDraggingFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<void*> ViewportView::LeftMouseButtonReleasedFlowOut()
+{
+	return m_Impl->m_LeftMouseStopDraggingFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<void*> ViewportView::RightMouseButtonDownFlowOut()
+{
+	return m_Impl->m_RightMouseStartDraggingFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<void*> ViewportView::RightMouseButtonReleasedFlowOut()
+{
+	return m_Impl->m_RightMouseStopDraggingFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<ViewportView::mouse_pos_t> ViewportView::LeftMouseButtonPosFlowOut()
+{
+	return m_Impl->m_LeftMouseButtonPosFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<ViewportView::mouse_pos_t> ViewportView::RightMouseButtonPosFlowOut()
+{
+	return m_Impl->m_RightMouseButtonPosFlowOoutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace mvt
 }	///	!namespace fu

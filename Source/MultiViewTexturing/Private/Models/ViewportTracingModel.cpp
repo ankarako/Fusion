@@ -3,6 +3,7 @@
 #include <Components/RaygenProgComp.h>
 #include <Components/SolidColorMissComp.h>
 #include <Components/TriangleMeshComp.h>
+#include <Components/PointCloudComp.h>
 #include <Components/ContextComp.h>
 #include <Components/ViewportFrustrumComp.h>
 #include <Systems/RaygenSystem.h>
@@ -10,6 +11,7 @@
 #include <Systems/CreateContextSystem.h>
 #include <Systems/MeshMappingSystem.h>
 #include <Systems/LaunchSystem.h>
+//#include <Systems/ObjectMappingSystem.h>
 
 #include <vector>
 #include <array>
@@ -28,6 +30,7 @@ struct ViewportTracingModel::Impl
 	rt::SolidColorMissComp					m_SolidColorMissComp;
 	rt::AccelerationComp					m_TopLevelAccelerationComp;
 	std::vector<rt::TriangleMeshComp>		m_TriangleMeshComps;
+	rt::PointCloudComp						m_PointCloudComp;
 	std::vector<rt::ViewportFrustrumComp>	m_ViewportFrustrumComps;
 	/// IO
 	rxcpp::subjects::subject<viewport_size_t>							m_ViewportSizeFlowInSubj;
@@ -36,6 +39,12 @@ struct ViewportTracingModel::Impl
 	rxcpp::subjects::subject<io::MeshData>								m_MeshDataFlowInSubj;
 	rxcpp::subjects::subject<mat_t>										m_CameraRotationTransformFlowInSubj;
 	rxcpp::subjects::subject<trans_vec_t>								m_CameraTranslationVectorFlowInSubj;
+	rxcpp::subjects::subject<void*>										m_LeftMouseButtonStartTrackingSubj;
+	rxcpp::subjects::subject<void*>										m_LeftMouseButtonStopTrackingSubj;
+	rxcpp::subjects::subject<void*>										m_RightMouseButtonStartTrackingSubj;
+	rxcpp::subjects::subject<void*>										m_RightMouseButtonStopTrackingSubj;
+	rxcpp::subjects::subject<mouse_pos_t>								m_LeftMouseButtonPosFlowInSubj;
+	rxcpp::subjects::subject<mouse_pos_t>								m_rightMouseButtonPosFlowInSubj;
 	/// outputs
 	rxcpp::subjects::subject<BufferCPU<uchar4>>							m_FrameBufferFlowOutSubj;
 	/// events
@@ -58,7 +67,7 @@ void ViewportTracingModel::Init()
 	rt::CreateContextSystem::CreateContext(m_Impl->m_ContextComp, 1, 1);
 	/// Create the raygen component
 	/// dummy raygen dimensions
-	rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, 10, 10);
+	rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, 1000, 500);
 	rt::RaygenSystem::SetRaygenAttributes(m_Impl->m_PinholeRaygenComp);
 	/// miss program
 	rt::MissSystem::InitializeSolidColorComp(m_Impl->m_SolidColorMissComp, m_Impl->m_ContextComp);
@@ -91,10 +100,41 @@ void ViewportTracingModel::Init()
 		.subscribe([this](const std::vector<io::volcap_cam_data_ptr_t> &cameraData) 
 	{
 		DebugMsg("Got Camera Data");
-		/// debug shit
-		m_Impl->m_ViewportFrustrumComps.emplace_back(rt::CreateViewportFrustrumComponent());
-		rt::MeshMappingSystem::MapViewportFrustrumComp(m_Impl->m_ViewportFrustrumComps.back(), m_Impl->m_ContextComp);
-		rt::MeshMappingSystem::AttachViewportCompToToLevelAcceleration(m_Impl->m_ViewportFrustrumComps.back(), m_Impl->m_TopLevelAccelerationComp);
+		m_Impl->m_PointCloudComp = rt::CreatePointCloudComponent();
+		io::MeshData meshData = io::CreateMeshData();
+		meshData->VertexBuffer = CreateBufferCPU<float3>(cameraData.size());
+		meshData->ColorBuffer = CreateBufferCPU<uchar4>(cameraData.size());
+		meshData->HasColors = true;
+		meshData->HasNormals = false;
+		meshData->HasFaces = false;
+		meshData->HasTexcoords = false;
+		for (int c = 0; c < cameraData.size(); ++c)
+		{
+			optix::float3 translation;
+			float rotation[9];
+			BufferCPU<float> depthExt = cameraData[c]->DepthExtrinsics;
+			translation.x = depthExt->Data()[3];
+			translation.y = depthExt->Data()[7];
+			translation.z = depthExt->Data()[11];
+			rotation[0] = depthExt->Data()[0];
+			rotation[1] = depthExt->Data()[1];
+			rotation[2] = depthExt->Data()[2];
+			rotation[3] = depthExt->Data()[4];
+			rotation[4] = depthExt->Data()[5];
+			rotation[5] = depthExt->Data()[6];
+			rotation[6] = depthExt->Data()[8];
+			rotation[7] = depthExt->Data()[9];
+			rotation[8] = depthExt->Data()[10];
+			optix::Matrix3x3 rotMat = optix::Matrix3x3(rotation);
+
+			uchar4 color = make_uchar4(20 * (c + 1), 10 * (c + 1), 30 * (c + 1), 255);
+			meshData->VertexBuffer->Data()[c] = translation;
+			meshData->ColorBuffer->Data()[c] = color;
+			/// get translation vector
+		}
+		rt::MeshMappingSystem::MapMeshDataToPointCloud(meshData, m_Impl->m_PointCloudComp, m_Impl->m_ContextComp);
+		rt::MeshMappingSystem::SetPointcloudCompPointSize(m_Impl->m_PointCloudComp, 0.05f);
+		rt::MeshMappingSystem::AttachPointCloudCompToTopLevelAcceleration(m_Impl->m_PointCloudComp, m_Impl->m_TopLevelAccelerationComp);
 		m_Impl->m_LaunchContextTaskSubj.get_subscriber().on_next(nullptr);
 	});
 	///=================
@@ -143,6 +183,10 @@ void ViewportTracingModel::Init()
 		m_Impl->m_LaunchContextTaskSubj.get_subscriber().on_next(nullptr);
 	});
 	///====================
+	/// Camera manipulation
+	///====================
+
+	///====================
 	/// Launch Context Task
 	///====================
 	m_Impl->m_LaunchContextTaskSubj.get_observable().as_dynamic()
@@ -156,7 +200,7 @@ void ViewportTracingModel::Init()
 /// \brief model destruction
 void ViewportTracingModel::Destroy()
 {
-
+	rt::CreateContextSystem::DestroyContext(m_Impl->m_ContextComp);
 }
 
 rxcpp::observer<ViewportTracingModel::viewport_size_t> ViewportTracingModel::ViewportSizeFlowIn()
@@ -182,6 +226,36 @@ rxcpp::observer<ViewportTracingModel::mat_t> ViewportTracingModel::CameraRotatio
 rxcpp::observer<ViewportTracingModel::trans_vec_t> ViewportTracingModel::CameraTranslationVectorFlowIn()
 {
 	return m_Impl->m_CameraTranslationVectorFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<void*> ViewportTracingModel::LeftMouseButtonStartTracking()
+{
+	return m_Impl->m_LeftMouseButtonStartTrackingSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<void*> ViewportTracingModel::LeftMouseButtonStopTracking()
+{
+	return m_Impl->m_LeftMouseButtonStopTrackingSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<void*> ViewportTracingModel::RightMouseButtonStartTracking()
+{
+	return m_Impl->m_RightMouseButtonStartTrackingSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<void*> ViewportTracingModel::RightMouseButtonStopTracking()
+{
+	return m_Impl->m_RightMouseButtonStopTrackingSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<ViewportTracingModel::mouse_pos_t> ViewportTracingModel::LeftMouseButtonPosFlowIn()
+{
+	return m_Impl->m_LeftMouseButtonPosFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<ViewportTracingModel::mouse_pos_t> ViewportTracingModel::RightMouseButtonPosFlowIn()
+{
+	return m_Impl->m_rightMouseButtonPosFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 rxcpp::observable<BufferCPU<uchar4>> ViewportTracingModel::FrameBufferFlowOut()

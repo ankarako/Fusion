@@ -3,7 +3,7 @@
 
 #include <plog/Log.h>
 
-#if defined(_DEBUG) || defined(NDEBUG)
+#if defined(_DEBUG)
 	#define DebugMsg(msg)	LOG_DEBUG << msg;
 #else
 	#define DebugMsg(msg)

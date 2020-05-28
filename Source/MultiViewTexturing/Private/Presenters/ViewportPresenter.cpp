@@ -60,6 +60,21 @@ void ViewportPresenter::Init()
 		.subscribe(m_Impl->m_Model->CameraRotationTransformFlowIn());
 	m_Impl->m_View->TranslationVectorFlowOut()
 		.subscribe(m_Impl->m_Model->CameraTranslationVectorFlowIn());
+	///====================
+	/// Mouse button events
+	///====================
+	//m_Impl->m_View->LeftMouseButtonDownFlowOut()
+	//	.subscribe(m_Impl->m_Model->LeftMouseButtonStartTracking());
+	//m_Impl->m_View->LeftMouseButtonReleasedFlowOut()
+	//	.subscribe(m_Impl->m_Model->LeftMouseButtonStopTracking());
+	//m_Impl->m_View->LeftMouseButtonPosFlowOut()
+	//	.subscribe(m_Impl->m_Model->LeftMouseButtonPosFlowIn());
+	//m_Impl->m_View->RightMouseButtonDownFlowOut()
+	//	.subscribe(m_Impl->m_Model->RightMouseButtonStartTracking());
+	//m_Impl->m_View->RightMouseButtonReleasedFlowOut()
+	//	.subscribe(m_Impl->m_Model->RightMouseButtonStopTracking());
+	//m_Impl->m_View->RightMouseButtonPosFlowOut()
+	//	.subscribe(m_Impl->m_Model->RightMouseButtonPosFlowIn());
 	/// Activate the view
 	m_Impl->m_View->Activate();
 }

@@ -25,6 +25,8 @@ include(StripPathFromList)
 include(AppendFilenamesInDir)
 # copy files from list
 include(CopyFilesFromLists)
+# compile ptx
+include(CompilePtx)
 # SBFCommon Project declaration
 message(STATUS "============================")
 message(STATUS "  OptixRayTracer Library")
@@ -155,84 +157,37 @@ get_filename_component(ProgramsIncludeDir "${FirstCUHFile}" DIRECTORY)
 set(CUDA_GENERATED_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/../Resources/Programs")
 CUDA_INCLUDE_DIRECTORIES("${CUDA_INCLUDE_DIRS}" "${OPTIX_INCLUDE_DIR}" "${ProgramsIncludeDir}")
 # we added the cuda targets one-by-one because that's it for now
-# TODO: write a more generic script for adding ptx targets
 # EnvMapMiss
-cuda_compile_ptx(CompilePtxEnvMapMiss "Private/Programs/EnvMapMiss.cu")
-add_custom_target(CompilePtxEnvMapMissPTX ALL DEPENDS ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapMiss.ptx "Private/Programs/EnvMapMiss.cu" SOURCES "Private/Programs/EnvMapMiss.cu")
-# tedious command to rename the ptx generated files
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxEnvMapMiss} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapMiss.ptx )
-add_custom_command(TARGET CompilePtxEnvMapMissPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxEnvMapMiss} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapMiss.ptx )
-set_target_properties(CompilePtxEnvMapMissPTX PROPERTIES FOLDER "CUDACustomTargets")
+CompilePtx(OptixRayTracer CompilePtxEnvMapMiss "Private/Programs/EnvMapMiss.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "EnvMapMiss.ptx")
 # EnvMapRaygen
-cuda_compile_ptx(CompilePtxEnvMapRaygen "Private/Programs/EnvMapRaygen.cu")
-add_custom_target(CompilePtxEnvMapRaygenPTX ALL DEPENDS "${CompilePtxEnvMapRaygen}" "Private/Programs/EnvMapRaygen.cu" SOURCES "Private/Programs/EnvMapRaygen.cu")
-# tedious command to rename the ptx generated files
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxEnvMapRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapRaygen.ptx )
-add_custom_command(TARGET CompilePtxEnvMapRaygenPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxEnvMapRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/EnvMapRaygen.ptx )
-set_target_properties(CompilePtxEnvMapRaygenPTX PROPERTIES FOLDER "CUDACustomTargets")
-# Pinhole Raygen
-cuda_compile_ptx(CompilePtxPinholeRaygen "Private/Programs/PinholeRaygen.cu")
-add_custom_target(CompilePtxPinholeRaygenPTX ALL DEPENDS "${CompilePtxPinholeRaygen}" "Private/Programs/PinholeRaygen.cu" SOURCES "Private/Programs/PinholeRaygen.cu")
-# tedious command to rename the ptx generated files
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPinholeRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/PinholeRaygen.ptx )
-add_custom_command(TARGET CompilePtxPinholeRaygenPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPinholeRaygen} ${CUDA_GENERATED_OUTPUT_DIR}/PinholeRaygen.ptx )
-set_target_properties(CompilePtxPinholeRaygenPTX PROPERTIES FOLDER "CUDACustomTargets")
-# Triangle Mesh
-cuda_compile_ptx(CompilePtxTriangleMesh "Private/Programs/TriangleMesh.cu")
-add_custom_target(CompilePtxTriangleMeshPTX ALL DEPENDS "${CompilePtxTriangleMesh}" "Private/Programs/TriangleMesh.cu" SOURCES "Private/Programs/TriangleMesh.cu")
-# tedious command to rename the pts generated files
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleMesh} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleMesh.ptx )
-add_custom_command(TARGET CompilePtxTriangleMeshPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleMesh} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleMesh.ptx )
-set_target_properties(CompilePtxTriangleMeshPTX PROPERTIES FOLDER "CUDACustomTargets")
-# Triangle Color hitgroup
-cuda_compile_ptx(CompilePtxTriangleColorHitGroup "Private/Programs/TriangleColorHitGroup.cu")
-add_custom_target(CompilePtxTriangleColorHitGroupPTX ALL DEPENDS "${CompilePtxTriangleColorHitGroup}" "Private/Programs/TriangleColorHitGroup.cu" SOURCES "Private/Programs/TriangleColorHitGroup.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleColorHitGroup.ptx )
-add_custom_command(TARGET CompilePtxTriangleColorHitGroupPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxTriangleColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/TriangleColorHitGroup.ptx )
-# tedious command to rename the generated ptx file
-set_target_properties(CompilePtxTriangleColorHitGroupPTX PROPERTIES FOLDER "CUDACustomTargets")
+CompilePtx(OptixRayTracer CompilePtxEnvMapRaygen "Private/Programs/EnvMapRaygen.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "EnvMapRaygen.ptx")
+# PinholeRaygen
+CompilePtx(OptixRayTracer CompilePtxPinholeRaygen "Private/Programs/PinholeRaygen.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "PinholeRaygen.ptx")
+# TriangleMesh
+CompilePtx(OptixRayTracer CompilePtxTriangleMesh "Private/Programs/TriangleMesh.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMesh.ptx")
+# TriangleColor
+CompilePtx(OptixRayTracer CompilePtxTriangleColorHitGroup "Private/Programs/TriangleColorHitGroup.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleColorHitGroup.ptx")
 # Exception
-cuda_compile_ptx(CompilePtxException "Private/Programs/Exception.cu")
-add_custom_target(CompilePtxExceptionPTX ALL DEPENDS "${CompilePtxException}" "Private/Programs/Exception.cu" SOURCES "Private/Programs/Exception.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxException} ${CUDA_GENERATED_OUTPUT_DIR}/Exception.ptx )
-add_custom_command(TARGET CompilePtxTriangleMeshPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxException} ${CUDA_GENERATED_OUTPUT_DIR}/Exception.ptx )
-# tedious command to rename the generated ptx file
-set_target_properties(CompilePtxExceptionPTX PROPERTIES FOLDER "CUDACustomTargets")
+CompilePtx(OptixRayTracer CompilePtxException "Private/Programs/Exception.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "Exception.ptx")
 # SolidColorMiss
-cuda_compile_ptx(CompilePtxSolidColorMiss "Private/Programs/SolidColorMiss.cu")
-add_custom_target(CompilePtxSolidColorMissPTX ALL DEPENDS "${CompilePtxSolidColorMiss}" "Private/Programs/SolidColorMiss.cu" SOURCES "Private/Programs/SolidColorMiss.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorMiss} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorMiss.ptx )
-add_custom_command(TARGET CompilePtxSolidColorMissPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorMiss} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorMiss.ptx )
-# tedious command to rename the generated ptx file
-set_target_properties(CompilePtxSolidColorMissPTX PROPERTIES FOLDER "CUDACustomTargets")
+CompilePtx(OptixRayTracer CompilePtxSolidColorMiss "Private/Programs/SolidColorMiss.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "SolidColorMiss.ptx")
 # PointCloud
-cuda_compile_ptx(CompilePtxPointcloudColor "Private/Programs/PointCloudColor.cu")
-add_custom_target(CompilePtxCompilePtxPointcloudColorPTX ALL DEPENDS "${CompilePtxPointcloudColor}" "Private/Programs/PointCloudColor.cu" SOURCES "Private/Programs/PointCloudColor.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPointcloudColor} ${CUDA_GENERATED_OUTPUT_DIR}/PointCloudColor.ptx )
-add_custom_command(TARGET CompilePtxCompilePtxPointcloudColorPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxPointcloudColor} ${CUDA_GENERATED_OUTPUT_DIR}/PointcloudColor.ptx )
-# tedious command to rename the generated ptx file
-set_target_properties(CompilePtxCompilePtxPointcloudColorPTX PROPERTIES FOLDER "CUDACustomTargets")
-# Solid Color hitgroup
-cuda_compile_ptx(CompilePtxSolidColorHitGroup "Private/Programs/SolidColorHitGroup.cu")
-add_custom_target(CompilePtxSolidColorHitGroupPTX ALL DEPENDS "${CompilePtxSolidColorHitGroup}" "Private/Programs/SolidColorHitGroup.cu" SOURCES "Private/Programs/SolidColorHitGroup.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorHitGroup.ptx )
-add_custom_command(TARGET CompilePtxSolidColorHitGroupPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxSolidColorHitGroup} ${CUDA_GENERATED_OUTPUT_DIR}/SolidColorHitGroup.ptx )
-# tedious command to rename the generated ptx file
-set_target_properties(CompilePtxSolidColorHitGroupPTX PROPERTIES FOLDER "CUDACustomTargets")
-# Parellelogram 
-cuda_compile_ptx(CompilePtxParallelogram "Private/Programs/Parallelogram.cu")
-add_custom_target(CompilePtxParallelogramPTX ALL DEPENDS "${CompilePtxParallelogram}" "Private/Programs/Parallelogram.cu" SOURCES "Private/Programs/Parallelogram.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxParallelogram} ${CUDA_GENERATED_OUTPUT_DIR}/Parallelogram.ptx )
-add_custom_command(TARGET CompilePtxParallelogramPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxParallelogram} ${CUDA_GENERATED_OUTPUT_DIR}/Parallelogram.ptx )
-# tedious command to rename the generated ptx file
-set_target_properties(CompilePtxParallelogramPTX PROPERTIES FOLDER "CUDACustomTargets")
-# ViewportMaterial
-cuda_compile_ptx(CompilePtxViewportMaterial "Private/Programs/ViewportMaterial.cu")
-add_custom_target(CompilePtxViewportMaterialPTX ALL DEPENDS "${CompilePtxViewportMaterial}" "Private/Programs/ViewportMaterial.cu" SOURCES "Private/Programs/ViewportMaterial.cu")
-add_custom_command(TARGET OptixRayTracer POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxViewportMaterial} ${CUDA_GENERATED_OUTPUT_DIR}/ViewportMaterial.ptx )
-add_custom_command(TARGET CompilePtxViewportMaterialPTX POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CompilePtxViewportMaterial} ${CUDA_GENERATED_OUTPUT_DIR}/ViewportMaterial.ptx )
-# tedious command to rename the generated ptx file
-set_target_properties(CompilePtxViewportMaterialPTX PROPERTIES FOLDER "CUDACustomTargets")
+CompilePtx(OptixRayTracer CompilePtxPointcloudColor "Private/Programs/PointCloudColor.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "PointCloudColor.ptx")
+#Solid Color Hitgroup
+CompilePtx(OptixRayTracer CompilePtxSolidColorHitGroup "Private/Programs/SolidColorHitGroup.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "SolidColorHitGroup.ptx")
+# parallelogram geometry
+CompilePtx(OptixRayTracer CompilePtxParallelogram "Private/Programs/Parallelogram.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "Parallelogram.ptx")
+# viewport material
+CompilePtx(OptixRayTracer CompilePtxViewportMaterial "Private/Programs/ViewportMaterial.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "ViewportMaterial.ptx")
+# Triangle mesh
+CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometry "Private/Programs/TriangleMeshGeometry.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMeshGeometry.ptx")
+CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometryNormals "Private/Programs/TriangleMeshGeometryNormals.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMeshGeometryNormals.ptx")
+CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometryColors "Private/Programs/TriangleMeshGeometryColors.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMeshGeometryColors.ptx")
+CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometryNormalsColors "Private/Programs/TriangleMeshGeometryNormalsColors.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMeshGeometryNormalsColors.ptx")
+CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometryNormalsTexcoords "Private/Programs/TriangleMeshGeometryNormalsTexcoords.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMeshGeometryNormalsTexcoords.ptx")
+##############
+# Dependencies
+##############
 ########
 # RxCpp
 ########
