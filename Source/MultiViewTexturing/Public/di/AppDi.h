@@ -23,6 +23,7 @@
 #include <Models/FileExplorerModel.h>
 #include <Models/MultiViewPlayerModel.h>
 #include <Models/ViewportTracingModel.h>
+#include <Models/MVTTexturingModel.h>
 /// Presenters
 #include <Presenters/MainToolbarPresenter.h>
 #include <Presenters/FileMenuPresenter.h>
@@ -30,6 +31,7 @@
 #include <Presenters/ViewportPresenter.h>
 #include <Presenters/MultiViewPlayerPresenter.h>
 #include <Presenters/PerformanceImportPresenter.h>
+#include <Presenters/MVTTexturingPresenter.h>
 /// Views
 #include <Views/MainToolbarView.h>
 #include <Views/FileExplorerView.h>
@@ -60,7 +62,9 @@ namespace mvt {
 				ViewportPresenter,
 				MultiViewPlayerModel,
 				MultiViewPlayerPresenter,
-				PerformanceImportPresenter
+				PerformanceImportPresenter,
+				MVTModel,
+				MVTPresenter
 			>(),
 			///============
 			/// Updateables

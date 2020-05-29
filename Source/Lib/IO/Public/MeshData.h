@@ -26,6 +26,22 @@ static MeshData CreateMeshData()
 {
 	return std::make_shared<MeshDataObj>();
 }
+
+struct TexturedMeshDataObj
+{
+	BufferCPU<float3>	VertexBuffer;
+	BufferCPU<float3> 	NormalBuffer;
+	BufferCPU<uchar4> 	ColorBuffer;
+	BufferCPU<uint3> 	TIndexBuffer;
+	BufferCPU<float2>	TexcoordBuffer;
+	BufferCPU<uchar4>	TextureBuffer;
+	size_t				TextureWidth;
+	size_t				TextureHeight;
+	bool HasNormals{ false };
+	bool HasColors{ false };
+	bool HasTexcoords{ false };
+	bool HasFaces{ false };
+};
 }	///	!namespace io
 }	///	!namespace fu
 #endif	///	!__IO_PUBLIC_MESHDATA_H__

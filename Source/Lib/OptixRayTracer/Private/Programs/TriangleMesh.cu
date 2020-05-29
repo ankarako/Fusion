@@ -34,7 +34,7 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 	{
 		if (rtPotentialIntersection(t))
 		{
-			cur_geom_normal = optix::normalize(normal);
+			//cur_geom_normal = optix::normalize(normal);
 			///==========================
 			/// Check for normal buffer
 			///==========================
@@ -47,9 +47,12 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 				optix::float3 n0 = normal_buffer[vertexIdx.x];
 				optix::float3 n1 = normal_buffer[vertexIdx.y];
 				optix::float3 n2 = normal_buffer[vertexIdx.z];
-
+				/// just for debuggin
+				optix::float3 n = (n0 + n1 + n2) / 3;
+				cur_geom_normal = optix::normalize(n);
 				cur_shad_normal = optix::normalize(n1 * beta + n2 * gamma + n0 * (1.0f - beta - gamma));
-				cur_color = fu::rt::make_color(cur_shad_normal);
+				optix::float3 world_shading_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, cur_geom_normal));
+				cur_color = fu::rt::make_color(world_shading_normal);
 			}
 			///===========================
 			/// check for texcoord buffer

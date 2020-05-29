@@ -185,6 +185,9 @@ CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometryNormals "Private/Program
 CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometryColors "Private/Programs/TriangleMeshGeometryColors.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMeshGeometryColors.ptx")
 CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometryNormalsColors "Private/Programs/TriangleMeshGeometryNormalsColors.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMeshGeometryNormalsColors.ptx")
 CompilePtx(OptixRayTracer CompilePtxTriangleMeshGeometryNormalsTexcoords "Private/Programs/TriangleMeshGeometryNormalsTexcoords.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleMeshGeometryNormalsTexcoords.ptx")
+CompilePtx(OptixRayTracer CompilePtxQuad "Private/Programs/Quad.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "Quad.ptx")
+CompilePtx(OptixRayTracer CompilePtxTexturingRaygen "Private/Programs/TexturingRaygen.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TexturingRaygen.ptx")
+CompilePtx(OptixRayTracer CompilePtxTexturedMeshMaterial "Private/Programs/TexturedMeshMaterial.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TexturedMeshMaterial.ptx")
 ##############
 # Dependencies
 ##############

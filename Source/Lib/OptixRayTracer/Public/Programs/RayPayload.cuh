@@ -10,5 +10,14 @@ struct PerRayData_Radiance
 	float			Importance;
 	int				Depth;
 };	///	!struct PerRayData_Radiance
+///	\struct PerRayData_Texturing
+///	\brief ray payload for texturing
+struct PerRayData_Texturing
+{
+	optix::uchar4	PixelValue;
+	int				CameraId;
+	float			CameraDist;
+	optix::float2	TexCoord;
+};	///	!struct PerRayData_Texturing
 }	///	!namespace rt
 }	///	!namespace fu

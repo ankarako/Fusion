@@ -6,6 +6,7 @@
 #include <Components/PointCloudComp.h>
 #include <Components/ContextComp.h>
 #include <Components/ViewportFrustrumComp.h>
+#include <Components/QuadComp.h>
 #include <Systems/RaygenSystem.h>
 #include <Systems/MissSystem.h>
 #include <Systems/CreateContextSystem.h>
@@ -32,6 +33,7 @@ struct ViewportTracingModel::Impl
 	std::vector<rt::TriangleMeshComp>		m_TriangleMeshComps;
 	rt::PointCloudComp						m_PointCloudComp;
 	std::vector<rt::ViewportFrustrumComp>	m_ViewportFrustrumComps;
+	std::vector<rt::QuadComp>				m_QuadComps;
 	/// IO
 	rxcpp::subjects::subject<viewport_size_t>							m_ViewportSizeFlowInSubj;
 	rxcpp::subjects::subject<std::vector<io::volcap_cam_data_ptr_t>>	m_CameraDataFlowInSubj;
@@ -45,6 +47,7 @@ struct ViewportTracingModel::Impl
 	rxcpp::subjects::subject<void*>										m_RightMouseButtonStopTrackingSubj;
 	rxcpp::subjects::subject<mouse_pos_t>								m_LeftMouseButtonPosFlowInSubj;
 	rxcpp::subjects::subject<mouse_pos_t>								m_rightMouseButtonPosFlowInSubj;
+	rxcpp::subjects::subject<BufferCPU<uchar4>>							m_TriangleMeshTextureFlowInSubj;
 	/// outputs
 	rxcpp::subjects::subject<BufferCPU<uchar4>>							m_FrameBufferFlowOutSubj;
 	/// events
@@ -110,30 +113,36 @@ void ViewportTracingModel::Init()
 		meshData->HasTexcoords = false;
 		for (int c = 0; c < cameraData.size(); ++c)
 		{
-			optix::float3 translation;
-			float rotation[9];
-			BufferCPU<float> depthExt = cameraData[c]->DepthExtrinsics;
-			translation.x = depthExt->Data()[3];
-			translation.y = depthExt->Data()[7];
-			translation.z = depthExt->Data()[11];
-			rotation[0] = depthExt->Data()[0];
-			rotation[1] = depthExt->Data()[1];
-			rotation[2] = depthExt->Data()[2];
-			rotation[3] = depthExt->Data()[4];
-			rotation[4] = depthExt->Data()[5];
-			rotation[5] = depthExt->Data()[6];
-			rotation[6] = depthExt->Data()[8];
-			rotation[7] = depthExt->Data()[9];
-			rotation[8] = depthExt->Data()[10];
-			optix::Matrix3x3 rotMat = optix::Matrix3x3(rotation);
+			/// lets make the color extrinsics matrix
+			BufferCPU<float> colorExt = cameraData[c]->ColorExtrinsics;
+			optix::Matrix4x4 colorExtMat(colorExt->Data());
+			/// because the extrinsics is in column major format
+			colorExtMat.transpose();
+			optix::float4 homoOrig = optix::make_float4(0.0f, 0.0f, 0.0f, 1.0f);
+			optix::float4 camEyeHomo = colorExtMat * homoOrig;
+			optix::float3 camEye = optix::make_float3(
+				camEyeHomo.x / camEyeHomo.w, 
+				camEyeHomo.y / camEyeHomo.w, 
+				camEyeHomo.z / camEyeHomo.w);
 
 			uchar4 color = make_uchar4(20 * (c + 1), 10 * (c + 1), 30 * (c + 1), 255);
-			meshData->VertexBuffer->Data()[c] = translation;
+			meshData->VertexBuffer->Data()[c] = camEye;
 			meshData->ColorBuffer->Data()[c] = color;
-			/// get translation vector
+
+			/// lets make quads -> they are the camera plane
+			BufferCPU<float> colorIntr = cameraData[c]->ColorIntrinsics;
+			optix::Matrix3x3 colorIntrMat(colorIntr->Data());
+			/// again it was column major
+			colorIntrMat.transpose();
+			rt::QuadComp qComp = rt::CreateQuadComponent(optix::make_float3(0.0f, 0.0f, 0.01f), 0.5f, 0.25f);
+			rt::MeshMappingSystem::MapQuadComp(qComp, m_Impl->m_ContextComp);
+			rt::MeshMappingSystem::AttachQuadCompToTopLevelAcceleration(qComp, m_Impl->m_TopLevelAccelerationComp);
+			rt::MeshMappingSystem::QuadCompSetTransMat(qComp, colorExtMat);
+			m_Impl->m_QuadComps.emplace_back(qComp);
+			m_Impl->m_LaunchContextTaskSubj.get_subscriber().on_next(nullptr);
 		}
 		rt::MeshMappingSystem::MapMeshDataToPointCloud(meshData, m_Impl->m_PointCloudComp, m_Impl->m_ContextComp);
-		rt::MeshMappingSystem::SetPointcloudCompPointSize(m_Impl->m_PointCloudComp, 0.05f);
+		rt::MeshMappingSystem::SetPointcloudCompPointSize(m_Impl->m_PointCloudComp, 0.01f);
 		rt::MeshMappingSystem::AttachPointCloudCompToTopLevelAcceleration(m_Impl->m_PointCloudComp, m_Impl->m_TopLevelAccelerationComp);
 		m_Impl->m_LaunchContextTaskSubj.get_subscriber().on_next(nullptr);
 	});
@@ -146,7 +155,11 @@ void ViewportTracingModel::Init()
 		DebugMsg("Got Mesh Data");
 		///
 		rt::TriangleMeshComp comp = rt::CreateTriangleMeshComponent();
-		rt::MeshMappingSystem::MapMeshDataToTriangleMesh(data, comp, m_Impl->m_ContextComp);
+		/// initialize a dummy textuer buffer
+		int size = 1604 * 1365;
+		BufferCPU<uchar4> texBuf = CreateBufferCPU<uchar4>(size);
+		std::memset(texBuf->Data(), 255, size * 4 * sizeof(unsigned char));
+		rt::MeshMappingSystem::MapMeshDataToTexturedMesh(data, comp, m_Impl->m_ContextComp, texBuf);
 		if (m_Impl->m_TriangleMeshComps.size() == 1)
 		{
 			rt::MeshMappingSystem::DetachTriangleMeshToTopLevelAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_TopLevelAccelerationComp);
@@ -256,6 +269,11 @@ rxcpp::observer<ViewportTracingModel::mouse_pos_t> ViewportTracingModel::LeftMou
 rxcpp::observer<ViewportTracingModel::mouse_pos_t> ViewportTracingModel::RightMouseButtonPosFlowIn()
 {
 	return m_Impl->m_rightMouseButtonPosFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<BufferCPU<uchar4>> ViewportTracingModel::TriangleMeshTextureFlowIn()
+{
+	return m_Impl->m_TriangleMeshTextureFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 rxcpp::observable<BufferCPU<uchar4>> ViewportTracingModel::FrameBufferFlowOut()
