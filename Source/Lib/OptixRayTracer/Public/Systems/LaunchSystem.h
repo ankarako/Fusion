@@ -4,8 +4,10 @@
 #include <Buffer.h>
 #include <Components/ContextComp.h>
 #include <Components/RaygenProgComp.h>
+#include <Components/TexturingCameraComp.h>
 #include <optix_world.h>
 #include <plog/Log.h>
+#include <Programs/RayPayload.cuh>
 
 namespace fu {
 namespace rt {
@@ -39,6 +41,14 @@ public:
 		std::memcpy(outBuffer->Data(), rayComp->OutputBuffer->map(), outBuffer->ByteSize());
 		rayComp->OutputBuffer->unmap();
 	}
+
+	static void CopyOutputTexturingBuffer(TexturingCameraComp& camComp, BufferCPU<TexturingOutput>& outBuffer)
+	{
+		std::memcpy(outBuffer->Data(), camComp->TexturingOutputBuffer->map(), outBuffer->ByteSize());
+		camComp->TexturingOutputBuffer->unmap();
+	}
+
+
 };	///	!class LaunchSystem
 }	///	!namespace rt
 }	///	!namespace fu

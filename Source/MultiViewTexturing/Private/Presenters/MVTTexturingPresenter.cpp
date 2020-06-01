@@ -42,11 +42,27 @@ void MVTPresenter::Init()
 	///===================
 	m_Impl->m_MultiViewPlayerModel->MultiViewFramesFlowOut()
 		.subscribe(m_Impl->m_Model->CameraFramesFlowIn());
+	///=========================
+	///	Tracked Parameters Input
+	///=========================
+	m_Impl->m_PerformanceImportModel->TrackedSequenceDataFlowOut()
+		.subscribe(m_Impl->m_Model->TrackedFramesFlowIn());
 	///===================
 	/// Seek Frame Output
 	///===================
 	m_Impl->m_Model->SeekFrameFlowOut()
 		.subscribe(m_Impl->m_MultiViewPlayerModel->SeekFrameIdFlowIn());
+
+	m_Impl->m_Model->CameraDataFlowOut()
+		.subscribe(m_Impl->m_ViewportTracingModel->CameraDataFlowIn());
+
+	m_Impl->m_Model->MeshDataFlowOut()
+		.subscribe(m_Impl->m_ViewportTracingModel->MeshDataFlowIn());
+	///===============
+	/// texture Output
+	///===============
+	m_Impl->m_Model->TextureFlowOut()
+		.subscribe(m_Impl->m_ViewportTracingModel->TriangleMeshTextureFlowIn());
 }
 }	///	!namespace mvt
 }	///	!namespace fu

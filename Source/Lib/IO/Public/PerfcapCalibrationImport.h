@@ -60,6 +60,17 @@ static std::vector<volcap_cam_data_ptr_t> ImportPerfcapCalibration(const std::st
 					camData->DepthIntrinsics->Data()[i] = intr[i].GetDouble();
 				}
 			}
+			if (dObj.HasMember("resolution"))
+			{
+				if (dObj["resolution"].HasMember("width"))
+				{
+					camData->DepthResolution.x = dObj["resolution"]["width"].GetInt();
+				}
+				if (dObj["resolution"].HasMember("height"))
+				{
+					camData->DepthResolution.y = dObj["resolution"]["height"].GetInt();
+				}
+			}
 		}
 		/// Get color camera data
 		if (deviceArray[d].HasMember("color"))
@@ -85,6 +96,17 @@ static std::vector<volcap_cam_data_ptr_t> ImportPerfcapCalibration(const std::st
 				for (int i = 0; i < count; ++i)
 				{
 					camData->ColorIntrinsics->Data()[i] = intr[i].GetDouble();
+				}
+				if (dObj.HasMember("resolution"))
+				{
+					if (dObj["resolution"].HasMember("width"))
+					{
+						camData->ColorResolution.x = dObj["resolution"]["width"].GetInt();
+					}
+					if (dObj["resolution"].HasMember("height"))
+					{
+						camData->ColorResolution.y = dObj["resolution"]["height"].GetInt();
+					}
 				}
 			}
 		}

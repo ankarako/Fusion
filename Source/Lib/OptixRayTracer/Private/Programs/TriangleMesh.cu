@@ -66,7 +66,7 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 				float2 t0 = texcoord_buffer[vertexIdx.x];
 				float2 t1 = texcoord_buffer[vertexIdx.y];
 				float2 t2 = texcoord_buffer[vertexIdx.z];
-				//cur_texcoord = make_float2(t1 * beta + t2 * gamma + t0 * (1.0f - beta - gamma));
+				cur_texcoord = t1 * beta + t2 * gamma + t0 * (1.0f - beta - gamma);
 			}
 			///=======================
 			/// check for color buffer

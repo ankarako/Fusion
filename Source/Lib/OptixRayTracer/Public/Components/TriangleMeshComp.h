@@ -31,6 +31,8 @@ struct TriangleMeshCompObj
 	optix::Acceleration		Acceleration;
 	optix::GeometryGroup	GGroup;
 	optix::Matrix4x4		TransMat;
+	optix::Buffer			TextureBuffer;
+	optix::TextureSampler	TextureSampler;
 };	///	!struct MeshGeometryComp
 ///	\typedef MeshGeometryComp
 ///	\brief a reference counted MeshGeometryCompObj

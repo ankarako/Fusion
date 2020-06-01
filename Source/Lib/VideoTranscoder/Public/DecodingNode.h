@@ -55,6 +55,13 @@ public:
 	///	\brief generate the frame at the current frame position
 	///	Outputs a frame buffer from the node's output
 	void GenerateFrame();
+	///	\brief get the specified frame
+	///	\param	id	the frame id
+	///	\return the specified frame
+	BufferCPU<uchar4> GetFrame(int id);
+	/// \brief rotate the video images
+	///	\param 
+	void RotateFrames90CW(bool rot);
 	///	\brief generate a specific number of frames
 	///	generates the specified number of frames
 	///	\param	frameCount	the number of frames to generate
