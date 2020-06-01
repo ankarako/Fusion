@@ -12,6 +12,8 @@ namespace io {
 struct VolcapCameraData
 {
 	std::string DeviceName;
+	uint2		DepthResolution;
+	uint2		ColorResolution;
 	BufferCPU<float> DepthIntrinsics;
 	BufferCPU<float> DepthExtrinsics;
 	BufferCPU<float> ColorIntrinsics;

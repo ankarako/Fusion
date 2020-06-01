@@ -11,6 +11,7 @@
 #include <optix_gl_interop.h>
 #include <string>
 #include <plog/Log.h>
+#include <Programs/RayPayload.cuh>
 
 namespace fu {
 namespace rt {
@@ -104,6 +105,19 @@ public:
 		raygenComp->RaygenProg["W"]->setFloat(basis.W);
 		raygenComp->RaygenProg["eye"]->setFloat(raygenComp->Eye);
 	}
+	///	\brief set the attributes of the raygen component
+	///	\param	eye		the camera's eye
+	///	\param	lookat	the camera's lookat
+	///	\param	up		the camera's up
+	static void SetRaygenAttributes(TexturingCameraComp& raygenComp)
+	{
+		CameraPlaneBasis basis;
+		UpdateCameraParams(raygenComp, basis);
+		raygenComp->RaygenProg["U"]->setFloat(basis.U);
+		raygenComp->RaygenProg["V"]->setFloat(basis.V);
+		raygenComp->RaygenProg["W"]->setFloat(basis.W);
+		raygenComp->RaygenProg["eye"]->setFloat(raygenComp->Eye);
+	}
 
 	static void SetPinholeRaygenTransMat(RaygenProgComp& raygenComp, const optix::Matrix4x4& mat)
 	{
@@ -132,16 +146,16 @@ public:
 		camComp->CamPlaneHeight = camPlaneSize.y;
 		camComp->AspectRatio = (float)camComp->CamPlaneWidth / (float)camComp->CamPlaneHeight;
 		/// make camera's basis vectors
-		optix::float4 eyeHomo = optix::make_float4(0.0f, 0.0f, 0.0f, 1.0f);
-		optix::float4 upHomo = optix::make_float4(0.0f, -1.0f, 0.0f, 1.0f);
-		optix::float4 lookHomo = optix::make_float4(0.0f, 0.0f, 1.0f, 1.0f);
-		eyeHomo = camComp->Extrinsics * eyeHomo;
-		upHomo = camComp->Extrinsics * upHomo;
-		lookHomo = camComp->Extrinsics * lookHomo;
-		camComp->Eye = optix::normalize(optix::make_float3(eyeHomo.x / eyeHomo.w, eyeHomo.y / eyeHomo.w, eyeHomo.z / eyeHomo.w));
-		camComp->Up = optix::normalize(optix::make_float3(upHomo.x / upHomo.w, upHomo.y / upHomo.w, upHomo.z / upHomo.w));
-		camComp->LookAt = optix::normalize(optix::make_float3(lookHomo.x / lookHomo.w, lookHomo.y / lookHomo.w, lookHomo.z / lookHomo.w));
-		camComp->Left = optix::normalize(optix::cross(camComp->Up, camComp->LookAt));
+		//optix::float4 eyeHomo = optix::make_float4(0.0f, 0.0f, 0.0f, 1.0f);
+		//optix::float4 upHomo = optix::make_float4(0.0f, -1.0f, 0.0f, 1.0f);
+		//optix::float4 lookHomo = optix::make_float4(0.0f, 0.0f, 0.0f, 1.0f);
+		//eyeHomo = camComp->Extrinsics * eyeHomo;
+		//upHomo = camComp->Extrinsics * upHomo;
+		////lookHomo = camComp->Extrinsics * lookHomo;
+		//camComp->Eye = optix::make_float3(eyeHomo.x / eyeHomo.w, eyeHomo.y / eyeHomo.w, eyeHomo.z / eyeHomo.w);
+		//camComp->Up = optix::normalize(optix::make_float3(upHomo.x / upHomo.w, upHomo.y / upHomo.w, upHomo.z / upHomo.w));
+		//camComp->LookAt = optix::make_float3(lookHomo.x / lookHomo.w, lookHomo.y / lookHomo.w, lookHomo.z / lookHomo.w);
+		//camComp->Left = optix::normalize(optix::cross(camComp->LookAt, camComp->Up));
 		
 		camComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_TexturingRaygenPtxFilepath, k_TexturingRaygenProgName);
 		camComp->TextureBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, camComp->CamPlaneWidth, camComp->CamPlaneHeight);
@@ -160,6 +174,12 @@ public:
 		camComp->RaygenProg["camId"]->setInt(camComp->Id);
 		camComp->RaygenProg["extrinsics"]->setMatrix4x4fv(false, camComp->Extrinsics.getData());
 		camComp->RaygenProg["intrinsics"]->setMatrix3x3fv(false, camComp->Intrinsics.getData());
+
+		camComp->TexturingOutputBuffer = ctxComp->Context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER, camPlaneSize.x, camPlaneSize.y);
+		camComp->TexturingOutputBuffer->setElementSize(sizeof(rt::TexturingOutput));
+		camComp->RaygenProg["TexturingOutputBuffer"]->setBuffer(camComp->TexturingOutputBuffer);
+		ctxComp->Context->setRayGenerationProgram(camId, camComp->RaygenProg);
+		SetRaygenAttributes(camComp);
 	}
 
 	static void TexturingCameraUpdateTexture(TexturingCameraComp& camComp, const BufferCPU<optix::uchar4>& text)
@@ -218,7 +238,36 @@ private:
 		raygenComp->Eye		= optix::make_float3(trans * optix::make_float4(eye, 1.0f));
 		raygenComp->Lookat	= optix::make_float3(trans * optix::make_float4(lookat, 1.0f));
 		raygenComp->Up		= optix::make_float3(trans * optix::make_float4(up, 1.0f));
-		CalcCameraPlaneBasis(raygenComp->Eye, raygenComp->Lookat, raygenComp->Up, raygenComp->AspectRatio, camPlane);
+		//CalcCameraPlaneBasis(raygenComp->Eye, raygenComp->Lookat, raygenComp->Up, raygenComp->AspectRatio, camPlane);
+	}
+	///	\brief update camera parameters
+	///	updates eye, lookat, up vectors
+	///	\param	raygenComp	the raygen component to update
+	///	\param	camPlane	the image plane basis vectors
+	void static UpdateCameraParams(TexturingCameraComp& raygenComp, CameraPlaneBasis& camPlane)
+	{
+		float ulen;
+		float vlen;
+		float wlen;
+		camPlane.W = -raygenComp->LookAt - raygenComp->Eye;
+		wlen = optix::length(camPlane.W);
+		camPlane.U = optix::normalize(optix::cross(camPlane.W, raygenComp->Up));
+		camPlane.V = optix::normalize(optix::cross(camPlane.U, camPlane.W));
+		float f = raygenComp->Intrinsics.getRow(0).x / raygenComp->CamPlaneWidth;
+		vlen = wlen * tanf(0.5f * 90.0f * M_PIf / 180.0f);
+		camPlane.V *= vlen;
+		ulen = vlen * raygenComp->AspectRatio;
+		camPlane.U *= ulen;
+		const optix::Matrix4x4 frame = optix::Matrix4x4::fromBasis(optix::normalize(camPlane.U), optix::normalize(camPlane.V), optix::normalize(-camPlane.W), raygenComp->LookAt);
+		const optix::Matrix4x4 frameInv = frame.inverse();
+		const optix::Matrix4x4 trans = frame * raygenComp->Extrinsics * frameInv;
+		const optix::float3 eye = raygenComp->Eye;
+		const optix::float3 lookat = raygenComp->LookAt;
+		const optix::float3 up = raygenComp->Up;
+		raygenComp->Eye = optix::make_float3(trans * optix::make_float4(eye, 1.0f));
+		raygenComp->LookAt = optix::make_float3(trans * optix::make_float4(lookat, 1.0f));
+		raygenComp->Up = optix::make_float3(trans * optix::make_float4(up, 1.0f));
+		//CalcCameraPlaneBasis(raygenComp->Eye, raygenComp->LookAt, raygenComp->Up, raygenComp->AspectRatio, camPlane);
 	}
 private:
 	/// system state

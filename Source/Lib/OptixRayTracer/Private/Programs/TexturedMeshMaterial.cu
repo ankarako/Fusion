@@ -3,7 +3,7 @@
 #include <RayPayload.cuh>
 
 rtBuffer<uchar4>			TextureBuffer;
-rtTextureSampler<uchar4, 2> TextureSampler;
+rtTextureSampler<float4, 2> TextureSampler;
 
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(optix::float2, cur_texcoord, 		attribute VertexTexcoord, );
@@ -18,8 +18,8 @@ RT_PROGRAM void closest_hit_radiance()
 {
 	float u = cur_texcoord.x;
 	float v = cur_texcoord.y;
-	uchar4 color = tex2D(TextureSampler, u, v);
-	prd_radiance.Result = color;
+	float4 color = tex2D(TextureSampler, u, v);
+	prd_radiance.Result = fu::rt::make_color(optix::make_float3(color));
 }
 
 RT_PROGRAM void any_hit()

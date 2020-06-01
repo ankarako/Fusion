@@ -42,6 +42,8 @@ struct DecodingNodeObj::Impl
 	double		m_FrameRate{ 0 };
 	///	the actual opencv video decoder
 	dec_t		m_Decoder;
+	/// 
+	bool		m_Rotate{ false };
 	///
 	std::atomic_bool	m_GenerateFrames{ false };
 	///	prefetch event task
@@ -200,6 +202,38 @@ void DecodingNodeObj::GenerateFrame()
 		m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
 	}
 }
+
+BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
+{
+	this->SetCurrentFramePos(id);
+	if (m_Impl->m_Decoder->isOpened() && m_Impl->m_CurrentFramePosition < m_Impl->m_FrameCount)
+	{
+
+		m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative);
+		cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
+		/// get the byte size of the native frame
+		size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+		size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
+		/// check that our frame and the native have the same byte size
+		DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
+		/// copy native frame data to our buffer
+		std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+		if (m_Impl->m_Rotate)
+			{
+				double angle = 90.0;
+				cv::Point2f center((m_Impl->m_CurrentFrameNative.cols - 1.0f) / 2.0f, (m_Impl->m_CurrentFrameNative.rows - 1.0f) / 2.0f);
+				cv::Mat rot = cv::getRotationMatrix2D(center, angle, 1.0f);
+				cv::Rect2f bbox = cv::RotateRect(cv::Point2f(), m_Impl->m_CurrentFrameNative.size(), angle).boundingRect2f();
+				///
+				rot.at<double>(0, 2) += bbox.width / 2.0f - m_Impl->m_CurrentFrameNative.cols / 2.0;
+				rot.at<double>(1, 2) += bbox.height / 2.0f - m_Impl->m_CurrentFrameNative.rows / 2.0;
+
+				cv::warpAffine(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, rot, bbox.size());
+			}
+		/// notify subscriber's about the current frame
+		return m_Impl->m_CurrentFrame;
+	}
+}
 ///	\brief generate a specific number of frames
 ///	generates the specified 6number of frames
 ///	\param	frameCount	the number of frames to generate
@@ -218,6 +252,18 @@ void DecodingNodeObj::GenerateFrames(size_t frameCount)
 			size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
 			/// check that our frame and the native have the same byte size
 			DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
+			if (m_Impl->m_Rotate)
+			{
+				double angle = 90.0;
+				cv::Point2f center((m_Impl->m_CurrentFrameNative.cols - 1.0f) / 2.0f, (m_Impl->m_CurrentFrameNative.rows - 1.0f) / 2.0f);
+				cv::Mat rot = cv::getRotationMatrix2D(center, angle, 1.0f);
+				cv::Rect2f bbox = cv::RotateRect(cv::Point2f(), m_Impl->m_CurrentFrameNative.size(), angle).boundingRect2f();
+				///
+				rot.at<double>(0, 2) += bbox.width / 2.0f - m_Impl->m_CurrentFrameNative.cols / 2.0;
+				rot.at<double>(1, 2) += bbox.height / 2.0f - m_Impl->m_CurrentFrameNative.rows / 2.0;
+
+				cv::warpAffine(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, rot, bbox.size());
+			}
 			/// copy native frame data to our buffer
 			std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
 			/// notify subscriber's about the current frame
@@ -243,6 +289,11 @@ void fu::trans::DecodingNodeObj::SetScaledSize(size_t width, size_t height)
 void fu::trans::DecodingNodeObj::SetGeneratingFrames(bool val)
 {
 	m_Impl->m_GenerateFrames.store(val, std::memory_order_seq_cst);
+}
+
+void DecodingNodeObj::RotateFrames90CW(bool rot)
+{
+	m_Impl->m_Rotate = rot;
 }
 ///	\brief frame output
 ///	decoding nodes have only output frame streams

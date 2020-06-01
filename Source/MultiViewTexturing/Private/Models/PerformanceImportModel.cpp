@@ -30,6 +30,8 @@ struct PerformanceImportModel::Impl
 	static constexpr const char* k_TrackedParamsFilename	= "tracked_params.json";
 	/// members
 	app_ptr_t m_7ZipApp;
+	/// Texture resolution
+	uint2 m_TextureResolution{ 1024, 1024 };
 	/// inputs
 	rxcpp::subjects::subject<std::string> m_ImportFilepathFlowInSubj;
 	/// outputs
@@ -111,7 +113,14 @@ void PerformanceImportModel::Init()
 		io::MeshData meshData = io::CreateMeshData();
 		std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilename).generic_string();
 		io::LoadObj(templateMeshFilepath, meshData);
-
+		/// Mesh data is textured
+		meshData->TextureWidth = m_Impl->m_TextureResolution.x;
+		meshData->TextureHeight = m_Impl->m_TextureResolution.y;
+		meshData->TextureBuffer = CreateBufferCPU<uchar4>(meshData->TextureWidth * meshData->TextureHeight);
+		for (int i = 0; i < meshData->TextureWidth * meshData->TextureHeight; ++i)
+		{
+			meshData->TextureBuffer->Data()[i] = make_uchar4(0, 0, 0, 255);
+		}
 		/*std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenamePly).generic_string();
 		meshData = io::LoadPly(templateMeshFilepath);*/
 		m_Impl->m_MeshDataFlowOutSubj.get_subscriber().on_next(meshData);

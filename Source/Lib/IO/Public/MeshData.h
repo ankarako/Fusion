@@ -13,6 +13,9 @@ struct MeshDataObj
 	BufferCPU<uchar4> 	ColorBuffer;
 	BufferCPU<uint3> 	TIndexBuffer;
 	BufferCPU<float2>	TexcoordBuffer;
+	BufferCPU<uchar4>	TextureBuffer;
+	unsigned int		TextureWidth;
+	unsigned int		TextureHeight;
 	bool HasNormals{ false };
 	bool HasColors{ false };
 	bool HasTexcoords{ false }; 
@@ -34,14 +37,14 @@ struct TexturedMeshDataObj
 	BufferCPU<uchar4> 	ColorBuffer;
 	BufferCPU<uint3> 	TIndexBuffer;
 	BufferCPU<float2>	TexcoordBuffer;
-	BufferCPU<uchar4>	TextureBuffer;
-	size_t				TextureWidth;
-	size_t				TextureHeight;
+	
 	bool HasNormals{ false };
 	bool HasColors{ false };
 	bool HasTexcoords{ false };
 	bool HasFaces{ false };
 };
+
+
 }	///	!namespace io
 }	///	!namespace fu
 #endif	///	!__IO_PUBLIC_MESHDATA_H__

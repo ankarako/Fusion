@@ -156,10 +156,7 @@ void ViewportTracingModel::Init()
 		///
 		rt::TriangleMeshComp comp = rt::CreateTriangleMeshComponent();
 		/// initialize a dummy textuer buffer
-		int size = 1604 * 1365;
-		BufferCPU<uchar4> texBuf = CreateBufferCPU<uchar4>(size);
-		std::memset(texBuf->Data(), 255, size * 4 * sizeof(unsigned char));
-		rt::MeshMappingSystem::MapMeshDataToTexturedMesh(data, comp, m_Impl->m_ContextComp, texBuf);
+		rt::MeshMappingSystem::MapMeshDataToTexturedMesh(data, comp, m_Impl->m_ContextComp, data->TextureBuffer, { data->TextureWidth, data->TextureHeight});
 		if (m_Impl->m_TriangleMeshComps.size() == 1)
 		{
 			rt::MeshMappingSystem::DetachTriangleMeshToTopLevelAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_TopLevelAccelerationComp);
@@ -195,10 +192,13 @@ void ViewportTracingModel::Init()
 		rt::RaygenSystem::SetPinholeRaygenEyeTranslation(m_Impl->m_PinholeRaygenComp, trans);
 		m_Impl->m_LaunchContextTaskSubj.get_subscriber().on_next(nullptr);
 	});
-	///====================
-	/// Camera manipulation
-	///====================
 
+	m_Impl->m_TriangleMeshTextureFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const BufferCPU<uchar4>& tex) 
+	{
+		rt::MeshMappingSystem::MapTextureToTexturedMesh(m_Impl->m_TriangleMeshComps.back(), tex);
+		m_Impl->m_LaunchContextTaskSubj.get_subscriber().on_next(nullptr);
+	});
 	///====================
 	/// Launch Context Task
 	///====================

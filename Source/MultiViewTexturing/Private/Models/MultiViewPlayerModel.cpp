@@ -9,6 +9,7 @@ namespace mvt {
 struct MultiViewPlayerModel::Impl
 {
 	std::vector<trans::DecodingNode> m_DecodingNodes;
+	std::vector<BufferCPU<uchar4>>	m_CurrentFrames;
 	rxcpp::subjects::subject<std::vector<std::string>>			m_VideoFilepathsFlowInSubj;
 	rxcpp::subjects::subject<std::vector<BufferCPU<uchar4>>>	m_MultiViewFramesFlowOutSubj;
 	rxcpp::subjects::subject<int>								m_SeekframeFlowInSubj;
@@ -34,6 +35,17 @@ void MultiViewPlayerModel::Init()
 			node->LoadFile(filepath);
 			m_Impl->m_DecodingNodes.emplace_back(node);
 		}
+	});
+
+	m_Impl->m_SeekframeFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](int frame) 
+	{
+		std::vector<BufferCPU<uchar4>> frames;
+		for (int n = 0; n < m_Impl->m_DecodingNodes.size(); n++)
+		{
+			frames.emplace_back(m_Impl->m_DecodingNodes[n]->GetFrame(frame));
+		}
+		m_Impl->m_MultiViewFramesFlowOutSubj.get_subscriber().on_next(frames);
 	});
 }
 /// \brief model destruction
