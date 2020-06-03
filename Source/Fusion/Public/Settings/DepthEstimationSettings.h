@@ -9,8 +9,8 @@ namespace fusion {
 class DepthEstimationSettings : public Settings<WriterType::PrettyWriter>
 {
 public:
-	std::string DepthFilepathEXR{ " " };
-	std::string PointCloudFilepathPLY{ " " };
+	std::string DepthFilepathEXR{ "" };
+	std::string PointCloudFilepathPLY{ "" };
 
 	void Save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& writer) override;
 	void Load(rapidjson::Document& doc) override;

@@ -203,3 +203,8 @@ configure_file(
 configure_file(
 	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7-zip32.dll"
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7-zip32.dll" COPYONLY)
+#####################
+# RayMVT CLI Project
+#####################
+
+

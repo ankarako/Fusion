@@ -88,9 +88,9 @@ static std::vector<volcap_cam_data_ptr_t> ImportPerfcapCalibration(const std::st
 				}
 			}
 			/// get intrinsics
-			if (dObj.HasMember("intrisics"))
+			if (dObj.HasMember("intrinsics"))
 			{
-				auto intr = dObj["intrisics"].GetArray();
+				auto intr = dObj["intrinsics"].GetArray();
 				size_t count = intr.Size();
 				camData->ColorIntrinsics = CreateBufferCPU<float>(count);
 				for (int i = 0; i < count; ++i)

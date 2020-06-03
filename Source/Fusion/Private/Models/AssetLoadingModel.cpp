@@ -38,7 +38,7 @@ AssetLoadingModel::AssetLoadingModel()
 			data = io::LoadPly(filepath);
 			break;
 		case fu::fusion::AssetType::Obj:
-			data = io::LoadObj(filepath);
+			//data = io::LoadObj(filepath);
 			break;
 		default:
 			LOG_WARNING << "Not supported file type: " << filepath;

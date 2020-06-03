@@ -88,7 +88,7 @@ void RayTracingModel::Init()
 	/// create pinhole raygen program
 	m_Impl->m_PinholeRaygenComp = rt::CreateRaygenProgComponent();
 	/// TODO: dimensions
-	rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, 1920, 1080);
+	rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, 1920, 1080, make_float3(0.0f, 1.0f, 0.0f));
 	/// place a dummy triangle mesh component
 	m_Impl->m_TriangleMeshComps.emplace_back(rt::CreateTriangleMeshComponent());
 	/// initialize the triangle mesh comp with no data
@@ -108,7 +108,7 @@ void RayTracingModel::Init()
 	{
 		m_Impl->m_LaunchWidth = size.x;
 		m_Impl->m_LaunchHeight = size.y;
-		rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, size.x, size.y);
+		rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, size.x, size.y, make_float3(0.0f, 1.0f, 0.0f));
 		rt::RaygenSystem::SetRaygenAttributes(m_Impl->m_PinholeRaygenComp);
 		rt::MeshMappingSystem::MapAccelerationToRaygen(m_Impl->m_AccelerationComp, m_Impl->m_PinholeRaygenComp);
 

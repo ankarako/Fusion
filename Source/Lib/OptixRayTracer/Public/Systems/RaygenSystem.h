@@ -25,12 +25,12 @@ public:
 	///	\param	ctxComp		the context component associated with the raygen
 	///	\param	ptxFilepath	the ptx source filepath
 	///	\param	progName	the ray generation program name
-	static void CreatePinholeRaygenProg(RaygenProgComp& raygenComp, ContextComp& ctxComp, int width, int height)
+	static void CreatePinholeRaygenProg(RaygenProgComp& raygenComp, ContextComp& ctxComp, int width, int height, float3 up)
 	{
 		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_PinholeRaygenPtxFilepath, k_PinholeRaygenProgName);
 		raygenComp->Eye		= optix::make_float3(-6.0f, 1.0f, 1.0f);
 		raygenComp->Lookat	= optix::make_float3(0.0f, 0.0f, 0.0f);
-		raygenComp->Up		= optix::make_float3(0.0f, -1.0f, 0.0f);
+		raygenComp->Up		= optix::make_float3(up.x, up.y, up.z);
 		raygenComp->ViewWidth	= width;
 		raygenComp->ViewHeight	= height;
 		raygenComp->AspectRatio = static_cast<float>(width) / static_cast<float>(height);
@@ -139,47 +139,69 @@ public:
 		raygenComp->OutputBuffer->setSize(width, height);
 	}
 
-	static void MapTexturingCamera(TexturingCameraComp& camComp, ContextComp& ctxComp, const optix::uint2& camPlaneSize, int camId)
+	static void MapTexturingCamera(TexturingCameraComp& camComp, ContextComp& ctxComp, const optix::uint2& camPlaneSize, int camId, int launchDimsMult)
 	{
 		camComp->Id = camId;
 		camComp->CamPlaneWidth = camPlaneSize.x;
 		camComp->CamPlaneHeight = camPlaneSize.y;
 		camComp->AspectRatio = (float)camComp->CamPlaneWidth / (float)camComp->CamPlaneHeight;
-		/// make camera's basis vectors
-		//optix::float4 eyeHomo = optix::make_float4(0.0f, 0.0f, 0.0f, 1.0f);
-		//optix::float4 upHomo = optix::make_float4(0.0f, -1.0f, 0.0f, 1.0f);
-		//optix::float4 lookHomo = optix::make_float4(0.0f, 0.0f, 0.0f, 1.0f);
-		//eyeHomo = camComp->Extrinsics * eyeHomo;
-		//upHomo = camComp->Extrinsics * upHomo;
-		////lookHomo = camComp->Extrinsics * lookHomo;
-		//camComp->Eye = optix::make_float3(eyeHomo.x / eyeHomo.w, eyeHomo.y / eyeHomo.w, eyeHomo.z / eyeHomo.w);
-		//camComp->Up = optix::normalize(optix::make_float3(upHomo.x / upHomo.w, upHomo.y / upHomo.w, upHomo.z / upHomo.w));
-		//camComp->LookAt = optix::make_float3(lookHomo.x / lookHomo.w, lookHomo.y / lookHomo.w, lookHomo.z / lookHomo.w);
-		//camComp->Left = optix::normalize(optix::cross(camComp->LookAt, camComp->Up));
-		
+		/// create Raygen Program
 		camComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_TexturingRaygenPtxFilepath, k_TexturingRaygenProgName);
-		camComp->TextureBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, camComp->CamPlaneWidth, camComp->CamPlaneHeight);
+		/// create Camera Texture Buffer and Texture Sampler
+		camComp->TextureBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, camPlaneSize.x, camPlaneSize.y);
 		camComp->TextureSampler = ctxComp->Context->createTextureSampler();
 		camComp->TextureSampler->setBuffer(camComp->TextureBuffer);
-		camComp->TextureSampler->setFilteringModes(RT_FILTER_LINEAR, RT_FILTER_LINEAR, RT_FILTER_LINEAR);
+		camComp->TextureSampler->setFilteringModes(RT_FILTER_NEAREST, RT_FILTER_NEAREST, RT_FILTER_NEAREST);
 		camComp->TextureSampler->setMaxAnisotropy(1.0f);
-		camComp->TextureSampler->setIndexingMode(RT_TEXTURE_INDEX_NORMALIZED_COORDINATES);
+		camComp->TextureSampler->setIndexingMode(RT_TEXTURE_INDEX_ARRAY_INDEX);
+		/// map program variables
 		camComp->RaygenProg["scene_epsilon"]->setFloat(1e-3f);
 		camComp->RaygenProg["TextureBuffer"]->setBuffer(camComp->TextureBuffer);
 		camComp->RaygenProg["TextureSampler"]->setTextureSampler(camComp->TextureSampler);
-		camComp->RaygenProg["eye"]->setFloat(camComp->Eye);
-		camComp->RaygenProg["up"]->setFloat(camComp->Up);
-		camComp->RaygenProg["left"]->setFloat(camComp->Left);
-		camComp->RaygenProg["lookat"]->setFloat(camComp->LookAt);
 		camComp->RaygenProg["camId"]->setInt(camComp->Id);
 		camComp->RaygenProg["extrinsics"]->setMatrix4x4fv(false, camComp->Extrinsics.getData());
-		camComp->RaygenProg["intrinsics"]->setMatrix3x3fv(false, camComp->Intrinsics.getData());
-
-		camComp->TexturingOutputBuffer = ctxComp->Context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER, camPlaneSize.x, camPlaneSize.y);
-		camComp->TexturingOutputBuffer->setElementSize(sizeof(rt::TexturingOutput));
-		camComp->RaygenProg["TexturingOutputBuffer"]->setBuffer(camComp->TexturingOutputBuffer);
+		camComp->RaygenProg["intrinsics"]->setMatrix4x4fv(false, camComp->Intrinsics.getData());
+		camComp->RaygenProg["dim_mult"]->setUint(launchDimsMult);
+		/// output buffers
+		camComp->OutputColorBuffer = 
+			ctxComp->Context->createBuffer(
+				RT_BUFFER_OUTPUT, 
+				RT_FORMAT_UNSIGNED_BYTE4, 
+				camPlaneSize.x * launchDimsMult, 
+				camPlaneSize.y * launchDimsMult);
+		camComp->OutputTexcoordBuffer = 
+			ctxComp->Context->createBuffer(
+				RT_BUFFER_OUTPUT, 
+				RT_FORMAT_FLOAT2, 
+				camPlaneSize.x * launchDimsMult, 
+				camPlaneSize.y * launchDimsMult);
+		camComp->OutputWeightBuffer = 
+			ctxComp->Context->createBuffer(
+				RT_BUFFER_OUTPUT, 
+				RT_FORMAT_FLOAT, 
+				camPlaneSize.x * launchDimsMult, 
+				camPlaneSize.y * launchDimsMult);
+		camComp->OutputCamIdBuffer = 
+			ctxComp->Context->createBuffer(
+				RT_BUFFER_OUTPUT, 
+				RT_FORMAT_INT, 
+				camPlaneSize.x * launchDimsMult, 
+				camPlaneSize.y * launchDimsMult);
+		/// map output buffers to program
+		camComp->RaygenProg["OutputColorBuffer"]->setBuffer(camComp->OutputColorBuffer);
+		camComp->RaygenProg["OutputTexcoordBuffer"]->setBuffer(camComp->OutputTexcoordBuffer);
+		camComp->RaygenProg["OutputWeightBuffer"]->setBuffer(camComp->OutputWeightBuffer);
+		camComp->RaygenProg["OutputCamIdBuffer"]->setBuffer(camComp->OutputCamIdBuffer);
+		/// set ray generation program to context
 		ctxComp->Context->setRayGenerationProgram(camId, camComp->RaygenProg);
-		SetRaygenAttributes(camComp);
+		// TODO: delete the debug buffer
+		//camComp->DebugBuffer = 
+		//	ctxComp->Context->createBuffer(
+		//		RT_BUFFER_OUTPUT, 
+		//		RT_FORMAT_UNSIGNED_BYTE4, 
+		//		camPlaneSize.x, 
+		//		camPlaneSize.y);
+		//camComp->RaygenProg["DebugBuffer"]->setBuffer(camComp->DebugBuffer);
 	}
 
 	static void TexturingCameraUpdateTexture(TexturingCameraComp& camComp, const BufferCPU<optix::uchar4>& text)

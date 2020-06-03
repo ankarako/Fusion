@@ -696,6 +696,153 @@ public:
 		trComp->TextureBuffer->unmap();
 	}
 
+	void static MapMeshDataToPerfcapTexturedMesh(const io::MeshData& data, TriangleMeshComp& trComp, ContextComp& ctxComp, const BufferCPU<uchar4>& texBuf, uint2 resolution)
+	{
+		trComp->Geometry = ctxComp->Context->createGeometry();
+		trComp->GInstance = ctxComp->Context->createGeometryInstance();
+		trComp->Material = ctxComp->Context->createMaterial();
+		trComp->GGroup = ctxComp->Context->createGeometryGroup();
+		trComp->Acceleration = ctxComp->Context->createAcceleration("Trbvh");
+		trComp->Transform = ctxComp->Context->createTransform();
+		///==========
+		/// Copy data
+		///==========
+		std::string intersect = "TriangleMesh";
+		std::string attributes = "NoAttrib";
+		/// we expect that every piece of mesh data has vertices
+		{
+			int count = data->VertexBuffer->Count();
+			int bsize = data->VertexBuffer->ByteSize();
+			trComp->VertexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
+			std::memcpy(trComp->VertexBuffer->map(), data->VertexBuffer->Data(), bsize);
+			trComp->VertexBuffer->unmap();
+			trComp->GInstance["vertex_buffer"]->setBuffer(trComp->VertexBuffer);
+		}
+		/// here we expect that mesh data always carry faces
+		{
+			int count = data->TIndexBuffer->Count();
+			int bsize = data->TIndexBuffer->ByteSize();
+			trComp->TIndexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_INT3, count);
+			std::memcpy(trComp->TIndexBuffer->map(), data->TIndexBuffer->Data(), bsize);
+			trComp->TIndexBuffer->unmap();
+			trComp->GInstance["tindex_buffer"]->setBuffer(trComp->TIndexBuffer);
+		}
+		if (data->HasNormals)
+		{
+			int count = data->NormalBuffer->Count();
+			int bsize = data->NormalBuffer->ByteSize();
+			trComp->NormalBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
+			std::memcpy(trComp->NormalBuffer->map(), data->VertexBuffer->Data(), bsize);
+			trComp->NormalBuffer->unmap();
+			trComp->GInstance["normal_buffer"]->setBuffer(trComp->NormalBuffer);
+			if (attributes == "NoAttrib")
+			{
+				attributes = "Normals";
+			}
+			else
+			{
+				attributes += "Normals";
+			}
+		}
+		else
+		{
+			trComp->NormalBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, 0);
+			trComp->GInstance["normal_buffer"]->setBuffer(trComp->NormalBuffer);
+		}
+		if (data->HasColors)
+		{
+			int count = data->ColorBuffer->Count();
+			int bsize = data->ColorBuffer->ByteSize();
+			trComp->ColorsBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, count);
+			std::memcpy(trComp->ColorsBuffer->map(), data->ColorBuffer->Data(), bsize);
+			trComp->ColorsBuffer->unmap();
+			trComp->GInstance["color_buffer"]->setBuffer(trComp->ColorsBuffer);
+			if (attributes == "NoAttrib")
+			{
+				attributes = "Color";
+			}
+			else
+			{
+				attributes += "Color";
+			}
+		}
+		else
+		{
+			trComp->ColorsBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, 0);
+			trComp->GInstance["color_buffer"]->setBuffer(trComp->ColorsBuffer);
+		}
+		if (data->HasTexcoords)
+		{
+			int count = data->TexcoordBuffer->Count();
+			int bsize = data->TexcoordBuffer->ByteSize();
+			trComp->TexCoordBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT2, count);
+			std::memcpy(trComp->TexCoordBuffer->map(), data->TexcoordBuffer->Data(), bsize);
+			trComp->TexCoordBuffer->unmap();
+			trComp->GInstance["texcoord_buffer"]->setBuffer(trComp->TexCoordBuffer);
+			if (attributes == "NoAttrib")
+			{
+				attributes = "Texcoord";
+			}
+			else
+			{
+				attributes += "Texcoord";
+			}
+		}
+		else
+		{
+			trComp->TexCoordBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT2, 0);
+			trComp->GInstance["texcoord_buffer"]->setBuffer(trComp->TexCoordBuffer);
+		}
+		if (attributes == "NoAttrib")
+		{
+			trComp->GInstance["solid_color"]->setFloat(optix::make_float3(0.5f, 0.5f, 0.5f));
+		}
+		/// select the appropriate programs
+		std::string intersect_ptx = k_PerfcapTriangleMeshPtxFilepath;
+		std::string hitgroup_ptx = GetResourceFilepath(intersect + "Hitgroup", attributes);
+		std::string intersection = k_PerfcapTriangleMeshIntersectionProgName;
+		std::string bounding = k_PerfcapTriangleMeshBbboxProgName;
+		//std::string closest = GetResourceProgName(intersect + "ClosestHit", attributes);
+		//std::string any = GetResourceProgName(intersect + "AnyHit", attributes);
+
+		trComp->IntersectionProg = ctxComp->Context->createProgramFromPTXFile(intersect_ptx, intersection);
+		trComp->BoundingBoxProgram = ctxComp->Context->createProgramFromPTXFile(intersect_ptx, bounding);
+		trComp->ClosestHitProgram = ctxComp->Context->createProgramFromPTXFile(k_TexturedMeshMaterialPtxFilepath, k_TexturedMeshMaterialClosetstHitProgName);
+		trComp->AnyHitProgram = ctxComp->Context->createProgramFromPTXFile(k_TexturedMeshMaterialPtxFilepath, k_TexturedMeshMaterialAnyHitProgName);
+
+		trComp->Geometry->setIntersectionProgram(trComp->IntersectionProg);
+		trComp->Geometry->setBoundingBoxProgram(trComp->BoundingBoxProgram);
+		trComp->Geometry->setPrimitiveCount(data->TIndexBuffer->Count());
+		trComp->Material->setClosestHitProgram(0, trComp->ClosestHitProgram);
+		trComp->Material->setAnyHitProgram(0, trComp->AnyHitProgram);
+		trComp->GInstance->setGeometry(trComp->Geometry);
+		trComp->GInstance->setMaterialCount(1);
+		trComp->GInstance->setMaterial(0, trComp->Material);
+		trComp->GGroup->addChild(trComp->GInstance);
+		trComp->TransMat = optix::Matrix4x4::identity();
+		trComp->Transform->setChild(trComp->GGroup);
+		trComp->Transform->setMatrix(false, trComp->TransMat.getData(), nullptr);
+		trComp->GGroup->setAcceleration(trComp->Acceleration);
+
+		trComp->TextureBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, resolution.x, resolution.y);
+		trComp->TextureSampler = ctxComp->Context->createTextureSampler();
+		trComp->TextureSampler->setFilteringModes(RT_FILTER_LINEAR, RT_FILTER_LINEAR, RT_FILTER_LINEAR);
+		trComp->TextureSampler->setIndexingMode(RT_TEXTURE_INDEX_NORMALIZED_COORDINATES);
+		trComp->TextureSampler->setWrapMode(0, RT_WRAP_REPEAT);
+		trComp->TextureSampler->setWrapMode(1, RT_WRAP_REPEAT);
+		trComp->TextureSampler->setWrapMode(2, RT_WRAP_REPEAT);
+		trComp->TextureSampler->setReadMode(RT_TEXTURE_READ_NORMALIZED_FLOAT);
+		trComp->TextureSampler->setMaxAnisotropy(1.0f);
+		trComp->TextureSampler->setMipLevelCount(1u);
+		trComp->TextureSampler->setArraySize(1u);
+		trComp->TextureSampler->setBuffer(0u, 0u, trComp->TextureBuffer);
+		trComp->GInstance["TextureBuffer"]->setBuffer(trComp->TextureBuffer);
+		trComp->GInstance["TextureSampler"]->set(trComp->TextureSampler);
+		uchar4* textureBufferData = (uchar4*)trComp->TextureBuffer->map();
+		std::memcpy(textureBufferData, texBuf->Data(), texBuf->ByteSize());
+		trComp->TextureBuffer->unmap();
+	}
+
 	static void MapMeshDataToTexturingTriangleMesh(const io::MeshData& data, TriangleMeshComp& trComp, ContextComp& ctxComp)
 	{
 		trComp->Geometry = ctxComp->Context->createGeometry();
@@ -747,6 +894,79 @@ public:
 		std::string intersect_ptx = rt::GetResourceFilepath("TriangleMesh", "NormalsColorTexcoord");
 		std::string intersect_name = rt::GetResourceProgName("TriangleMeshIntersection", "NormalsColorTexcoord");
 		std::string bounds_name = rt::GetResourceProgName("TriangleMeshBoundingBox", "NormalsColorTexcoord");
+
+		trComp->IntersectionProg = ctxComp->Context->createProgramFromPTXFile(intersect_ptx, intersect_name);
+		trComp->BoundingBoxProgram = ctxComp->Context->createProgramFromPTXFile(intersect_ptx, bounds_name);
+		trComp->ClosestHitProgram = ctxComp->Context->createProgramFromPTXFile(k_TexturingMeshHitGroupPtxFilepath, k_TexturingMeshClosestHitProgName);
+		trComp->AnyHitProgram = ctxComp->Context->createProgramFromPTXFile(k_TexturingMeshHitGroupPtxFilepath, k_TexturingMeshAnyHitProgName);
+
+		trComp->Geometry->setPrimitiveCount(data->TIndexBuffer->Count());
+		trComp->Geometry->setIntersectionProgram(trComp->IntersectionProg);
+		trComp->Geometry->setBoundingBoxProgram(trComp->BoundingBoxProgram);
+		trComp->Material->setClosestHitProgram(0, trComp->ClosestHitProgram);
+		trComp->Material->setAnyHitProgram(0, trComp->AnyHitProgram);
+
+		trComp->GInstance->setGeometry(trComp->Geometry);
+		trComp->GInstance->setMaterialCount(1);
+		trComp->GInstance->setMaterial(0, trComp->Material);
+		trComp->GGroup->addChild(trComp->GInstance);
+		trComp->TransMat = optix::Matrix4x4::identity();
+		trComp->Transform->setMatrix(false, trComp->TransMat.getData(), nullptr);
+		trComp->GGroup->setAcceleration(trComp->Acceleration);
+		trComp->Transform->setChild(trComp->GGroup);
+	}
+
+	static void MapMeshDataToPerfcapTriangleMesh(const io::MeshData& data, TriangleMeshComp& trComp, ContextComp& ctxComp)
+	{
+		trComp->Geometry = ctxComp->Context->createGeometry();
+		trComp->GInstance = ctxComp->Context->createGeometryInstance();
+		trComp->Material = ctxComp->Context->createMaterial();
+		trComp->GGroup = ctxComp->Context->createGeometryGroup();
+		trComp->Acceleration = ctxComp->Context->createAcceleration("Trbvh");
+		trComp->Transform = ctxComp->Context->createTransform();
+
+		/// we expect that every piece of mesh data has vertices
+		{
+			int count = data->VertexBuffer->Count();
+			int bsize = data->VertexBuffer->ByteSize();
+			trComp->VertexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
+			std::memcpy(trComp->VertexBuffer->map(), data->VertexBuffer->Data(), bsize);
+			trComp->VertexBuffer->unmap();
+			trComp->GInstance["vertex_buffer"]->setBuffer(trComp->VertexBuffer);
+		}
+		/// here we expect that mesh data always carry faces
+		{
+			int count = data->TIndexBuffer->Count();
+			int bsize = data->TIndexBuffer->ByteSize();
+			trComp->TIndexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_INT3, count);
+			std::memcpy(trComp->TIndexBuffer->map(), data->TIndexBuffer->Data(), bsize);
+			trComp->TIndexBuffer->unmap();
+			trComp->GInstance["tindex_buffer"]->setBuffer(trComp->TIndexBuffer);
+		}
+		{
+			int count = data->NormalBuffer->Count();
+			int bsize = data->NormalBuffer->ByteSize();
+			trComp->NormalBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, count);
+			std::memcpy(trComp->NormalBuffer->map(), data->NormalBuffer->Data(), bsize);
+			trComp->NormalBuffer->unmap();
+			trComp->GInstance["normal_buffer"]->setBuffer(trComp->NormalBuffer);
+		}
+		{
+			int count = data->TexcoordBuffer->Count();
+			int bsize = data->TexcoordBuffer->ByteSize();
+			trComp->TexCoordBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT2, count);
+			std::memcpy(trComp->TexCoordBuffer->map(), data->TexcoordBuffer->Data(), bsize);
+			trComp->TexCoordBuffer->unmap();
+			trComp->GInstance["texcoord_buffer"]->setBuffer(trComp->TexCoordBuffer);
+		}
+		{
+			/// no colors
+			trComp->ColorsBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, 0);
+			trComp->GInstance["color_buffer"]->setBuffer(trComp->ColorsBuffer);
+		}
+		std::string intersect_ptx = k_PerfcapTriangleMeshPtxFilepath;
+		std::string intersect_name = k_PerfcapTriangleMeshIntersectionProgName;
+		std::string bounds_name = k_PerfcapTriangleMeshBbboxProgName;
 
 		trComp->IntersectionProg = ctxComp->Context->createProgramFromPTXFile(intersect_ptx, intersect_name);
 		trComp->BoundingBoxProgram = ctxComp->Context->createProgramFromPTXFile(intersect_ptx, bounds_name);
@@ -973,6 +1193,13 @@ public:
 		qComp->GInstance["solid_color"]->setFloat(qComp->Color);
 	}
 
+	static void CopyAnimatedMeshDataToTriangleComp(TriangleMeshComp& trComp, const io::MeshData& data)
+	{
+		std::memcpy(trComp->VertexBuffer->map(), data->VertexBuffer->Data(), data->VertexBuffer->ByteSize());
+		trComp->VertexBuffer->unmap();
+		trComp->Acceleration->markDirty();
+	}
+
 	static void AttachQuadCompToTopLevelAcceleration(QuadComp& qComp, AccelerationComp& accComp)
 	{
 		accComp->Group->addChild(qComp->Transform);
@@ -1011,6 +1238,9 @@ private:
 	static constexpr const char* k_TexturingMeshHitGroupPtxFilepath			= "FusionLib/Resources/Programs/TriangleTexturingHitGroup.ptx";
 	static constexpr const char* k_TexturingMeshClosestHitProgName			= "closest_hit_texturing";
 	static constexpr const char* k_TexturingMeshAnyHitProgName				= "any_hit";
+	static constexpr const char* k_PerfcapTriangleMeshPtxFilepath			= "FusionLib/Resources/Programs/PerfcapTriangleMesh.ptx";
+	static constexpr const char* k_PerfcapTriangleMeshIntersectionProgName	= "triangle_mesh_intersect";
+	static constexpr const char* k_PerfcapTriangleMeshBbboxProgName			= "triangle_mesh_bounds";
 };	///	!class MeshMappingSystem
 }	///	!namespace rt
 }	///	!namespace fu

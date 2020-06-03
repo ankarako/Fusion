@@ -9,8 +9,8 @@ namespace fusion {
 class NormalEstimationSettings : public Settings<WriterType::PrettyWriter>
 {
 public:
-	std::string NormalFilepathEXR{ " " };
-	std::string NormalFilepathPNG{ " " };
+	::std::string NormalFilepathEXR{ "" };
+	::std::string NormalFilepathPNG{ "" };
 
 	void Save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& writer) override;
 	void Load(rapidjson::Document& doc) override;

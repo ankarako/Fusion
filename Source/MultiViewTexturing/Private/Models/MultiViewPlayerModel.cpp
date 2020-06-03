@@ -33,6 +33,7 @@ void MultiViewPlayerModel::Init()
 		{
 			trans::DecodingNode node = trans::CreateDecodingNode();
 			node->LoadFile(filepath);
+			//node->RotateFrames90CW(true);
 			m_Impl->m_DecodingNodes.emplace_back(node);
 		}
 	});

@@ -54,6 +54,7 @@ void IlluminationEstimationModel::Init()
 		cv::resize(mat, mat, cv::Size(512, 256));
 		cv::cvtColor(mat, tosave, cv::COLOR_BGRA2RGB);
 
+		std::string wpdir = m_Impl->m_ProjectModel->WorkSpaceDirectory();
 		std::string filepath = m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/color_illum_est_input.png";
 		std::string outfpath_exr = m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/est_illum_output";
 		cv::imwrite(filepath, tosave);
@@ -96,19 +97,22 @@ void IlluminationEstimationModel::Init()
 	m_Impl->m_Settings->OnSettingsLoaded()
 		.subscribe([this](auto _) 
 	{
-		/// open result image
-		cv::Mat illum_exr = cv::imread(m_Impl->m_Settings->IlluminationFilepathEXR, cv::IMREAD_UNCHANGED);
-		/// convert to ldr
-		double max = -1e16;
-		double min = 1e16;
-		cv::minMaxLoc(illum_exr, &min, &max);
-		cv::normalize(illum_exr, illum_exr, 0.0f, 1.0f, cv::NORM_MINMAX);
-		cv::convertScaleAbs(illum_exr, illum_exr, 255.0, 0.0);
-		cv::cvtColor(illum_exr, illum_exr, cv::COLOR_BGR2RGBA);
+		if (!m_Impl->m_Settings->IlluminationFilepathEXR.empty())
+		{
+			/// open result image
+			cv::Mat illum_exr = cv::imread(m_Impl->m_Settings->IlluminationFilepathEXR, cv::IMREAD_UNCHANGED);
+			/// convert to ldr
+			double max = -1e16;
+			double min = 1e16;
+			cv::minMaxLoc(illum_exr, &min, &max);
+			cv::normalize(illum_exr, illum_exr, 0.0f, 1.0f, cv::NORM_MINMAX);
+			cv::convertScaleAbs(illum_exr, illum_exr, 255.0, 0.0);
+			cv::cvtColor(illum_exr, illum_exr, cv::COLOR_BGR2RGBA);
 
-		BufferCPU<uchar4> frame = CreateBufferCPU<uchar4>(illum_exr.cols * illum_exr.rows);
-		std::memcpy(frame->Data(), illum_exr.data, frame->ByteSize());
-		m_Impl->m_IlluminationMapFlowOutSubj.get_subscriber().on_next(frame);
+			BufferCPU<uchar4> frame = CreateBufferCPU<uchar4>(illum_exr.cols * illum_exr.rows);
+			std::memcpy(frame->Data(), illum_exr.data, frame->ByteSize());
+			m_Impl->m_IlluminationMapFlowOutSubj.get_subscriber().on_next(frame);
+		}
 	});
 	///=======================
 	/// Register our settings

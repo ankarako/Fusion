@@ -66,15 +66,15 @@ static perfcap_skeleton_ptr_t ImportPerfcapSkeleton(const std::string& filepath)
 		}
 		if (jObj.HasMember("swing2"))
 		{
-			joint->Swing1[0] = jObj["swing2"][0].GetDouble();
-			joint->Swing1[1] = jObj["swing2"][1].GetDouble();
-			joint->Swing1[2] = jObj["swing2"][2].GetDouble();
+			joint->Swing2[0] = jObj["swing2"][0].GetDouble();
+			joint->Swing2[1] = jObj["swing2"][1].GetDouble();
+			joint->Swing2[2] = jObj["swing2"][2].GetDouble();
 		}
 		if (jObj.HasMember("twist"))
 		{
-			joint->Swing1[0] = jObj["twist"][0].GetDouble();
-			joint->Swing1[1] = jObj["twist"][1].GetDouble();
-			joint->Swing1[2] = jObj["twist"][2].GetDouble();
+			joint->Twist[0] = jObj["twist"][0].GetDouble();
+			joint->Twist[1] = jObj["twist"][1].GetDouble();
+			joint->Twist[2] = jObj["twist"][2].GetDouble();
 		}
 		if (jObj.HasMember("position"))
 		{

@@ -32,6 +32,7 @@ public:
 	rxcpp::observer<viewport_size_t>						ViewportSizeFlowIn();
 	rxcpp::observer<std::vector<io::volcap_cam_data_ptr_t>>	CameraDataFlowIn();
 	rxcpp::observer<io::MeshData>							MeshDataFlowIn();
+	rxcpp::observer<io::MeshData>							AnimatedMeshDataFlowIn();
 	rxcpp::observer<mat_t>									CameraRotationTransformFlowIn();
 	rxcpp::observer<trans_vec_t>							CameraTranslationVectorFlowIn();
 	rxcpp::observer<void*>									LeftMouseButtonStartTracking();

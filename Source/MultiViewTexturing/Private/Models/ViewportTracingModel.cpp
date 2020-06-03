@@ -39,6 +39,7 @@ struct ViewportTracingModel::Impl
 	rxcpp::subjects::subject<std::vector<io::volcap_cam_data_ptr_t>>	m_CameraDataFlowInSubj;
 	rxcpp::subjects::subject<std::vector<BufferCPU<uchar4>>>			m_VideoTexturesFlowInSubj;
 	rxcpp::subjects::subject<io::MeshData>								m_MeshDataFlowInSubj;
+	rxcpp::subjects::subject<io::MeshData>								m_AnimatedMeshDataFlowInSubj;
 	rxcpp::subjects::subject<mat_t>										m_CameraRotationTransformFlowInSubj;
 	rxcpp::subjects::subject<trans_vec_t>								m_CameraTranslationVectorFlowInSubj;
 	rxcpp::subjects::subject<void*>										m_LeftMouseButtonStartTrackingSubj;
@@ -70,7 +71,7 @@ void ViewportTracingModel::Init()
 	rt::CreateContextSystem::CreateContext(m_Impl->m_ContextComp, 1, 1);
 	/// Create the raygen component
 	/// dummy raygen dimensions
-	rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, 1000, 500);
+	rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, 1000, 500, make_float3(0.0f, -1.0f, 0.0f));
 	rt::RaygenSystem::SetRaygenAttributes(m_Impl->m_PinholeRaygenComp);
 	/// miss program
 	rt::MissSystem::InitializeSolidColorComp(m_Impl->m_SolidColorMissComp, m_Impl->m_ContextComp);
@@ -128,7 +129,7 @@ void ViewportTracingModel::Init()
 			uchar4 color = make_uchar4(20 * (c + 1), 10 * (c + 1), 30 * (c + 1), 255);
 			meshData->VertexBuffer->Data()[c] = camEye;
 			meshData->ColorBuffer->Data()[c] = color;
-
+			
 			/// lets make quads -> they are the camera plane
 			BufferCPU<float> colorIntr = cameraData[c]->ColorIntrinsics;
 			optix::Matrix3x3 colorIntrMat(colorIntr->Data());
@@ -156,7 +157,7 @@ void ViewportTracingModel::Init()
 		///
 		rt::TriangleMeshComp comp = rt::CreateTriangleMeshComponent();
 		/// initialize a dummy textuer buffer
-		rt::MeshMappingSystem::MapMeshDataToTexturedMesh(data, comp, m_Impl->m_ContextComp, data->TextureBuffer, { data->TextureWidth, data->TextureHeight});
+		rt::MeshMappingSystem::MapMeshDataToPerfcapTexturedMesh(data, comp, m_Impl->m_ContextComp, data->TextureBuffer, { data->TextureWidth, data->TextureHeight});
 		if (m_Impl->m_TriangleMeshComps.size() == 1)
 		{
 			rt::MeshMappingSystem::DetachTriangleMeshToTopLevelAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_TopLevelAccelerationComp);
@@ -165,6 +166,12 @@ void ViewportTracingModel::Init()
 		rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(comp, m_Impl->m_TopLevelAccelerationComp);
 		m_Impl->m_TriangleMeshComps.emplace_back(comp);
 		m_Impl->m_LaunchContextTaskSubj.get_subscriber().on_next(nullptr);
+	});
+
+	m_Impl->m_AnimatedMeshDataFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const io::MeshData& data) 
+	{
+		rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TriangleMeshComps.back(), data);
 	});
 	///=================
 	/// Camera Rotation
@@ -229,6 +236,11 @@ rxcpp::observer<std::vector<io::volcap_cam_data_ptr_t>> ViewportTracingModel::Ca
 rxcpp::observer<io::MeshData> ViewportTracingModel::MeshDataFlowIn()
 {
 	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<io::MeshData> ViewportTracingModel::AnimatedMeshDataFlowIn()
+{
+	return m_Impl->m_AnimatedMeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 rxcpp::observer<ViewportTracingModel::mat_t> ViewportTracingModel::CameraRotationTransformFlowIn()

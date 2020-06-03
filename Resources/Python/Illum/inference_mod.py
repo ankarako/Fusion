@@ -33,7 +33,7 @@ def parse_arguments(args):
     )
     parser = argparse.ArgumentParser(description=usage_text)
     #output path for predicted lighting env map
-    parser.add_argument('--output', type=str, default='./output/', help='Low pass filter for SH')
+    parser.add_argument('--out_path', type=str, default='./output/', help='Low pass filter for SH')
     #durations
     #hardware
     parser.add_argument('-b',"--batch_size", type = int, help = "Train with a <batch_size> number of samples each train iteration.")
@@ -74,7 +74,7 @@ def parse_arguments(args):
     parser.add_argument('--n_channel_output', type=int, default=3, help='number of output channels')
     parser.add_argument('--n_generator_filters', type=int, default=64, help='number of initial generator filters')
     parser.add_argument('--deringing', type=int, default=1, help='Low pass filter for SH')
-    parser.add_argument('--input', type=str, default='', help='Low pass filter for SH')
+    parser.add_argument('--input_path', type=str, default='', help='Low pass filter for SH')
     parser.add_argument('--spherical_weights', type=int, default=1, help='Low pass filter for SH')
     parser.add_argument('-e',"--epochs", type = int, help = "Train for a total number of <epochs> epochs.")
     return parser.parse_known_args(args)
@@ -110,7 +110,8 @@ def eval(module, args):
             out_path = args.out_path+os.path.basename(args.input_path)
             filename, file_extension = os.path.splitext(out_path)
             file_extension = '.exr'
-            out_path = filename + file_extension
+            out_path = args.out_path + ".exr"
+            print(out_path)
             cv2.imwrite(out_path, p_diff_conv_np)
     elapsed_time = time.time() - start_time
     print("Elapsed time: %2.4f" %elapsed_time)

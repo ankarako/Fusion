@@ -164,7 +164,7 @@ target_link_libraries(Fusion PRIVATE FusionIO)
 cmake_policy(SET CMP0079 NEW)
 add_subdirectory("${3rdPartyPath}/imguizmo" ImGuizmo)
 target_link_libraries(ImGuizmo PRIVATE ImGui)
-target_link_libraries(Fusion PRIVATE ImGuizmo)
+target_link_libraries(Fusion PUBLIC ImGuizmo)
 
 # Application module
 # add_subdirectory("../Application" ApplicationModule)

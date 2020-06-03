@@ -34,7 +34,6 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 	{
 		if (rtPotentialIntersection(t))
 		{
-			//cur_geom_normal = optix::normalize(normal);
 			///==========================
 			/// Check for normal buffer
 			///==========================
@@ -52,7 +51,7 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 				cur_geom_normal = optix::normalize(n);
 				cur_shad_normal = optix::normalize(n1 * beta + n2 * gamma + n0 * (1.0f - beta - gamma));
 				optix::float3 world_shading_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, cur_geom_normal));
-				cur_color = fu::rt::make_color(world_shading_normal);
+				//cur_color = fu::rt::make_color(world_shading_normal);
 			}
 			///===========================
 			/// check for texcoord buffer
@@ -76,11 +75,8 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 				optix::uchar4 c0 = color_buffer[vertexIdx.x];
 				optix::uchar4 c1 = color_buffer[vertexIdx.y];
 				optix::uchar4 c2 = color_buffer[vertexIdx.z];
-				/// let's try to paint the normals
-
 				optix::float3 hitpoint = ray.origin + t * ray.direction;
-				//cur_color = fu::rt::triangle_color(v0, v1, v2, hitpoint, c0, c1, c2);
-				//cur_color = fu::rt::make_color(cur_shad_normal);
+				cur_color = fu::rt::triangle_color(v0, v1, v2, hitpoint, c0, c1, c2);
 			}
 			/// material is always zero
 			rtReportIntersection(0);

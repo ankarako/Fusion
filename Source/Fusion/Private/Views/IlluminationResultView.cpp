@@ -110,9 +110,13 @@ void IlluminationResultView::Render()
 			unsigned int w = mousePos.x * m_Impl->m_DisplayTextureWidth;
 			unsigned int h = mousePos.y * m_Impl->m_DisplayTextureHeight;
 
-			uchar4 color = m_Impl->m_IlluminationMap->Data()[w * h];
-			m_Impl->m_LightColor = color;
-			sprintf_s(m_Impl->m_ColorDisplayTextBuffer, "Light Color: R:%u, G:%u, B:%u, A:%u", color.x, color.y, color.z, color.w);
+			uchar4 color;
+			if (m_Impl->m_IlluminationMap->Count() != 0)
+			{
+				color = m_Impl->m_IlluminationMap->Data()[w * h];
+				m_Impl->m_LightColor = color;
+				sprintf_s(m_Impl->m_ColorDisplayTextBuffer, "Light Color: R:%u, G:%u, B:%u, A:%u", color.x, color.y, color.z, color.w);
+			}
 		}
 		ImGui::Separator();
 		ImGui::Text(m_Impl->m_ColorDisplayTextBuffer);

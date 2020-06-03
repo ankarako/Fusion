@@ -107,8 +107,24 @@ void PlayerModel::Init()
 	m_Impl->m_Settings->OnSettingsLoaded().take(1)
 		.subscribe([this](auto _)
 	{
-		this->LoadFile(m_Impl->m_Settings->LoadedVideoFilepath);
-		this->Seek(m_Impl->m_Settings->CurrentFrameId);
+		if (!m_Impl->m_Settings->LoadedVideoFilepath.empty())
+		{
+			this->LoadFile(m_Impl->m_Settings->LoadedVideoFilepath);
+			this->Seek(m_Impl->m_Settings->CurrentFrameId);
+		}
+	}, [this](std::exception_ptr ptr) 
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception & ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
 	});
 }
 ///	\brief destroy the player

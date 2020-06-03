@@ -92,9 +92,13 @@ void NormalsEstimationModel::Init()
 		/// load exr
 		cv::Mat normals_exr = cv::Mat::zeros(256, 512, CV_32FC3);
 		normals_exr = cv::imread(outfpath_exr, cv::IMREAD_UNCHANGED);
-		BufferCPU<float3> normalsbuf_float = CreateBufferCPU<float3>(256 * 512);
-		std::memcpy(normalsbuf_float->Data(), normals_exr.data, normalsbuf_float->ByteSize());
-		m_Impl->m_NormalsBufferFloatFlowOutSubj.get_subscriber().on_next(normalsbuf_float);
+		if (!normals_exr.empty())
+		{
+			BufferCPU<float3> normalsbuf_float = CreateBufferCPU<float3>(256 * 512);
+			std::memcpy(normalsbuf_float->Data(), normals_exr.data, normalsbuf_float->ByteSize());
+			m_Impl->m_NormalsBufferFloatFlowOutSubj.get_subscriber().on_next(normalsbuf_float);
+		}
+		
 	});
 	///=======================
 	/// Settings Loaded Task
@@ -102,23 +106,26 @@ void NormalsEstimationModel::Init()
 	m_Impl->m_Settings->OnSettingsLoaded()
 		.subscribe([this](auto _) 
 	{
-		/// load png
-		cv::Mat normals_rgba = cv::Mat::zeros(256, 512, CV_8UC4);
-		LOG_DEBUG << "Loaded PNG: " << m_Impl->m_Settings->NormalFilepathPNG;
-		normals_rgba = cv::imread(m_Impl->m_Settings->NormalFilepathPNG, cv::IMREAD_ANYCOLOR);
-		cv::cvtColor(normals_rgba, normals_rgba, cv::COLOR_BGR2RGBA);
-		/// create buffer
-		BufferCPU<uchar4> normalsbuf_rgba = CreateBufferCPU<uchar4>(256 * 512);
-		std::memcpy(normalsbuf_rgba->Data(), normals_rgba.data, normalsbuf_rgba->ByteSize());
-		/// send the buffer
-		m_Impl->m_NormalsBufferRGBAFlowOutSubj.get_subscriber().on_next(normalsbuf_rgba);
-		/// load exr
-		LOG_DEBUG << "Loaded EXR: " << m_Impl->m_Settings->NormalFilepathEXR;
-		cv::Mat normals_exr = cv::Mat::zeros(256, 512, CV_32FC3);
-		normals_exr = cv::imread(m_Impl->m_Settings->NormalFilepathEXR, cv::IMREAD_UNCHANGED);
-		BufferCPU<float3> normalsbuf_float = CreateBufferCPU<float3>(256 * 512);
-		std::memcpy(normalsbuf_float->Data(), normals_exr.data, normalsbuf_float->ByteSize());
-		m_Impl->m_NormalsBufferFloatFlowOutSubj.get_subscriber().on_next(normalsbuf_float);
+		if (!m_Impl->m_Settings->NormalFilepathEXR.empty() && !m_Impl->m_Settings->NormalFilepathPNG.empty())
+		{
+			/// load png
+			cv::Mat normals_rgba = cv::Mat::zeros(256, 512, CV_8UC4);
+			LOG_DEBUG << "Loaded PNG: " << m_Impl->m_Settings->NormalFilepathPNG;
+			normals_rgba = cv::imread(m_Impl->m_Settings->NormalFilepathPNG, cv::IMREAD_ANYCOLOR);
+			cv::cvtColor(normals_rgba, normals_rgba, cv::COLOR_BGR2RGBA);
+			/// create buffer
+			BufferCPU<uchar4> normalsbuf_rgba = CreateBufferCPU<uchar4>(256 * 512);
+			std::memcpy(normalsbuf_rgba->Data(), normals_rgba.data, normalsbuf_rgba->ByteSize());
+			/// send the buffer
+			m_Impl->m_NormalsBufferRGBAFlowOutSubj.get_subscriber().on_next(normalsbuf_rgba);
+			/// load exr
+			LOG_DEBUG << "Loaded EXR: " << m_Impl->m_Settings->NormalFilepathEXR;
+			cv::Mat normals_exr = cv::Mat::zeros(256, 512, CV_32FC3);
+			normals_exr = cv::imread(m_Impl->m_Settings->NormalFilepathEXR, cv::IMREAD_UNCHANGED);
+			BufferCPU<float3> normalsbuf_float = CreateBufferCPU<float3>(256 * 512);
+			std::memcpy(normalsbuf_float->Data(), normals_exr.data, normalsbuf_float->ByteSize());
+			m_Impl->m_NormalsBufferFloatFlowOutSubj.get_subscriber().on_next(normalsbuf_float);
+		}
 	}, [this](std::exception_ptr ptr) 
 	{
 		if (ptr)

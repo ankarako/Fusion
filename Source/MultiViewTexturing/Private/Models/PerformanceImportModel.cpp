@@ -4,6 +4,7 @@
 #include <PerfcapSkeletonImport.h>
 #include <PerfcapSkinningDataImport.h>
 #include <PerfcapTrackedParamsImport.h>
+#include <PerfcapTemplateImport.h>
 #include <LoadObj.h>
 #include <LoadPly.h>
 #include <filesystem>
@@ -24,7 +25,7 @@ struct PerformanceImportModel::Impl
 	static constexpr const char* k_CalibrationFilename		= "calibration.json";
 	static constexpr const char* k_SkinningFilename			= "skinning.json";
 	static constexpr const char* k_SkeletonFilename			= "skeleton.json";
-	static constexpr const char* k_TemplateMeshFilename		= "template_mesh.obj";
+	static constexpr const char* k_TemplateMeshFilenameObj	= "template_mesh.obj";
 	static constexpr const char* k_TemplateMeshFilenamePly	= "template_mesh.ply";
 	static constexpr const char* k_TextureAtlasFilename		= "texture_atlas.jpg";
 	static constexpr const char* k_TrackedParamsFilename	= "tracked_params.json";
@@ -89,12 +90,6 @@ void PerformanceImportModel::Init()
 		io::perfcap_skeleton_ptr_t skeleton = io::ImportPerfcapSkeleton(skeletonFilepath);
 		m_Impl->m_PerfcapSkeletonFlowOutSubj.get_subscriber().on_next(skeleton);
 		///=====================
-		/// import skinning data
-		///=====================
-		std::string skinningDataFilepath = targetDir + "\\" + m_Impl->k_SkinningFilename;
-		io::perfcap_skin_data_ptr_t skinData = io::ImportPerfcapSkinningData(skinningDataFilepath);
-		m_Impl->m_PerfcapSkinDataFlowOutSubj.get_subscriber().on_next(skinData);
-		///=====================
 		/// find video filenames
 		///=====================
 		std::vector<std::string> videoFilepaths;
@@ -107,12 +102,22 @@ void PerformanceImportModel::Init()
 			}
 		}
 		m_Impl->m_TextureFilenamesFlowOutSubj.get_subscriber().on_next(videoFilepaths);
+		///=====================
+		/// import skinning data
+		///=====================
+		std::string skinningDataFilepath = targetDir + "\\" + m_Impl->k_SkinningFilename;
+		io::perfcap_skin_data_ptr_t skinData = io::ImportPerfcapSkinningData(skinningDataFilepath);
+		m_Impl->m_PerfcapSkinDataFlowOutSubj.get_subscriber().on_next(skinData);
 		///==============
 		/// template mesh
 		///==============
 		io::MeshData meshData = io::CreateMeshData();
-		std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilename).generic_string();
-		io::LoadObj(templateMeshFilepath, meshData);
+		std::string templateMeshFilepathObj = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenameObj).generic_string();
+		std::string templateMeshFilepathPly = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenamePly).generic_string();
+		//io::LoadObj(templateMeshFilepath, meshData);
+		//io::perfcap_skin_data_ptr_t denseSkinData = io::CreatePerfcapSkinData();
+		//io::LoadObjWithSkinData(templateMeshFilepath, meshData, skinData, denseSkinData);
+		io::PerfcapMeshImport(templateMeshFilepathPly, templateMeshFilepathObj, meshData);
 		/// Mesh data is textured
 		meshData->TextureWidth = m_Impl->m_TextureResolution.x;
 		meshData->TextureHeight = m_Impl->m_TextureResolution.y;
@@ -123,6 +128,7 @@ void PerformanceImportModel::Init()
 		}
 		/*std::string templateMeshFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenamePly).generic_string();
 		meshData = io::LoadPly(templateMeshFilepath);*/
+		//m_Impl->m_PerfcapSkinDataFlowOutSubj.get_subscriber().on_next(denseSkinData);
 		m_Impl->m_MeshDataFlowOutSubj.get_subscriber().on_next(meshData);
 		/// texture atlas
 		std::string textureAtlasFilepath = filesystem::absolute(targetDir + "\\" + m_Impl->k_TextureAtlasFilename).generic_string();

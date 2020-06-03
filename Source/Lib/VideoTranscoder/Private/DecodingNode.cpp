@@ -217,19 +217,20 @@ BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
 		/// check that our frame and the native have the same byte size
 		DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
 		/// copy native frame data to our buffer
-		std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
 		if (m_Impl->m_Rotate)
-			{
-				double angle = 90.0;
-				cv::Point2f center((m_Impl->m_CurrentFrameNative.cols - 1.0f) / 2.0f, (m_Impl->m_CurrentFrameNative.rows - 1.0f) / 2.0f);
-				cv::Mat rot = cv::getRotationMatrix2D(center, angle, 1.0f);
-				cv::Rect2f bbox = cv::RotateRect(cv::Point2f(), m_Impl->m_CurrentFrameNative.size(), angle).boundingRect2f();
-				///
-				rot.at<double>(0, 2) += bbox.width / 2.0f - m_Impl->m_CurrentFrameNative.cols / 2.0;
-				rot.at<double>(1, 2) += bbox.height / 2.0f - m_Impl->m_CurrentFrameNative.rows / 2.0;
+		{
+			double angle = -90.0;
+			cv::Point2f center((m_Impl->m_CurrentFrameNative.cols - 1.0f) / 2.0f, (m_Impl->m_CurrentFrameNative.rows - 1.0f) / 2.0f);
+			cv::Mat rot = cv::getRotationMatrix2D(center, angle, 1.0f);
+			cv::Rect2f bbox = cv::RotatedRect(cv::Point2f(), m_Impl->m_CurrentFrameNative.size(), angle).boundingRect2f();
+			///
+			rot.at<double>(0, 2) += bbox.width / 2.0f - m_Impl->m_CurrentFrameNative.cols / 2.0;
+			rot.at<double>(1, 2) += bbox.height / 2.0f - m_Impl->m_CurrentFrameNative.rows / 2.0;
 
-				cv::warpAffine(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, rot, bbox.size());
-			}
+			cv::warpAffine(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, rot, bbox.size());
+		}
+		std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+		//cv::imwrite("test_Frame.png", m_Impl->m_CurrentFrameNative);
 		/// notify subscriber's about the current frame
 		return m_Impl->m_CurrentFrame;
 	}
@@ -257,7 +258,7 @@ void DecodingNodeObj::GenerateFrames(size_t frameCount)
 				double angle = 90.0;
 				cv::Point2f center((m_Impl->m_CurrentFrameNative.cols - 1.0f) / 2.0f, (m_Impl->m_CurrentFrameNative.rows - 1.0f) / 2.0f);
 				cv::Mat rot = cv::getRotationMatrix2D(center, angle, 1.0f);
-				cv::Rect2f bbox = cv::RotateRect(cv::Point2f(), m_Impl->m_CurrentFrameNative.size(), angle).boundingRect2f();
+				cv::Rect2f bbox = cv::RotatedRect(cv::Point2f(), m_Impl->m_CurrentFrameNative.size(), angle).boundingRect2f();
 				///
 				rot.at<double>(0, 2) += bbox.width / 2.0f - m_Impl->m_CurrentFrameNative.cols / 2.0;
 				rot.at<double>(1, 2) += bbox.height / 2.0f - m_Impl->m_CurrentFrameNative.rows / 2.0;

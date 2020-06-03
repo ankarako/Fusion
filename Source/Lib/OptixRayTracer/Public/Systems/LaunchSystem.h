@@ -48,7 +48,21 @@ public:
 		camComp->TexturingOutputBuffer->unmap();
 	}
 
-
+	static void CopyOutputTexturingDataToBuffers(TexturingCameraComp& camComp, 
+		BufferCPU<uchar4>& texBuf, 
+		BufferCPU<float2>& texcoordBuf, 
+		BufferCPU<float>& weightBuf,
+		BufferCPU<int>& camIdBuf)
+	{
+		std::memcpy(texBuf->Data(), camComp->OutputColorBuffer->map(), texBuf->ByteSize());
+		camComp->OutputColorBuffer->unmap();
+		std::memcpy(texcoordBuf->Data(), camComp->OutputTexcoordBuffer->map(), texcoordBuf->ByteSize());
+		camComp->OutputTexcoordBuffer->unmap();
+		std::memcpy(weightBuf->Data(), camComp->OutputWeightBuffer->map(), weightBuf->ByteSize());
+		camComp->OutputWeightBuffer->unmap();
+		std::memcpy(camIdBuf->Data(), camComp->OutputCamIdBuffer->map(), camIdBuf->ByteSize());
+		camComp->OutputCamIdBuffer->unmap();
+	}
 };	///	!class LaunchSystem
 }	///	!namespace rt
 }	///	!namespace fu

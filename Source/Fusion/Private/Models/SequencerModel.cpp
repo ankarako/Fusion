@@ -17,7 +17,7 @@ struct SequencerModel::Impl
 	player_model_ptr_t		m_PlayerModel;
 	perfcap_player_ptr_t	m_PerfcapModel;
 
-	std::vector<SequenceItem> m_SequernceItems;
+	std::vector<SequenceItem> m_SequenceItems;
 
 	rxcpp::subjects::subject<size_t> m_PlayerTrackPositionFlowInSubj;
 	rxcpp::subjects::subject<size_t> m_AnimationTrackPositionFlowInSubj;

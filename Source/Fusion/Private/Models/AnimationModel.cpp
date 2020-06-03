@@ -82,8 +82,8 @@ void AnimationModel::Init()
 					m_Impl->m_TemplateMesh.Skeleton[0].Position.y,
 					m_Impl->m_TemplateMesh.Skeleton[0].Position.z
 				};
-				rt::AnimationSystem::GetRTEulerCenter(rootTranslation, rootRot, rootInitPos, rootTrans);
-				JointTransforms.emplace_back(rootTrans);
+				/*rt::AnimationSystem::GetRTEulerCenter(rootTranslation, rootRot, rootInitPos, rootTrans);
+				JointTransforms.emplace_back(rootTrans);*/
 			}
 			else
 			{

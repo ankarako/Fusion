@@ -18,9 +18,14 @@ class MVTModel : public app::Initializable
 public:
 	MVTModel();
 	void Init() override;
-
+	void SetOutputDir(const std::string& dir);
+	void SetTextureSize(const uint2& size);
+	void SetSeparateTextures(bool set);
+	void SetLaunchMult(int mult);
+	void SetViewportEnabled(bool enabled);
 	rxcpp::observer<io::MeshData>							MeshDataFlowIn();
 	rxcpp::observable<io::MeshData>							MeshDataFlowOut();
+	rxcpp::observable<io::MeshData>							AnimatedMeshDataFlowOut();
 	rxcpp::observer<std::vector<io::volcap_cam_data_ptr_t>> CameraDataFlowIn();
 	rxcpp::observable<std::vector<io::volcap_cam_data_ptr_t>> CameraDataFlowOut();
 

@@ -4,6 +4,7 @@
 #include <Models/ViewportTracingModel.h>
 #include <Models/MultiViewPlayerModel.h>
 
+
 namespace fu {
 namespace mvt {
 struct MVTPresenter::Impl
@@ -47,6 +48,16 @@ void MVTPresenter::Init()
 	///=========================
 	m_Impl->m_PerformanceImportModel->TrackedSequenceDataFlowOut()
 		.subscribe(m_Impl->m_Model->TrackedFramesFlowIn());
+	///=================
+	/// Skeleton Input
+	///================
+	m_Impl->m_PerformanceImportModel->SkeletonFlowOut()
+		.subscribe(m_Impl->m_Model->SkeletonFlowIn());
+	///====================
+	/// Skinning Data Input
+	///====================
+	m_Impl->m_PerformanceImportModel->SkinDataFlowOut()
+		.subscribe(m_Impl->m_Model->SkinningDataFlowIn());
 	///===================
 	/// Seek Frame Output
 	///===================
@@ -58,11 +69,20 @@ void MVTPresenter::Init()
 
 	m_Impl->m_Model->MeshDataFlowOut()
 		.subscribe(m_Impl->m_ViewportTracingModel->MeshDataFlowIn());
+
+	m_Impl->m_Model->AnimatedMeshDataFlowOut()
+		.subscribe(m_Impl->m_ViewportTracingModel->AnimatedMeshDataFlowIn());
 	///===============
 	/// texture Output
 	///===============
 	m_Impl->m_Model->TextureFlowOut()
 		.subscribe(m_Impl->m_ViewportTracingModel->TriangleMeshTextureFlowIn());
+
+	m_Impl->m_Model->SetOutputDir("output");
+	m_Impl->m_Model->SetTextureSize(make_uint2(2048, 2048));
+	m_Impl->m_Model->SetSeparateTextures(true);
+	m_Impl->m_Model->SetLaunchMult(4);
+	m_Impl->m_Model->SetViewportEnabled(true);
 }
 }	///	!namespace mvt
 }	///	!namespace fu

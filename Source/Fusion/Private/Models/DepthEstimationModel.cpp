@@ -76,12 +76,19 @@ void DepthEstimationModel::Init()
 			+ " " + "--gpu 0";
 		LOG_DEBUG << "Running cli: " << cli;
 		/// run depth estimation network
-		std::system(cli.c_str());
-		std::string absoutply = std::filesystem::absolute(std::filesystem::path(m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_pcl.ply")).generic_string();
-		m_Impl->m_Settings->PointCloudFilepathPLY = absoutply;
-		/// send filepath to pcl loader
-		DepthColorToPCL(absinputimg, absoutimg + ".exr", 10.0f, absoutply);
-		m_Impl->m_PointcloudFilepathFlowOut.get_subscriber().on_next(absoutply);
+		int ret = std::system(cli.c_str());
+		if (ret == 0)
+		{
+			std::string absoutply = std::filesystem::absolute(std::filesystem::path(m_Impl->m_ProjectModel->WorkSpaceDirectory() + "/depth_est_pcl.ply")).generic_string();
+			m_Impl->m_Settings->PointCloudFilepathPLY = absoutply;
+			/// send filepath to pcl loader
+			DepthColorToPCL(absinputimg, absoutimg + ".exr", 10.0f, absoutply);
+			m_Impl->m_PointcloudFilepathFlowOut.get_subscriber().on_next(absoutply);
+		}
+		else
+		{
+			LOG_WARNING << "Failed to run: " << cli;
+		}
 	});
 	///=====================
 	/// Settings loaded Task
@@ -90,8 +97,11 @@ void DepthEstimationModel::Init()
 		.observe_on(m_Impl->m_Coord->ModelCoordination())
 		.subscribe([this](auto _) 
 	{
-		/// we just want to load the point cloud
-		m_Impl->m_PointcloudFilepathFlowOut.get_subscriber().on_next(m_Impl->m_Settings->PointCloudFilepathPLY);
+		if (!m_Impl->m_Settings->DepthFilepathEXR.empty())
+		{
+			/// we just want to load the point cloud
+			m_Impl->m_PointcloudFilepathFlowOut.get_subscriber().on_next(m_Impl->m_Settings->PointCloudFilepathPLY);
+		}
 	});
 	///======================
 	/// Register our settings

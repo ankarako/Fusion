@@ -9,9 +9,9 @@ namespace fusion {
 class ProjectSettings : public Settings<WriterType::PrettyWriter>
 {
 public:
-	std::string ProjectPath{ " " };
-	std::string WorkspacePath{ " " };
-	std::string ProjectName{ " " };
+	std::string ProjectPath{ "" };
+	std::string WorkspacePath{ "" };
+	std::string ProjectName{ "" };
 
 	void Save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& writer) override;
 	void Load(rapidjson::Document& doc) override;
