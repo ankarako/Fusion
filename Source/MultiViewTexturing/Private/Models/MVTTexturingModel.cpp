@@ -10,8 +10,8 @@
 #include <Systems/RaygenSystem.h>
 #include <Systems/MissSystem.h>
 #include <Systems/AnimationSystem.h>
-#include <Programs/RayPayload.cuh>
 #include <TextureExportingNode.h>
+#include <EncodingNode.h>
 #include <SavePly.h>
 #include <DebugMsg.h>
 #include <filesystem>
@@ -23,15 +23,19 @@ namespace mvt {
 ///	\brief MVTModel implementation
 struct MVTModel::Impl
 {
-	static constexpr const char* k_CamIdMaskFilename = "mask.png";
-	static constexpr const char* k_WeightMaskPrefix = "mask";
-	static constexpr const char* k_TextureMapsPrefix = "texels";
-	static constexpr const char* k_AnimatedMeshFilename = "animated_template.ply";
+	static constexpr const char* k_7zipPath = "Resources\\7zip\\7z.exe";
+	static constexpr const char* k_CamIdMaskFilename			= "mask.png";
+	static constexpr const char* k_WeightMaskPrefix				= "mask";
+	static constexpr const char* k_TextureMapsPrefix			= "texels";
+	static constexpr const char* k_AnimatedMeshFilename			= "animated_template.ply";
+	static constexpr const char* k_MergedTextureFilenamePrefix	= "texels_";
+	static constexpr const char* k_MergedTextureOuputFilename	= "texels";
 	/// ray tracing related
 	rt::ContextComp							m_ContextComp;
 	rt::AccelerationComp					m_TopLevelAcceleration;
 	rt::TriangleMeshComp					m_TriangleMeshComp;
 	rt::SolidColorMissComp					m_MissComp;
+	trans::EncodingNode						m_EncodingNode;
 	std::vector<rt::TexturingCameraComp>	m_TexturingCameraComps;
 	uint2									m_ContextLaunchDimensions;
 	int										m_ContextLaunchMult{ 1 };
@@ -53,6 +57,8 @@ struct MVTModel::Impl
 	std::vector<BufferCPU<uchar4>>			m_OutputTextureCamIdBuffers;
 	/// texture buffer for viewport rendering
 	BufferCPU<uchar4>						m_ViewportTextureBuffer;
+	BufferCPU<uchar4>						m_OutputTextureBuffer;
+	BufferCPU<float>						m_MaxWeightsBuffer;
 	
 	io::tracked_seq_ptr_t							m_TrackedSequence;
 	io::perfcap_skeleton_ptr_t						m_PerfcapSkeleton;
@@ -64,7 +70,15 @@ struct MVTModel::Impl
 	bool m_InitializedGeometry{ false };
 	bool m_SeparateTextures{ true };
 	bool m_ViewportEnabled{ false };
+	bool m_DeleteOutputEnabled{ false };
 	trans::TextureExportingNode						m_TextureExportingNode;
+	///
+	std::string	m_TempFolderPath;
+	std::string m_SkinningFilename;
+	std::string m_SkeletonFilename;
+	std::string m_TrackedParamsFilename;
+	std::string m_TemplateMeshFilename;
+	std::string m_ExportDir;
 
 	rxcpp::subjects::subject<io::MeshData>								m_MeshDataFlowInSubj;
 	rxcpp::subjects::subject<io::MeshData>								m_MeshDataFlowOutSubj;
@@ -78,8 +92,13 @@ struct MVTModel::Impl
 	rxcpp::subjects::subject<void*>										m_RunTexturingLoopSubj;
 	rxcpp::subjects::subject<int>										m_SeekFrameFlowOutSubj;
 	rxcpp::subjects::subject<void*>										m_PipelineInitializedSubj;
+	rxcpp::subjects::subject<void*>										m_RunSeparateTextureSubj;
 	rxcpp::subjects::subject<void*>										m_RunTextureMergingSubj;
+	rxcpp::subjects::subject<void*>										m_RunViewportMergingSubj;
 	rxcpp::subjects::subject<BufferCPU<uchar4>>							m_TextureFlowOutSubj;
+	rxcpp::subjects::subject<std::vector<DistCoeffs>>					m_DistortionCoefficientsFlowOutSubj;
+	rxcpp::subjects::subject<std::vector<BufferCPU<float>>>				m_CameraMatricesFlowOutSubj;
+	rxcpp::subjects::subject<void*>										m_RunExportTaskSubj;
 	/// Construction
 	Impl() 
 		: m_ContextComp(rt::CreateContextComponent())
@@ -87,6 +106,7 @@ struct MVTModel::Impl
 		, m_TriangleMeshComp(rt::CreateTriangleMeshComponent())
 		, m_MissComp(rt::CreateSolidColorMissComponent(optix::make_float3(0.0f, 0.0f, 0.0f)))
 		, m_TextureExportingNode(trans::CreateTextureExportingNode())
+		, m_EncodingNode(trans::CreateEncodingNode())
 	{ }
 };	///	!struct Impl
 ///	Construction
@@ -113,6 +133,9 @@ void MVTModel::Init()
 		rt::MissSystem::AttachSolidColorMissToContext(m_Impl->m_MissComp, m_Impl->m_ContextComp);
 		rt::MeshMappingSystem::NullInitializeAcceleration(m_Impl->m_TopLevelAcceleration, m_Impl->m_ContextComp);
 		/// map camera and output buffer data for each camera
+		std::vector<DistCoeffs>	dcoeffs;
+		std::vector<BufferCPU<float>> camMats;
+
 		for (int c = 0; c < cam_data.size(); ++c)
 		{
 			/// create texture camera component
@@ -129,6 +152,9 @@ void MVTModel::Init()
 			intr4.setRow(2, optix::make_float4(intr.getRow(2), 0.0f));
 			intr4.setRow(3, optix::make_float4(0.0f, 0.0f, 0.0f, 0.0f));
 			comp->Intrinsics = intr4;
+			BufferCPU<float> camMat = CreateBufferCPU<float>(9);
+			std::memcpy(camMat->Data(), intr.getData(), 9 * sizeof(float));
+			camMats.emplace_back(camMat);
 			/// was column major
 			comp->Intrinsics;
 			m_Impl->m_ContextLaunchDimensions = cam->ColorResolution;
@@ -136,7 +162,17 @@ void MVTModel::Init()
 			rt::RaygenSystem::MapTexturingCamera(comp, m_Impl->m_ContextComp, m_Impl->m_ContextLaunchDimensions, c, m_Impl->m_ContextLaunchMult);
 			rt::RaygenSystem::AttachTopLevelAccelerationToTexturingRaygen(comp, m_Impl->m_TopLevelAcceleration);
 			m_Impl->m_TexturingCameraComps.emplace_back(comp);
-
+			/// create distortion coefficients
+			DistCoeffs coeffs;
+			coeffs.p1 = cam->TangentialDist.x;
+			coeffs.p2 = cam->TangentialDist.y;
+			coeffs.k1 = cam->RadialDist123.x;
+			coeffs.k2 = cam->RadialDist123.y;
+			coeffs.k3 = cam->RadialDist123.z;
+			coeffs.k4 = cam->RadialDist345.x;
+			coeffs.k5 = cam->RadialDist345.y;
+			coeffs.k6 = cam->RadialDist345.z;
+			dcoeffs.emplace_back(coeffs);
 			/// create tracing buffers
 			BufferCPU<uchar4> colorBuf = CreateBufferCPU<uchar4>(launchDims.x * launchDims.y);
 			m_Impl->m_TracedColorsBuffers.emplace_back(colorBuf);
@@ -153,6 +189,8 @@ void MVTModel::Init()
 			m_Impl->m_OutputTextureWeightBuffers.emplace_back(outTexWeightBuf);
 			BufferCPU<uchar4> outCamIdBuf = CreateBufferCPU<uchar4>(m_Impl->m_TextureSize.x * m_Impl->m_TextureSize.y);
 		}
+		m_Impl->m_CameraMatricesFlowOutSubj.get_subscriber().on_next(camMats);
+		m_Impl->m_DistortionCoefficientsFlowOutSubj.get_subscriber().on_next(dcoeffs);
 		m_Impl->m_InitializedCameras = true;
 		if (m_Impl->m_InitializedCameras && m_Impl->m_InitializedGeometry)
 			m_Impl->m_PipelineInitializedSubj.get_subscriber().on_next(nullptr);
@@ -237,7 +275,14 @@ void MVTModel::Init()
 				m_Impl->m_TracedCamIdBuffers[c]);
 		}
 		DebugMsg("Launched");
-		m_Impl->m_RunTextureMergingSubj.get_subscriber().on_next(nullptr);
+		if (m_Impl->m_SeparateTextures)
+		{
+			m_Impl->m_RunSeparateTextureSubj.get_subscriber().on_next(nullptr);
+		}
+		else
+		{
+			m_Impl->m_RunTextureMergingSubj.get_subscriber().on_next(nullptr);
+		}
 	});
 	///==============
 	/// Launch Task
@@ -259,10 +304,13 @@ void MVTModel::Init()
 			///===========================
 			/// create directory for frame
 			///===========================
-			m_Impl->m_CurrentFrameDir = m_Impl->m_OutputDir + "\\" + std::to_string(f);
-			if (!filesystem::exists(m_Impl->m_CurrentFrameDir))
+			if (m_Impl->m_SeparateTextures)
 			{
-				filesystem::create_directory(m_Impl->m_CurrentFrameDir);
+				m_Impl->m_CurrentFrameDir = m_Impl->m_OutputDir + "\\" + std::to_string(f);
+				if (!filesystem::exists(m_Impl->m_CurrentFrameDir))
+				{
+					filesystem::create_directory(m_Impl->m_CurrentFrameDir);
+				}
 			}
 			///=========
 			/// Animate
@@ -280,6 +328,67 @@ void MVTModel::Init()
 			m_Impl->m_SeekFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
 		}
 		LOG_INFO << "Sequence ended.";
+		m_Impl->m_RunExportTaskSubj.get_subscriber().on_next(nullptr);
+	});
+	///===========================
+	/// Separate Textures pipeline
+	///===========================
+	m_Impl->m_RunSeparateTextureSubj.get_observable().as_dynamic()
+		.subscribe([this](auto _) 
+	{
+		// TODO: really tedious for now - reimplement
+		for (int c = 0; c < m_Impl->m_CameraCount; ++c)
+		{
+			BufferCPU<uchar4> colorBuf = m_Impl->m_TracedColorsBuffers[c];
+			BufferCPU<float2> texcoordBuf = m_Impl->m_TracedTexcoordsBuffers[c];
+			BufferCPU<float> weightsBuf = m_Impl->m_TracedWeightsBuffers[c];
+
+			int count = m_Impl->m_ContextLaunchDimensions.x * m_Impl->m_ContextLaunchDimensions.y * m_Impl->m_ContextLaunchMult;
+
+			std::vector<float> weights;
+			float minw = 1e16f;
+			float maxw = -1e16f;
+			// TODO: tediousness for finding min max weights
+			for (int p = 0; p < weightsBuf->Count(); ++p)
+			{
+				float w = weightsBuf->Data()[p];
+				weights.emplace_back(w);
+				if (weights[p] > maxw)
+					maxw = weights[p];
+				if (weights[p] < minw)
+					minw = weights[p];
+			}
+			for (int p = 0; p < colorBuf->Count(); ++p)
+			{
+				float2 texcoord = texcoordBuf->Data()[p];
+				texcoord.y = 1.0f - texcoord.y;
+				uchar4 color = colorBuf->Data()[p];
+
+				uint2 textureCoord = make_uint2(texcoord.x * m_Impl->m_TextureSize.x, texcoord.y * m_Impl->m_TextureSize.y);
+				float weight = (weights[p] - minw) / (maxw - minw) * 255.0f;
+				unsigned char nw = (unsigned char)weight;
+				uchar4 w = make_uchar4(nw, nw, nw, 255);
+
+				int bufcoord = textureCoord.y * m_Impl->m_TextureSize.x + textureCoord.x;
+				m_Impl->m_OutputTextureColorBuffers[c]->Data()[bufcoord] = color;
+				m_Impl->m_OutputTextureWeightBuffers[c]->Data()[bufcoord] = w;
+			}
+			std::stringstream ssc;
+			ssc << m_Impl->m_CurrentFrameDir << "\\texels-" << std::setw(2) << std::setfill('0') << std::to_string(c);
+			std::string filepath = ssc.str();
+			m_Impl->m_TextureExportingNode->ExportTexture(filepath + ".png", m_Impl->m_OutputTextureColorBuffers[c], m_Impl->m_TextureSize);
+			std::stringstream ssw;
+			ssw << m_Impl->m_CurrentFrameDir << "\\mask-" << std::setw(2) << std::setfill('0') << std::to_string(c);
+			filepath = ssw.str();
+			m_Impl->m_TextureExportingNode->ExportWeights(filepath + ".png", m_Impl->m_OutputTextureWeightBuffers[c], m_Impl->m_TextureSize);
+		}
+		std::string filepath = m_Impl->m_CurrentFrameDir + "\\" + m_Impl->k_AnimatedMeshFilename;
+		io::SavePly(filepath, m_Impl->m_AnimatedMesh);
+
+		if (m_Impl->m_ViewportEnabled)
+		{
+			m_Impl->m_RunViewportMergingSubj.get_subscriber().on_next(nullptr);
+		}
 	});
 	///======================
 	/// Texture Merging Task
@@ -287,130 +396,171 @@ void MVTModel::Init()
 	m_Impl->m_RunTextureMergingSubj.get_observable().as_dynamic()
 		.subscribe([this](auto _) 
 	{
-		if (m_Impl->m_SeparateTextures)
+		m_Impl->m_MaxWeightsBuffer = CreateBufferCPU<float>(m_Impl->m_TracedColorsBuffers[0]->Count());
+		std::memset(m_Impl->m_MaxWeightsBuffer->Data(), 0, m_Impl->m_MaxWeightsBuffer->ByteSize());
+		
+		m_Impl->m_OutputTextureBuffer = CreateBufferCPU<uchar4>(m_Impl->m_ViewportTextureBuffer->Count());
+		std::memset(m_Impl->m_OutputTextureBuffer->Data(), 0, m_Impl->m_OutputTextureBuffer->ByteSize());
+		for (int c = 0; c < m_Impl->m_CameraCount; ++c)
 		{
-			// TODO: really tedious for now - reimplement
-			for (int c = 0; c < m_Impl->m_CameraCount; ++c)
-			{
-				BufferCPU<uchar4> colorBuf = m_Impl->m_TracedColorsBuffers[c];
-				BufferCPU<float2> texcoordBuf = m_Impl->m_TracedTexcoordsBuffers[c];
-				BufferCPU<float> weightsBuf = m_Impl->m_TracedWeightsBuffers[c];
+			BufferCPU<uchar4> colorBuf = m_Impl->m_TracedColorsBuffers[c];
+			BufferCPU<float2> texcoordBuf = m_Impl->m_TracedTexcoordsBuffers[c];
+			BufferCPU<float> weightsBuf = m_Impl->m_TracedWeightsBuffers[c];
 
-				int count = m_Impl->m_ContextLaunchDimensions.x * m_Impl->m_ContextLaunchDimensions.y * m_Impl->m_ContextLaunchMult;
+			for (int p = 0; p < colorBuf->Count(); ++p)
+			{
+				float2 texc = texcoordBuf->Data()[p];
+				uint2 textureCoord = make_uint2(texc.x * m_Impl->m_TextureSize.x, texc.y * m_Impl->m_TextureSize.y);
+				texc.y = 1.0f - texc.y;
+				uchar4 color = colorBuf->Data()[p];
+				float weight = weightsBuf->Data()[p];
 				
-				std::vector<float> weights;
-				float minw = 1e16f;
-				float maxw = -1e16f;
-				// TODO: tediousness for finding min max weights
-				for (int p = 0; p < weightsBuf->Count(); ++p)
+				if (weight > m_Impl->m_MaxWeightsBuffer->Data()[p])
 				{
-					float w = weightsBuf->Data()[p];
-					weights.emplace_back(w);
-					if (weights[p] > maxw)
-						maxw = weights[p];
-					if (weights[p] < minw)
-						minw = weights[p];
-				}
-				for (int p = 0; p < colorBuf->Count(); ++p)
-				{
-					float2 texcoord = texcoordBuf->Data()[p];
-					texcoord.y = 1.0f - texcoord.y;
-					uchar4 color = colorBuf->Data()[p];
-					uint2 textureCoord = make_uint2(texcoord.x * m_Impl->m_TextureSize.x, texcoord.y * m_Impl->m_TextureSize.y);
-					float weight = (weights[p] - minw) / (maxw - minw) * 255.0f;
-					unsigned char nw = (unsigned char)weight;
-					uchar4 w = make_uchar4(nw, nw, nw, 255);
-					
+					m_Impl->m_MaxWeightsBuffer->Data()[p] = weight;
 					int bufcoord = textureCoord.y * m_Impl->m_TextureSize.x + textureCoord.x;
-					m_Impl->m_OutputTextureColorBuffers[c]->Data()[bufcoord] = color;
-					m_Impl->m_OutputTextureWeightBuffers[c]->Data()[bufcoord] = w;
-				}
-				std::stringstream ssc;
-				ssc << m_Impl->m_CurrentFrameDir << "\\texels-" << std::setw(2) << std::setfill('0') << std::to_string(c);
-				std::string filepath = ssc.str();
-				m_Impl->m_TextureExportingNode->ExportTexture(filepath + ".png", m_Impl->m_OutputTextureColorBuffers[c], m_Impl->m_TextureSize);
-				std::stringstream ssw;
-				ssw << m_Impl->m_CurrentFrameDir << "\\mask-" << std::setw(2) << std::setfill('0') << std::to_string(c);
-				filepath = ssw.str();
-				m_Impl->m_TextureExportingNode->ExportWeights(filepath + ".png", m_Impl->m_OutputTextureWeightBuffers[c], m_Impl->m_TextureSize);
-			}
-			std::string filepath = m_Impl->m_CurrentFrameDir + "\\" + m_Impl->k_AnimatedMeshFilename;
-			io::SavePly(filepath, m_Impl->m_AnimatedMesh);
-		}
-		else
-		{
-			for (int c = 0; c < m_Impl->m_CameraCount; ++c)
-			{
-				BufferCPU<uchar4> colorBuf = m_Impl->m_TracedColorsBuffers[c];
-				BufferCPU<float2> texcoordBuf = m_Impl->m_TracedTexcoordsBuffers[c];
-				BufferCPU<float> weightBuffer = m_Impl->m_TracedWeightsBuffers[c];
-
-				for (int p = 0; p < colorBuf->Count(); ++p)
-				{
-					float2 texc = texcoordBuf->Data()[p];
-					uchar4 color = colorBuf->Data()[p];
-					float weight = weightBuffer->Data()[p];
-					// tediousness
-					/// convert color to float
-					float r = (float)color.x / 255.f * weight;
-					float g = (float)color.y / 255.f * weight;
-					float b = (float)color.z / 255.f * weight;
-					float a = (float)color.w / 255.f;
-
-					float4 colorf = make_float4(r, g, b, a);
-
-					uint2 textureCoord = make_uint2(texc.x * m_Impl->m_TextureSize.x, texc.y * m_Impl->m_TextureSize.y);
-					int bufcoord = textureCoord.y * m_Impl->m_TextureSize.x + textureCoord.x;
-
-
-					m_Impl->m_ViewportTextureBuffer->Data()[bufcoord] = color;
+					m_Impl->m_OutputTextureBuffer->Data()[bufcoord] = color;
 				}
 			}
-			//m_Impl->m_TextureFlowOutSubj.get_subscriber().on_next(m_Impl->m_ViewportTextureBuffer);
 		}
-		//============================
-		// TODO: delete this once done
-		//============================
+		std::stringstream ss;
+		ss << m_Impl->m_OutputDir + "\\texels_" << std::setw(3) << std::setfill('0') << std::to_string(m_Impl->m_CurrentFrame);
+
+		std::string filepath = ss.str() + ".png";
+		m_Impl->m_TextureExportingNode->ExportTexture(filepath, m_Impl->m_OutputTextureBuffer, m_Impl->m_TextureSize);
 		if (m_Impl->m_ViewportEnabled)
 		{
-			for (int c = 0; c < m_Impl->m_CameraCount; ++c)
-			{
-				BufferCPU<uchar4> buf = m_Impl->m_TracedColorsBuffers[c];
-				BufferCPU<float2> texcoord = m_Impl->m_TracedTexcoordsBuffers[c];
-				for (int p = 0; p < buf->Count(); ++p)
-				{
-					float2 texc = texcoord->Data()[p];
-					uchar4 color = buf->Data()[p];
-					uint2 textureCoord = make_uint2(texc.x * m_Impl->m_TextureSize.x, texc.y * m_Impl->m_TextureSize.y);
-					int bufcoord = textureCoord.y * m_Impl->m_TextureSize.x + textureCoord.x;
-					m_Impl->m_ViewportTextureBuffer->Data()[bufcoord] = color;
-				}
-			}
-			m_Impl->m_TextureFlowOutSubj.get_subscriber().on_next(m_Impl->m_ViewportTextureBuffer);
+			m_Impl->m_TextureFlowOutSubj.get_subscriber().on_next(m_Impl->m_OutputTextureBuffer);
 		}
 	});
+	///=========================
+	/// Viewport Texture Merging
+	///=========================
+	m_Impl->m_RunViewportMergingSubj.get_observable().as_dynamic()
+		.subscribe([this](auto _) 
+	{
+		for (int c = 0; c < m_Impl->m_CameraCount; ++c)
+		{
+			BufferCPU<uchar4> buf = m_Impl->m_TracedColorsBuffers[c];
+			BufferCPU<float2> texcoord = m_Impl->m_TracedTexcoordsBuffers[c];
+			for (int p = 0; p < buf->Count(); ++p)
+			{
+				float2 texc = texcoord->Data()[p];
+				uchar4 color = buf->Data()[p];
+				uint2 textureCoord = make_uint2(texc.x * m_Impl->m_TextureSize.x, texc.y * m_Impl->m_TextureSize.y);
+				int bufcoord = textureCoord.y * m_Impl->m_TextureSize.x + textureCoord.x;
+				m_Impl->m_ViewportTextureBuffer->Data()[bufcoord] = color;
+			}
+		}
+	});
+	///=============
+	/// Export Task
+	///=============
+	m_Impl->m_RunExportTaskSubj.get_observable().as_dynamic()
+		.subscribe([this](auto _) 
+	{
+		using namespace std::experimental;
+		if (!filesystem::exists(m_Impl->m_ExportDir))
+		{
+			filesystem::create_directory(m_Impl->m_ExportDir);
+		}
 
+		m_Impl->m_EncodingNode->SetInputDirectory(m_Impl->m_OutputDir);
+		m_Impl->m_EncodingNode->SetInputFilenamePrefix(m_Impl->k_MergedTextureFilenamePrefix);
+		std::string filepath = m_Impl->m_ExportDir + "\\" + std::string(m_Impl->k_MergedTextureOuputFilename) + ".avi";
+		m_Impl->m_EncodingNode->SetOutputFilepath(filepath);
+		/// 
+		m_Impl->m_EncodingNode->ExportVideo();
+		// export (copy) skeleton file
+		try
+		{
+			std::string skeletonFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkeletonFilename;
+			std::string skinningFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkinningFilename;
+			std::string tempMeshFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TemplateMeshFilename;
+			std::string trackedFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TrackedParamsFilename;
+			filesystem::copy_file(skeletonFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkeletonFilename);
+			filesystem::copy_file(skinningFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkinningFilename);
+			filesystem::copy_file(tempMeshFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TemplateMeshFilename);
+			filesystem::copy_file(trackedFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TrackedParamsFilename);
+		}
+		catch (std::exception& ex)
+		{
+			LOG_ERROR << ex.what();
+		}
+		// zip the whole file
+		std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
+		std::system(cli.c_str());
+	});
+
+}
+void MVTModel::Destroy()
+{
+	using namespace std::experimental;
+	if (m_Impl->m_DeleteOutputEnabled)
+	{
+		// TODO: delete output
+	}
 }
 void MVTModel::SetOutputDir(const std::string & dir)
 {
 	m_Impl->m_OutputDir = dir;
 }
+
+void MVTModel::SetExportDir(const std::string & dir)
+{
+	m_Impl->m_ExportDir = dir;
+}
+
 void MVTModel::SetTextureSize(const uint2 & size)
 {
 	m_Impl->m_TextureSize = size;
 }
+
 void MVTModel::SetSeparateTextures(bool set)
 {
 	m_Impl->m_SeparateTextures = set;
 }
+
 void MVTModel::SetLaunchMult(int mult)
 {
 	m_Impl->m_ContextLaunchMult = mult;
 }
+
 void MVTModel::SetViewportEnabled(bool enabled)
 {
 	m_Impl->m_ViewportEnabled = enabled;
 }
+
+void MVTModel::SetDeleteOutputEnabled(bool enabled)
+{
+	m_Impl->m_DeleteOutputEnabled = enabled;
+}
+
+void MVTModel::SetTempFolderPath(const std::string & filename)
+{
+	m_Impl->m_TempFolderPath = filename;
+}
+
+void MVTModel::SetSkinningFilename(const std::string & filename)
+{
+	m_Impl->m_SkinningFilename = filename;
+}
+
+void MVTModel::SetSkeletonFilename(const std::string & filename)
+{
+	m_Impl->m_SkeletonFilename = filename;
+}
+
+void MVTModel::SetTrackedParamsFilename(const std::string & filename)
+{
+	m_Impl->m_TrackedParamsFilename = filename;
+}
+
+void MVTModel::SetTemplateMeshFilename(const std::string & filename)
+{
+	m_Impl->m_TemplateMeshFilename = filename;
+}
+
 rxcpp::observer<io::MeshData> MVTModel::MeshDataFlowIn()
 {
 	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
@@ -459,6 +609,14 @@ rxcpp::observable<int> MVTModel::SeekFrameFlowOut()
 rxcpp::observable<BufferCPU<uchar4>> MVTModel::TextureFlowOut()
 {
 	return m_Impl->m_TextureFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<std::vector<BufferCPU<float>>> MVTModel::CameraMatricesFlowOut()
+{
+	return m_Impl->m_CameraMatricesFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<std::vector<DistCoeffs>> MVTModel::DistortionCoefficientsFlowOut()
+{
+	return m_Impl->m_DistortionCoefficientsFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace mvt
 }	///	!namespace fu

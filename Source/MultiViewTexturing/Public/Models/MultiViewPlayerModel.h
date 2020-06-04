@@ -8,6 +8,7 @@
 #include <string>
 #include <rxcpp/rx.hpp>
 #include <Buffer.h>
+#include <DistortionCoefficients.h>
 
 namespace fu {
 namespace mvt {
@@ -22,7 +23,11 @@ public:
 	///	\brief model initialization
 	void Init() override;
 	void Destroy() override;
+	void SetUndistortEnabled(bool enabled);
+	void SetDebugFramesEnabled(bool enabled);
 	/// io
+	rxcpp::observer<std::vector<BufferCPU<float>>>		CameraMatricesFlowIn();
+	rxcpp::observer<std::vector<DistCoeffs>>			DistortionCoefficientsFlowIn();
 	rxcpp::observer<std::vector<std::string>>			VideoFilepathsFlowIn();
 	rxcpp::observer<int>								SeekFrameIdFlowIn();
 	rxcpp::observable<std::vector<BufferCPU<uchar4>>>	MultiViewFramesFlowOut();

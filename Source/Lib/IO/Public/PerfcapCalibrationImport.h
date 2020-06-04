@@ -97,15 +97,59 @@ static std::vector<volcap_cam_data_ptr_t> ImportPerfcapCalibration(const std::st
 				{
 					camData->ColorIntrinsics->Data()[i] = intr[i].GetDouble();
 				}
-				if (dObj.HasMember("resolution"))
+			}
+			if (dObj.HasMember("resolution"))
+			{
+				if (dObj["resolution"].HasMember("width"))
 				{
-					if (dObj["resolution"].HasMember("width"))
+					camData->ColorResolution.x = dObj["resolution"]["width"].GetInt();
+				}
+				if (dObj["resolution"].HasMember("height"))
+				{
+					camData->ColorResolution.y = dObj["resolution"]["height"].GetInt();
+				}
+			}
+			if (dObj.HasMember("distortion_coefficients"))
+			{
+				auto dist = dObj["distortion_coefficients"].GetObject();
+				if (dist.HasMember("tangential"))
+				{
+					auto tang = dist["tangential"].GetObject();
+					if (tang.HasMember("p1"))
 					{
-						camData->ColorResolution.x = dObj["resolution"]["width"].GetInt();
+						camData->TangentialDist.x = tang["p1"].GetDouble();
 					}
-					if (dObj["resolution"].HasMember("height"))
+					if (tang.HasMember("p2"))
 					{
-						camData->ColorResolution.y = dObj["resolution"]["height"].GetInt();
+						camData->TangentialDist.y = tang["p2"].GetDouble();
+					}
+				}
+				if (dist.HasMember("radial"))
+				{
+					auto rad = dist["radial"].GetObject();
+					if (rad.HasMember("k1"))
+					{
+						camData->RadialDist123.x = rad["k1"].GetDouble();
+					}
+					if (rad.HasMember("k2"))
+					{
+						camData->RadialDist123.y = rad["k2"].GetDouble();
+					}
+					if (rad.HasMember("k3"))
+					{
+						camData->RadialDist123.z = rad["k3"].GetDouble();
+					}
+					if (rad.HasMember("k4"))
+					{
+						camData->RadialDist345.x = rad["k4"].GetDouble();
+					}
+					if (rad.HasMember("k5"))
+					{
+						camData->RadialDist345.y = rad["k5"].GetDouble();
+					}
+					if (rad.HasMember("k6"))
+					{
+						camData->RadialDist345.z = rad["k6"].GetDouble();
 					}
 				}
 			}

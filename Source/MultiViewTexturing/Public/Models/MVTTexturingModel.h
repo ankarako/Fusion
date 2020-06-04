@@ -2,6 +2,7 @@
 #define __MVT_PUVLIC_MODELS_MVTTEXTURINGMODEL_H__
 
 #include <Initializable.h>
+#include <Destroyable.h>
 #include <MeshData.h>
 #include <VolcapCameraData.h>
 #include <PerfcapAnimationData.h>
@@ -9,20 +10,31 @@
 #include <Buffer.h>
 #include <vector>
 #include <spimpl.h>
+#include <DistortionCoefficients.h>
 #include <rxcpp/rx.hpp>
 
 namespace fu {
 namespace mvt {
-class MVTModel : public app::Initializable
+class MVTModel : public app::Initializable, public app::Destroyable
 {
 public:
 	MVTModel();
+	/// Derived
 	void Init() override;
+	void Destroy() override;
+	/// Interface
 	void SetOutputDir(const std::string& dir);
+	void SetExportDir(const std::string& dir);
 	void SetTextureSize(const uint2& size);
 	void SetSeparateTextures(bool set);
 	void SetLaunchMult(int mult);
 	void SetViewportEnabled(bool enabled);
+	void SetDeleteOutputEnabled(bool enabled);
+	void SetTempFolderPath(const std::string& filename);
+	void SetSkinningFilename(const std::string& filename);
+	void SetSkeletonFilename(const std::string& filename);
+	void SetTrackedParamsFilename(const std::string& filename);
+	void SetTemplateMeshFilename(const std::string& filename);
 	rxcpp::observer<io::MeshData>							MeshDataFlowIn();
 	rxcpp::observable<io::MeshData>							MeshDataFlowOut();
 	rxcpp::observable<io::MeshData>							AnimatedMeshDataFlowOut();
@@ -36,6 +48,8 @@ public:
 	rxcpp::observer<void*>									RunTexturingLoop();
 	rxcpp::observable<int>									SeekFrameFlowOut();
 	rxcpp::observable<BufferCPU<uchar4>>					TextureFlowOut();
+	rxcpp::observable<std::vector<BufferCPU<float>>>		CameraMatricesFlowOut();
+	rxcpp::observable<std::vector<DistCoeffs>>				DistortionCoefficientsFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

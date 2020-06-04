@@ -25,6 +25,12 @@ public:
 	void Init() override;
 	///	\brief destroy the model
 	void Destroy() override;
+
+	std::string TempFolderPath() const;
+	std::string SkinningFilename() const;
+	std::string SkeletonFilename() const;
+	std::string TrackedParamsFilename() const;
+	std::string TemplateMeshFilename() const;
 	/// inputs
 	///	\brief filepath input for importing
 	rxcpp::observer<std::string> ImportFilepathFlowIn();

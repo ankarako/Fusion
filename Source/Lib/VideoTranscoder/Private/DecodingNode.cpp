@@ -5,9 +5,11 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/calib3d.hpp>
 #include <thread>
 #include <plog/Log.h>
 #include <atomic>
+#include <filesystem>
 
 namespace fu {
 namespace trans {
@@ -40,10 +42,15 @@ struct DecodingNodeObj::Impl
 	size_t		m_FrameCount{ 0 };
 	///	frame rate
 	double		m_FrameRate{ 0 };
+
+	cv::Mat		m_CameraMatrix;
 	///	the actual opencv video decoder
 	dec_t		m_Decoder;
 	/// 
 	bool		m_Rotate{ false };
+	cv::Mat		m_DistCoeffs;
+	bool		m_Undistort{ false };
+	bool		m_DebugFramesEnabled{ false };
 	///
 	std::atomic_bool	m_GenerateFrames{ false };
 	///	prefetch event task
@@ -217,6 +224,37 @@ BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
 		/// check that our frame and the native have the same byte size
 		DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
 		/// copy native frame data to our buffer
+		if (m_Impl->m_DebugFramesEnabled)
+		{
+			using namespace std::experimental;
+			std::string vfname = filesystem::path(m_Impl->m_LoadedFile).filename().replace_extension("").generic_string();
+			std::string fname = vfname + "_distorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
+			cv::Mat out;
+			cv::cvtColor(m_Impl->m_CurrentFrameNative, out, cv::COLOR_RGB2BGR);
+			cv::imwrite(fname, out);
+		}
+		if (m_Impl->m_Undistort)
+		{
+			try
+			{
+				cv::Mat undistorted;
+				cv::undistort(m_Impl->m_CurrentFrameNative, undistorted, m_Impl->m_CameraMatrix, m_Impl->m_DistCoeffs);
+				m_Impl->m_CurrentFrameNative = undistorted;
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+			if (m_Impl->m_DebugFramesEnabled)
+			{
+				using namespace std::experimental;
+				std::string vfname = filesystem::path(m_Impl->m_LoadedFile).filename().replace_extension("").generic_string();
+				std::string fname = vfname + "_undistorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
+				cv::Mat out;
+				cv::cvtColor(m_Impl->m_CurrentFrameNative, out, cv::COLOR_RGB2BGR);
+				cv::imwrite(fname, out);
+			}
+		}
 		if (m_Impl->m_Rotate)
 		{
 			double angle = -90.0;
@@ -230,7 +268,7 @@ BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
 			cv::warpAffine(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, rot, bbox.size());
 		}
 		std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
-		//cv::imwrite("test_Frame.png", m_Impl->m_CurrentFrameNative);
+		
 		/// notify subscriber's about the current frame
 		return m_Impl->m_CurrentFrame;
 	}
@@ -295,6 +333,33 @@ void fu::trans::DecodingNodeObj::SetGeneratingFrames(bool val)
 void DecodingNodeObj::RotateFrames90CW(bool rot)
 {
 	m_Impl->m_Rotate = rot;
+}
+void DecodingNodeObj::SetCameraMatrix(const BufferCPU<float>& mat)
+{
+	cv::Mat camMat = cv::Mat::zeros(cv::Size(3, 3), CV_32FC1);
+	std::memcpy(camMat.data, mat->Data(), 9 * sizeof(float));
+	m_Impl->m_CameraMatrix = camMat;
+}
+void DecodingNodeObj::SetDisrtionCoefficients(const DistCoeffs & coeffs)
+{
+	cv::Mat dist = cv::Mat::zeros(cv::Size(8, 1), CV_32FC1);
+	dist.at<float>(0, 0) = coeffs.k1;
+	dist.at<float>(0, 1) = coeffs.k2;
+	dist.at<float>(0, 2) = coeffs.p1;
+	dist.at<float>(0, 3) = coeffs.p2;
+	dist.at<float>(0, 4) = coeffs.k3;
+	dist.at<float>(0, 5) = coeffs.k4;
+	dist.at<float>(0, 6) = coeffs.k5;
+	dist.at<float>(0, 7) = coeffs.k6;
+	m_Impl->m_DistCoeffs = dist;
+}
+void DecodingNodeObj::SetUndistortEnabled(bool enabled)
+{
+	m_Impl->m_Undistort = enabled;
+}
+void DecodingNodeObj::SetSaveDebugFramesEnabled(bool enabled)
+{
+	m_Impl->m_DebugFramesEnabled = enabled;
 }
 ///	\brief frame output
 ///	decoding nodes have only output frame streams

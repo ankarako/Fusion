@@ -77,12 +77,6 @@ void PerformanceImportModel::Init()
 		m_Impl->m_7ZipApp->Cli = "e " + filepath + " -o" + targetDir;
 		m_Impl->m_7ZipApp->Run();
 		/// so lets open the files one by one
-		///=========================
-		/// import calibration file
-		///=========================
-		std::string calibrationFilepath = targetDir + "\\" + m_Impl->k_CalibrationFilename;
-		std::vector<io::volcap_cam_data_ptr_t> deviceData = io::ImportPerfcapCalibration(calibrationFilepath);
-		m_Impl->m_ViewportDataFlowOutSubj.get_subscriber().on_next(deviceData);
 		///=================
 		/// import skeleton
 		///=================
@@ -102,6 +96,12 @@ void PerformanceImportModel::Init()
 			}
 		}
 		m_Impl->m_TextureFilenamesFlowOutSubj.get_subscriber().on_next(videoFilepaths);
+		///=========================
+		/// import calibration file
+		///=========================
+		std::string calibrationFilepath = targetDir + "\\" + m_Impl->k_CalibrationFilename;
+		std::vector<io::volcap_cam_data_ptr_t> deviceData = io::ImportPerfcapCalibration(calibrationFilepath);
+		m_Impl->m_ViewportDataFlowOutSubj.get_subscriber().on_next(deviceData);
 		///=====================
 		/// import skinning data
 		///=====================
@@ -155,6 +155,31 @@ void PerformanceImportModel::Destroy()
 			}
 		}
 	}
+}
+
+std::string PerformanceImportModel::TempFolderPath() const
+{
+	return std::string(m_Impl->k_TempFolderPath);
+}
+
+std::string PerformanceImportModel::SkinningFilename() const
+{
+	return std::string(m_Impl->k_SkinningFilename);
+}
+
+std::string PerformanceImportModel::SkeletonFilename() const
+{
+	return std::string(m_Impl->k_SkeletonFilename);
+}
+
+std::string PerformanceImportModel::TrackedParamsFilename() const
+{
+	return std::string(m_Impl->k_TrackedParamsFilename);
+}
+
+std::string PerformanceImportModel::TemplateMeshFilename() const
+{
+	return std::string(m_Impl->k_TemplateMeshFilenameObj);
 }
 
 rxcpp::observer<std::string> fu::mvt::PerformanceImportModel::ImportFilepathFlowIn()

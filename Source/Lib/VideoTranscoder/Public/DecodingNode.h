@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <rxcpp/rx.hpp>
+#include <DistortionCoefficients.h>
 #include <opencv2/core.hpp>
 
 namespace fu {
@@ -62,6 +63,11 @@ public:
 	/// \brief rotate the video images
 	///	\param 
 	void RotateFrames90CW(bool rot);
+	/// \brief set distortion coefficients
+	void SetCameraMatrix(const BufferCPU<float>& mat);
+	void SetDisrtionCoefficients(const DistCoeffs& coeffs);
+	void SetUndistortEnabled(bool enabled);
+	void SetSaveDebugFramesEnabled(bool enabled);
 	///	\brief generate a specific number of frames
 	///	generates the specified number of frames
 	///	\param	frameCount	the number of frames to generate

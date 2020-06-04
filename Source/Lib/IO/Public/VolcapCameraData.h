@@ -18,6 +18,9 @@ struct VolcapCameraData
 	BufferCPU<float> DepthExtrinsics;
 	BufferCPU<float> ColorIntrinsics;
 	BufferCPU<float> ColorExtrinsics;
+	float2				TangentialDist;
+	float3				RadialDist123;
+	float3				RadialDist345;
 	/// TODO: Should I add Distortions coeffs?
 };	///	!struct VolcapCameraData
 ///	\typedef volcap_cam_data_ptr_t

@@ -8,8 +8,12 @@ namespace mvt {
 ///	\brief MultiViewPlayerModel Implementation
 struct MultiViewPlayerModel::Impl
 {
-	std::vector<trans::DecodingNode> m_DecodingNodes;
-	std::vector<BufferCPU<uchar4>>	m_CurrentFrames;
+	std::vector<trans::DecodingNode>	m_DecodingNodes;
+	std::vector<BufferCPU<uchar4>>		m_CurrentFrames;
+	bool m_DebugFramesEnabled{ false };
+	bool m_UndistortEnabled{ false };
+	rxcpp::subjects::subject<std::vector<DistCoeffs>>			m_DistortionCoefficientsFlowInSubj;
+	rxcpp::subjects::subject<std::vector<BufferCPU<float>>>		m_CameraMatricesFlowInSubj;
 	rxcpp::subjects::subject<std::vector<std::string>>			m_VideoFilepathsFlowInSubj;
 	rxcpp::subjects::subject<std::vector<BufferCPU<uchar4>>>	m_MultiViewFramesFlowOutSubj;
 	rxcpp::subjects::subject<int>								m_SeekframeFlowInSubj;
@@ -33,11 +37,15 @@ void MultiViewPlayerModel::Init()
 		{
 			trans::DecodingNode node = trans::CreateDecodingNode();
 			node->LoadFile(filepath);
-			//node->RotateFrames90CW(true);
+			node->SetUndistortEnabled(m_Impl->m_UndistortEnabled);
+			node->SetSaveDebugFramesEnabled(m_Impl->m_DebugFramesEnabled);
 			m_Impl->m_DecodingNodes.emplace_back(node);
 		}
+		
 	});
-
+	///=============
+	/// Seek frame
+	///=============
 	m_Impl->m_SeekframeFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](int frame) 
 	{
@@ -48,6 +56,31 @@ void MultiViewPlayerModel::Init()
 		}
 		m_Impl->m_MultiViewFramesFlowOutSubj.get_subscriber().on_next(frames);
 	});
+	///=========================
+	/// Camera Matrices Flow in
+	///=========================
+	m_Impl->m_CameraMatricesFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const std::vector<BufferCPU<float>>& mats) 
+	{
+		int count = mats.size();
+		for (int c = 0; c < count; ++c)
+		{
+			m_Impl->m_DecodingNodes[c]->SetCameraMatrix(mats[c]);
+		}
+	
+	});
+	///================================
+	/// Distortion Coefficients flow in
+	///================================
+	m_Impl->m_DistortionCoefficientsFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const std::vector<DistCoeffs>& coeffs) 
+	{
+		int count = coeffs.size();
+		for (int c = 0; c < count; ++c)
+		{
+			m_Impl->m_DecodingNodes[c]->SetDisrtionCoefficients(coeffs[c]);
+		}
+	});
 }
 /// \brief model destruction
 void MultiViewPlayerModel::Destroy()
@@ -56,6 +89,27 @@ void MultiViewPlayerModel::Destroy()
 	{
 		node->Release();
 	}
+}
+
+void MultiViewPlayerModel::SetUndistortEnabled(bool enabled)
+{
+	m_Impl->m_UndistortEnabled = enabled;
+}
+
+void MultiViewPlayerModel::SetDebugFramesEnabled(bool enabled)
+{
+	m_Impl->m_DebugFramesEnabled = enabled;
+}
+
+
+rxcpp::observer<std::vector<BufferCPU<float>>> MultiViewPlayerModel::CameraMatricesFlowIn()
+{
+	return m_Impl->m_CameraMatricesFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<std::vector<DistCoeffs>> MultiViewPlayerModel::DistortionCoefficientsFlowIn()
+{
+	return m_Impl->m_DistortionCoefficientsFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 rxcpp::observer<std::vector<std::string>> MultiViewPlayerModel::VideoFilepathsFlowIn()

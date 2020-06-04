@@ -77,12 +77,30 @@ void MVTPresenter::Init()
 	///===============
 	m_Impl->m_Model->TextureFlowOut()
 		.subscribe(m_Impl->m_ViewportTracingModel->TriangleMeshTextureFlowIn());
-
+	///================
+	/// Camera matrices
+	///================
+	m_Impl->m_Model->CameraMatricesFlowOut()
+		.subscribe(m_Impl->m_MultiViewPlayerModel->CameraMatricesFlowIn());
+	///===============================
+	/// Distortion Coefficients Output
+	///===============================
+	m_Impl->m_Model->DistortionCoefficientsFlowOut()
+		.subscribe(m_Impl->m_MultiViewPlayerModel->DistortionCoefficientsFlowIn());
+	///===========================================
 	m_Impl->m_Model->SetOutputDir("output");
+	m_Impl->m_Model->SetExportDir("export");
 	m_Impl->m_Model->SetTextureSize(make_uint2(2048, 2048));
-	m_Impl->m_Model->SetSeparateTextures(true);
+	m_Impl->m_Model->SetSeparateTextures(false);
 	m_Impl->m_Model->SetLaunchMult(4);
-	m_Impl->m_Model->SetViewportEnabled(true);
+	m_Impl->m_Model->SetViewportEnabled(false);
+	m_Impl->m_MultiViewPlayerModel->SetDebugFramesEnabled(false);
+	m_Impl->m_MultiViewPlayerModel->SetUndistortEnabled(true);
+	m_Impl->m_Model->SetTempFolderPath(m_Impl->m_PerformanceImportModel->TempFolderPath());
+	m_Impl->m_Model->SetSkeletonFilename(m_Impl->m_PerformanceImportModel->SkeletonFilename());
+	m_Impl->m_Model->SetSkinningFilename(m_Impl->m_PerformanceImportModel->SkinningFilename());
+	m_Impl->m_Model->SetTemplateMeshFilename(m_Impl->m_PerformanceImportModel->TemplateMeshFilename());
+	m_Impl->m_Model->SetTrackedParamsFilename(m_Impl->m_PerformanceImportModel->TrackedParamsFilename());
 }
 }	///	!namespace mvt
 }	///	!namespace fu
