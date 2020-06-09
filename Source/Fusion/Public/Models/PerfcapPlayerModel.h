@@ -32,6 +32,7 @@ public:
 	rxcpp::observable<SequenceItem>				SequenceItemFlowOut();
 	rxcpp::observable<template_mesh_t>			TemplateMeshDataFlowOut();
 	rxcpp::observable<io::MeshData>				AnimatedMeshDataFlowOut();
+	rxcpp::observable<void*>					AnimationFrameCompleted();
 	rxcpp::observer<perfcap_tex_mesh_t>			PerfcapMeshDataFlowIn();
 private:
 	struct Impl;

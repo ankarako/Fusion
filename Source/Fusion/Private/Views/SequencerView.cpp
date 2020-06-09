@@ -292,6 +292,7 @@ struct SequencerView::Impl
 
 	rxcpp::subjects::subject<void*>			m_OnVideoStartPlaybackSubj;
 	rxcpp::subjects::subject<void*>			m_OnAnimationStartPlaybackSubj;
+	rxcpp::subjects::subject<void*>			m_CurrentFrameTickSubj;
 	/// Construction
 	Impl(fman_ptr_t fman)
 		: m_FontManager(fman)
@@ -315,8 +316,16 @@ struct SequencerView::Impl
 		{
 			m_CurrentFrame = index;
 		});
+		///=====================
+		/// Current frame tick
+		///====================
+		m_CurrentFrameTickSubj.get_observable().as_dynamic()
+			.subscribe([this](auto _) 
+		{
+			m_CurrentFrame++;
+		});
 		///
-		double fps = 30.0;
+		double fps = 29.99;
 		double periodSecs = 1.0 / fps;
 		auto framePeriod =
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::duration<double>(periodSecs));
@@ -419,29 +428,36 @@ void SequencerView::Render()
 				for (int i = 0; i < count; i++)
 				{
 					auto& item = m_Impl->m_Sequence.GetItem(i);
-					int frame = current - item.SeqFrameStart + item.FrameStart;
+					LOG_DEBUG << "Current Sequencer Frame: " << current;
+					LOG_DEBUG << "Item: " << item.Name;
+					LOG_DEBUG << "\tStarts at    : " << item.SeqFrameStart;
+
+					int itemCurrent = current - item.SeqFrameStart + item.FrameStart;
+					LOG_DEBUG << "\tCurrent Frame: " << itemCurrent;
+
+					/*int frame = current - item.SeqFrameStart + item.FrameStart;
 					LOG_DEBUG << "frame  : " << frame;
 					LOG_DEBUG << "current: " << current;
-					LOG_DEBUG << "seq    : " << item.SeqFrameStart;
-					if (item.SeqFrameStart == current)
+					LOG_DEBUG << "seq    : " << item.SeqFrameStart;*/
+					if (item.SeqFrameStart <= current)
 					{
-						if (frame < 0)
+						if (itemCurrent < 0)
 						{
 							item.OnSeekFrame.get_subscriber().on_next(0);
 						}
-						else if (frame >= 0)
+						else if (itemCurrent >= 0)
 						{
-							item.OnSeekFrame.get_subscriber().on_next(item.FrameStart);
+							item.OnSeekFrame.get_subscriber().on_next(itemCurrent);
 						}
 						else
 						{
 							//item.OnStartPlayback.get_subscriber().on_next(nullptr);
 						}
 					}
-					if (frame == 0)
-					{
-						//item.OnStartPlayback.get_subscriber().on_next(nullptr);
-					}
+					//if (itemCurrent == 0)
+					//{
+					//	//item.OnStartPlayback.get_subscriber().on_next(nullptr);
+					//}
 				}
 				m_Impl->m_CurrentFrame++;
 			}
@@ -514,6 +530,11 @@ rxcpp::observer<SequenceItem> fu::fusion::SequencerView::SequencerItemFlowIn()
 rxcpp::observer<int> fu::fusion::SequencerView::CurrentFrameFlowIn()
 {
 	return m_Impl->m_CurrentFrameFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<void*> SequencerView::CurrentFrameTickFlowIn()
+{
+	return m_Impl->m_CurrentFrameTickSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 rxcpp::observable<void*> fu::fusion::SequencerView::OnPlayButtonClicked()

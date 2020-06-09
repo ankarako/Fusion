@@ -22,6 +22,7 @@ public:
 
 	rxcpp::observer<SequenceItem>	SequencerItemFlowIn();
 	rxcpp::observer<int>			CurrentFrameFlowIn();
+	rxcpp::observer<void*>			CurrentFrameTickFlowIn();
 
 	rxcpp::observable<void*>		OnPlayButtonClicked();
 	rxcpp::observable<void*>		OnPauseButtonClicked();

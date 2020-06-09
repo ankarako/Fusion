@@ -16,6 +16,7 @@ class PerfcapPlayerModel;
 class RayTracingModel;
 class VideoTracingModel;
 class AnimationModel;
+class Coordination;
 
 class SequencerPresenter	: public app::Initializable
 {
@@ -27,6 +28,7 @@ public:
 	using rt_model_ptr_t		= std::shared_ptr<RayTracingModel>;
 	using vrt_model_ptr_t		= std::shared_ptr<VideoTracingModel>;
 	using anim_model_ptr_t		= std::shared_ptr<AnimationModel>;
+	using coord_ptr_t			= std::shared_ptr<Coordination>;
 
 	SequencerPresenter(
 		view_ptr_t view, 
@@ -35,7 +37,8 @@ public:
 		perfcap_player_ptr_t perfcap_player,
 		rt_model_ptr_t rt_model,
 		vrt_model_ptr_t vrt_model,
-		anim_model_ptr_t anim_model);
+		anim_model_ptr_t anim_model,
+		coord_ptr_t coord);
 	void Init() override;
 
 private:

@@ -5,6 +5,7 @@
 #include <Models/RayTracingModel.h>
 #include <Models/VideoTracingModel.h>
 #include <Models/AnimationModel.h>
+#include <Core/Coordination.h>
 #include <WidgetRepo.h>
 
 namespace fu {
@@ -19,8 +20,9 @@ struct SequencerPresenter::Impl
 	rt_model_ptr_t			m_RayTracingModel;
 	vrt_model_ptr_t			m_VideoTracingModel;
 	anim_model_ptr_t		m_AnimationModel;
+	coord_ptr_t				m_Coord;
 
-	Impl(view_ptr_t view, wrepo_ptr_t wrepo, player_ptr_t player, perfcap_player_ptr_t perfcap_player, rt_model_ptr_t rt_model, vrt_model_ptr_t vrt_model, anim_model_ptr_t anim_model)
+	Impl(view_ptr_t view, wrepo_ptr_t wrepo, player_ptr_t player, perfcap_player_ptr_t perfcap_player, rt_model_ptr_t rt_model, vrt_model_ptr_t vrt_model, anim_model_ptr_t anim_model, coord_ptr_t coord)
 		: m_View(view)
 		, m_Wrepo(wrepo)
 		, m_PlayerModel(player)
@@ -28,6 +30,7 @@ struct SequencerPresenter::Impl
 		, m_RayTracingModel(rt_model)
 		, m_VideoTracingModel(vrt_model)
 		, m_AnimationModel(anim_model)
+		, m_Coord(coord)
 	{ }
 };	///	!struct Impl
 /// Construction
@@ -38,8 +41,9 @@ SequencerPresenter::SequencerPresenter(
 	perfcap_player_ptr_t perfcap_player,
 	rt_model_ptr_t rt_model,
 	vrt_model_ptr_t vrt_model,
-	anim_model_ptr_t anim_model)
-	: m_Impl(spimpl::make_unique_impl<Impl>(view, wrepo, player, perfcap_player, rt_model, vrt_model, anim_model))
+	anim_model_ptr_t anim_model,
+	coord_ptr_t coord)
+	: m_Impl(spimpl::make_unique_impl<Impl>(view, wrepo, player, perfcap_player, rt_model, vrt_model, anim_model, coord))
 { }
 
 void SequencerPresenter::Init()
@@ -110,6 +114,7 @@ void SequencerPresenter::Init()
 		///	Seek
 		///======
 		item.OnSeekFrame.get_observable().as_dynamic()
+			.observe_on(m_Impl->m_Coord->ModelCoordination())
 			.subscribe([this](int idx) 
 		{
 			m_Impl->m_PlayerModel->Seek(idx);
@@ -163,10 +168,24 @@ void SequencerPresenter::Init()
 		{
 			m_Impl->m_PerfcapPlayer->SeekForward();
 		});
+
+		item.OnSeekFrame.get_observable().as_dynamic()
+			.observe_on(m_Impl->m_Coord->ModelCoordination())
+			.subscribe([this](int frameId)
+		{
+			m_Impl->m_PerfcapPlayer->SeekFrame(frameId);
+		});
+
 		return item;
 	}).subscribe(m_Impl->m_View->SequencerItemFlowIn());
 
 
+	/*m_Impl->m_PerfcapPlayer->AnimationFrameCompleted()
+		.with_latest_from(m_Impl->m_PlayerModel->CurrentFrameFlowOut())
+		.subscribe([this](auto _) 
+	{
+		m_Impl->m_View->CurrentFrameTickFlowIn().on_next(nullptr);
+	});*/
 	m_Impl->m_View->Activate();
 }
 

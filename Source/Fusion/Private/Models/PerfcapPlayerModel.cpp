@@ -27,6 +27,7 @@ struct PerfcapPlayerModel::Impl
 	rxcpp::subjects::subject<SequenceItem>			m_SequenceItemFlowOutSubj;
 	rxcpp::subjects::subject<template_mesh_t>		m_TemplateMeshFlowOutSubj;
 	rxcpp::subjects::subject<io::MeshData>			m_AnimatedMeshDataFlowOutSubj;
+	rxcpp::subjects::subject<void*>					m_AnimationFrameCompletedSubj;
 
 	rxcpp::composite_subscription						m_PlaybackLifetime;
 	rxcpp::observable<long>								m_PlaybackObservable;
@@ -152,6 +153,11 @@ rxcpp::observable<PerfcapPlayerModel::template_mesh_t> PerfcapPlayerModel::Templ
 rxcpp::observable<io::MeshData> PerfcapPlayerModel::AnimatedMeshDataFlowOut()
 {
 	return m_Impl->m_AnimatedMeshDataFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> PerfcapPlayerModel::AnimationFrameCompleted()
+{
+	return m_Impl->m_AnimationFrameCompletedSubj.get_observable().as_dynamic();
 }
 
 rxcpp::observer<PerfcapPlayerModel::perfcap_tex_mesh_t> PerfcapPlayerModel::PerfcapMeshDataFlowIn()
