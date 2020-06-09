@@ -68,6 +68,7 @@ public:
 	void SetDisrtionCoefficients(const DistCoeffs& coeffs);
 	void SetUndistortEnabled(bool enabled);
 	void SetSaveDebugFramesEnabled(bool enabled);
+	void SetDebugFramesOutDir(const std::string& outdir);
 	///	\brief generate a specific number of frames
 	///	generates the specified number of frames
 	///	\param	frameCount	the number of frames to generate

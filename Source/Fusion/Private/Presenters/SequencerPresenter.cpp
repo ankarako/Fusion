@@ -72,7 +72,7 @@ void SequencerPresenter::Init()
 		item.OnStartPlayback.get_observable().as_dynamic()
 			.subscribe([this](auto _)
 		{
-			m_Impl->m_PlayerModel->Start();
+			//m_Impl->m_PlayerModel->Start();
 		});
 		///============
 		///	Pause Task
@@ -117,8 +117,6 @@ void SequencerPresenter::Init()
 		return item;
 	}).subscribe(m_Impl->m_View->SequencerItemFlowIn());
 
-	
-
 	///======================
 	/// sequence Loaded task
 	///======================
@@ -131,7 +129,7 @@ void SequencerPresenter::Init()
 		item.OnStartPlayback.get_observable().as_dynamic()
 			.subscribe([this](auto _) 
 		{
-			m_Impl->m_PerfcapPlayer->Start();
+			//m_Impl->m_PerfcapPlayer->Start();
 		});
 		///======
 		/// Pause
@@ -167,16 +165,7 @@ void SequencerPresenter::Init()
 		});
 		return item;
 	}).subscribe(m_Impl->m_View->SequencerItemFlowIn());
-	///==========================================================
-	/// Animation Frame flow out -> AnimationModel frame flow in
-	///===========================================================
-	m_Impl->m_PerfcapPlayer->AnimationFrameFlowOut()
-		.subscribe(m_Impl->m_AnimationModel->AnimationFrameFlowIn());
-	///=====================================================================
-	/// Template mesh ptr flow out -> AnimationModel::template mesh flow in
-	///=====================================================================
-	m_Impl->m_PerfcapPlayer->TemplateMeshFlowOut()
-		.subscribe(m_Impl->m_AnimationModel->TemplateMeshFlowIn());
+
 
 	m_Impl->m_View->Activate();
 }

@@ -1,12 +1,18 @@
 #ifndef	__IO_PUBLIC_PERFCAPSKELETONIMPORT_H__
 #define __IO_PUBLIC_PERFCAPSKELETONIMPORT_H__
 
+#ifdef _MSC_VER
+#undef GetObject
+#endif
+
 #include <PerfcapAnimationData.h>
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 #include <string>
 #include <fstream>
 #include <plog/Log.h>
+
+
 
 namespace fu {
 namespace io {

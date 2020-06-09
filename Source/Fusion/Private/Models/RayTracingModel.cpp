@@ -12,6 +12,7 @@
 #include <Systems/MissSystem.h>
 #include <Systems/MeshMappingSystem.h>
 #include <Systems/LaunchSystem.h>
+#include <Systems/AnimationSystem.h>
 
 #include <LoadPly.h>
 #include <LoadObj.h>
@@ -43,6 +44,7 @@ struct RayTracingModel::Impl
 	/// our 3D meshes
 	std::vector<rt::TriangleMeshComp>	m_TriangleMeshComps;
 	std::vector<rt::PointCloudComp>		m_PointCloudComps;
+	rt::TriangleMeshComp				m_TemplateMeshComp;
 	/// our launch size
 	unsigned int m_LaunchWidth;
 	unsigned int m_LaunchHeight;
@@ -59,6 +61,8 @@ struct RayTracingModel::Impl
 	rxcpp::subjects::subject<float>					m_CullingPlanePositionFlowInSubj;
 	rxcpp::subjects::subject<float>					m_PclSizeFlowInSubj;
 	rxcpp::subjects::subject<io::MeshData>			m_MeshDataFlowInSubj;
+	rxcpp::subjects::subject<template_mesh_t>		m_TemplateMeshFlowInSubj;
+	rxcpp::subjects::subject<io::MeshData>			m_AnimatedMeshDataFlowInSubj;
 
 	rxcpp::subjects::subject<vec_t>					m_PerfcapTranslationFlowInSubj;
 	rxcpp::subjects::subject<vec_t>					m_PerfcapRotationFlowInSubj;
@@ -239,6 +243,29 @@ void RayTracingModel::Init()
 			}
 		}
 	});
+	///============================
+	/// Template mesh data flow in
+	///============================
+	m_Impl->m_TemplateMeshFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const template_mesh_t& tempMesh) 
+	{
+		io::MeshData data = std::get<0>(tempMesh);
+		BufferCPU<uchar4> texture = std::get<1>(tempMesh);
+		uint2 resolution = std::get<2>(tempMesh);
+		m_Impl->m_TemplateMeshComp = rt::CreateTriangleMeshComponent();
+		rt::MeshMappingSystem::MapMeshDataToPerfcapTexturedMesh(data, m_Impl->m_TemplateMeshComp, m_Impl->m_ContextComp, texture, resolution);
+		rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(m_Impl->m_TemplateMeshComp, m_Impl->m_AccelerationComp);
+		this->OnLaunch().on_next(nullptr);
+	});
+	///============================
+	/// Animated mesh data flow In
+	///============================
+	m_Impl->m_AnimatedMeshDataFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const io::MeshData& data) 
+	{
+		rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TemplateMeshComp, data);
+		this->OnLaunch().on_next(nullptr);
+	});
 	///=================================
 	/// PointCloudNormals Flow In Task
 	///==================================
@@ -357,6 +384,16 @@ rxcpp::observer<float> fu::fusion::RayTracingModel::CullingPlanePositionFlowIn()
 rxcpp::observer<io::MeshData> fu::fusion::RayTracingModel::MeshDataFlowIn()
 {
 	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<RayTracingModel::template_mesh_t> RayTracingModel::TemplateMeshDataFlowIn()
+{
+	return m_Impl->m_TemplateMeshFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<io::MeshData> RayTracingModel::AnimatedMeshDataFlowIn()
+{
+	return m_Impl->m_AnimatedMeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 rxcpp::observer<RayTracingModel::vec_t> RayTracingModel::PerfcapTranslationFlowIn()

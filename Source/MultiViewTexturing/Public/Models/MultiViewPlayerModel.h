@@ -25,6 +25,7 @@ public:
 	void Destroy() override;
 	void SetUndistortEnabled(bool enabled);
 	void SetDebugFramesEnabled(bool enabled);
+	void SetDebugOutDir(const std::string& outdir);
 	/// io
 	rxcpp::observer<std::vector<BufferCPU<float>>>		CameraMatricesFlowIn();
 	rxcpp::observer<std::vector<DistCoeffs>>			DistortionCoefficientsFlowIn();

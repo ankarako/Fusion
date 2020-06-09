@@ -203,8 +203,101 @@ configure_file(
 configure_file(
 	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7-zip32.dll"
 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7-zip32.dll" COPYONLY)
+##########################################################################################
 #####################
 # RayMVT CLI Project
 #####################
-
-
+add_executable(
+	RayMVTCli
+	"Source/maincli.cpp"
+	"${MVTFreeHdrFiles}"
+	"${MVTFreeSrcFiles}"
+	"${MVTDIHdrFiles}"
+	"${MVTCoreHdrFiles}"
+	"${MVTCoreSrcFiles}"
+	"${MVTModelsHdrFiles}"
+	"${MVTModelsSrcFiles}"
+	"${MVTPresentersHdrFiles}"
+	"${MVTPresentersSrcFiles}"
+	"${MVTViewsHdrFiles}"
+	"${MVTViewsSrcFiles}"
+	"${MVTSettingsHdrFiles}"
+	"${MVTSettingsSrcFiles}"
+)
+set_target_properties(RayMVTCli PROPERTIES FOLDER "RayMVT")
+set_property(TARGET RayMVTCli PROPERTY CXX_STANDARD 17)
+# set include directory
+target_include_directories(RayMVTCli PUBLIC "Public")
+###############
+# Dependencies
+###############
+# di
+# just the include path suffices
+target_include_directories(RayMVTCli PUBLIC "${3rdPartyPath}/boost-di/include")
+# add the library
+# add_subdirectory("../Lib" FusionLib)
+target_link_libraries(RayMVTCli PRIVATE FusionApplication)
+target_link_libraries(RayMVTCli PRIVATE OptixRayTracer)
+target_link_libraries(RayMVTCli PRIVATE FusionTranscoder)
+target_link_libraries(RayMVTCli PRIVATE FusionIO)
+# ImGuizmo
+cmake_policy(SET CMP0079 NEW)
+# add_subdirectory("${3rdPartyPath}/imguizmo" ImGuizmo)
+# target_link_libraries(ImGuizmo PRIVATE ImGui)
+target_link_libraries(RayMVTCli PRIVATE ImGuizmo)
+# depends on spimpl
+# we add only the include directory
+target_include_directories(RayMVTCli PRIVATE "${3rdPartyPath}/spimpl")
+########
+# RxCpp
+########
+# only the include directory suffices
+target_include_directories(RayMVTCli PRIVATE "${3rdPartyPath}/rxcpp/Rx/v2/src")
+#######
+# PLog
+#######
+# adding the include diretory only suffices
+target_include_directories(RayMVTCli PRIVATE "${3rdPartyPath}/plog/include")
+############
+# RapidJson
+############
+target_include_directories(RayMVTCli PRIVATE "${3rdPartyPath}/rapidjson/include")
+######
+# STB
+#####
+target_include_directories(RayMVTCli PUBLIC "${3rdPartyPath}/stb")
+######
+# HPS
+#####
+target_include_directories(RayMVTCli PRIVATE "${3rdPartyPath}/hps/src")
+#######
+# Cli11
+#######
+add_subdirectory("${3rdPartyPath}/CLI11" CLI11)
+target_link_libraries(RayMVTCli PUBLIC CLI11)
+#### copy resources
+# we use configure_file() instead file() because it creates a
+# file-level dependency
+# \see: https://stackoverflow.com/questions/34799916/copy-file-from-source-directory-to-binary-directory-using-cmake
+# configure_file(
+# 	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/calibri.ttf"
+# 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/calibri.ttf" COPYONLY)
+# configure_file(
+# 	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/fa-regular-400.ttf"
+# 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/fa-regular-400.ttf" COPYONLY)
+# configure_file(
+# 	"${CMAKE_SOURCE_DIR}/../../Resources/Fonts/MaterialIcons-Regular.ttf"
+# 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/Fonts/MaterialIcons-Regular.ttf" COPYONLY)
+# # Copy 7zip files
+# configure_file(
+# 	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7z.exe"
+# 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7z.exe" COPYONLY)
+# configure_file(
+# 	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7z.dll"
+# 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7z.dll" COPYONLY)
+# configure_file(
+# 	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7-zip.dll"
+# 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7-zip.dll" COPYONLY)
+# configure_file(
+# 	"${CMAKE_SOURCE_DIR}/../../Resources/7zip/7-zip32.dll"
+# 	"${CMAKE_CURRENT_BINARY_DIR}/Resources/7zip/7-zip32.dll" COPYONLY)

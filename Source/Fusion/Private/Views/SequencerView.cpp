@@ -249,6 +249,7 @@ private:
 	EditState	m_CurrentItemEditState;
 	std::vector<SequenceItem> m_SequenceItems;
 };
+///======================================================
 ///	\struct Impls
 struct SequencerView::Impl
 {
@@ -380,8 +381,7 @@ void SequencerView::Render()
 			{
 				m_Impl->m_StartTime = std::chrono::high_resolution_clock::now();
 				m_Impl->m_State = Impl::SequencerState::Playing;
-				m_Impl->m_OnPlayButtonClickedSubj.get_subscriber().on_next(nullptr);
-
+				//m_Impl->m_OnPlayButtonClickedSubj.get_subscriber().on_next(nullptr);
 			}
 		}
 		else
@@ -429,7 +429,7 @@ void SequencerView::Render()
 						{
 							item.OnSeekFrame.get_subscriber().on_next(0);
 						}
-						else if (frame > 0)
+						else if (frame >= 0)
 						{
 							item.OnSeekFrame.get_subscriber().on_next(item.FrameStart);
 						}
@@ -440,7 +440,7 @@ void SequencerView::Render()
 					}
 					if (frame == 0)
 					{
-						item.OnStartPlayback.get_subscriber().on_next(nullptr);
+						//item.OnStartPlayback.get_subscriber().on_next(nullptr);
 					}
 				}
 				m_Impl->m_CurrentFrame++;

@@ -39,6 +39,8 @@ struct VideoTracingModel::Impl
 	rt::AccelerationComp	m_AccelrationComp;
 	///	triangle meshes
 	std::vector<rt::TriangleMeshComp> m_TriangleMeshComps;
+
+	rt::TriangleMeshComp		m_TemplateMeshComp;
 	/// the context launch size
 	uint2 m_LaunchSize;
 	/// frame size flow in
@@ -49,6 +51,9 @@ struct VideoTracingModel::Impl
 	rxcpp::subjects::subject<input_frame_t>		m_FrameFlowinSubj;
 	///
 	rxcpp::subjects::subject<io::MeshData>		m_MeshDataFlowInSubj;
+
+	rxcpp::subjects::subject<template_mesh_t>		m_TemplateMeshDataFlowInSubj;
+	rxcpp::subjects::subject<io::MeshData>			m_AnimatedMeshDataFlowInSubj;
 
 	rxcpp::subjects::subject<vec_t>				m_PerfcapTranslationFlowInSubj;
 	rxcpp::subjects::subject<vec_t>				m_PerfcapRotationFlowInSubj;
@@ -156,6 +161,30 @@ void VideoTracingModel::Init()
 			}
 		}
 	});
+	///============================
+	/// Template Mesh Data flow Int
+	///=============================
+	m_Impl->m_TemplateMeshDataFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const template_mesh_t& tempMesh) 
+	{
+		io::MeshData data = std::get<0>(tempMesh);
+		BufferCPU<uchar4> texture = std::get<1>(tempMesh);
+		uint2 resolution = std::get<2>(tempMesh);
+		m_Impl->m_TemplateMeshComp = rt::CreateTriangleMeshComponent();
+		rt::MeshMappingSystem::MapMeshDataToPerfcapTexturedMesh(data, m_Impl->m_TemplateMeshComp, m_Impl->m_ContextComp, texture, resolution);
+		rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(m_Impl->m_TemplateMeshComp, m_Impl->m_AccelrationComp);
+		rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
+		/// copy output buffer
+		rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
+		/// send frame to output
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
+	});
+
+	m_Impl->m_AnimatedMeshDataFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](const io::MeshData& data) 
+	{
+		rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TemplateMeshComp, data);
+	});
 	///=============================
 	/// perfcap translation flow in
 	///=============================
@@ -234,6 +263,16 @@ rxcpp::observer<VideoTracingModel::input_frame_t> fu::fusion::VideoTracingModel:
 rxcpp::observer<io::MeshData> fu::fusion::VideoTracingModel::MeshDataFlowIn()
 {
 	return m_Impl->m_MeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<VideoTracingModel::template_mesh_t> VideoTracingModel::TemplateMeshDataFlowIn()
+{
+	return m_Impl->m_TemplateMeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+
+rxcpp::observer<io::MeshData> VideoTracingModel::AnimatedMeshDataFlowIn()
+{
+	return m_Impl->m_AnimatedMeshDataFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 
 rxcpp::observer<VideoTracingModel::vec_t> fu::fusion::VideoTracingModel::PerfcapTranslationFlowIn()

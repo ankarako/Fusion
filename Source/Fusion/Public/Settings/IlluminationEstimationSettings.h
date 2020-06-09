@@ -10,7 +10,7 @@ namespace fusion {
 class IlluminationEstimationSettings : public Settings<WriterType::PrettyWriter>
 {
 public:
-	std::string IlluminationFilepathEXR{ " " };
+	std::string IlluminationFilepathEXR{ "" };
 
 	void Save(rapidjson::PrettyWriter<rapidjson::OStreamWrapper>& writer) override;
 	void Load(rapidjson::Document& doc) override;

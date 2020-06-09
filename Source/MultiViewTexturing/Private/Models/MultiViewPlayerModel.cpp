@@ -1,6 +1,6 @@
 #include <Models/MultiViewPlayerModel.h>
 #include <DecodingNode.h>
-
+#include <filesystem>
 
 namespace fu {
 namespace mvt {
@@ -10,6 +10,7 @@ struct MultiViewPlayerModel::Impl
 {
 	std::vector<trans::DecodingNode>	m_DecodingNodes;
 	std::vector<BufferCPU<uchar4>>		m_CurrentFrames;
+	std::string							m_DebugOutputDir;
 	bool m_DebugFramesEnabled{ false };
 	bool m_UndistortEnabled{ false };
 	rxcpp::subjects::subject<std::vector<DistCoeffs>>			m_DistortionCoefficientsFlowInSubj;
@@ -39,6 +40,7 @@ void MultiViewPlayerModel::Init()
 			node->LoadFile(filepath);
 			node->SetUndistortEnabled(m_Impl->m_UndistortEnabled);
 			node->SetSaveDebugFramesEnabled(m_Impl->m_DebugFramesEnabled);
+			node->SetDebugFramesOutDir(m_Impl->m_DebugOutputDir);
 			m_Impl->m_DecodingNodes.emplace_back(node);
 		}
 		
@@ -99,6 +101,16 @@ void MultiViewPlayerModel::SetUndistortEnabled(bool enabled)
 void MultiViewPlayerModel::SetDebugFramesEnabled(bool enabled)
 {
 	m_Impl->m_DebugFramesEnabled = enabled;
+}
+
+void MultiViewPlayerModel::SetDebugOutDir(const std::string & outdir)
+{
+	using namespace std::experimental;
+	m_Impl->m_DebugOutputDir = outdir;
+	if (!filesystem::exists(outdir))
+	{
+		filesystem::create_directory(outdir);
+	}
 }
 
 

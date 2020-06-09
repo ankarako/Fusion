@@ -11,6 +11,7 @@
 #include <atomic>
 #include <filesystem>
 
+
 namespace fu {
 namespace trans {
 ///	\struct Impl
@@ -21,6 +22,7 @@ struct DecodingNodeObj::Impl
 	/// loaded filepath
 	/// TODO: maybe redundant
 	std::string m_LoadedFile{ " " };
+	std::string m_DebugOutDir{ "" };
 	///	current frfame buffer
 	frame_t				m_CurrentFrame;
 	/// keep the cv::Mat frame too so we don't have 
@@ -226,9 +228,13 @@ BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
 		/// copy native frame data to our buffer
 		if (m_Impl->m_DebugFramesEnabled)
 		{
-			using namespace std::experimental;
+			#if _MSC_VER >= 1924
+				using namespace std;
+			#else		
+				using namespace std::experimental;
+			#endif
 			std::string vfname = filesystem::path(m_Impl->m_LoadedFile).filename().replace_extension("").generic_string();
-			std::string fname = vfname + "_distorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
+			std::string fname = m_Impl->m_DebugOutDir + "\\" + vfname + "_distorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
 			cv::Mat out;
 			cv::cvtColor(m_Impl->m_CurrentFrameNative, out, cv::COLOR_RGB2BGR);
 			cv::imwrite(fname, out);
@@ -247,9 +253,13 @@ BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
 			}
 			if (m_Impl->m_DebugFramesEnabled)
 			{
-				using namespace std::experimental;
+				#if _MSC_VER >= 1924
+					using namespace std;
+				#else		
+					using namespace std::experimental;
+				#endif
 				std::string vfname = filesystem::path(m_Impl->m_LoadedFile).filename().replace_extension("").generic_string();
-				std::string fname = vfname + "_undistorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
+				std::string fname = m_Impl->m_DebugOutDir + "\\" + vfname + "_undistorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
 				cv::Mat out;
 				cv::cvtColor(m_Impl->m_CurrentFrameNative, out, cv::COLOR_RGB2BGR);
 				cv::imwrite(fname, out);
@@ -360,6 +370,10 @@ void DecodingNodeObj::SetUndistortEnabled(bool enabled)
 void DecodingNodeObj::SetSaveDebugFramesEnabled(bool enabled)
 {
 	m_Impl->m_DebugFramesEnabled = enabled;
+}
+void DecodingNodeObj::SetDebugFramesOutDir(const std::string & outdir)
+{
+	m_Impl->m_DebugOutDir = outdir;
 }
 ///	\brief frame output
 ///	decoding nodes have only output frame streams

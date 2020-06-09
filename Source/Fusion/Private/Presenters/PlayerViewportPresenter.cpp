@@ -85,8 +85,8 @@ void PlayerViewportPresenter::Init()
 		LOG_DEBUG << "perk";
 		return true;
 	}).subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
-	m_Impl->m_PerfcapModel->TemplateMeshDataFlowOut()
-		.subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
+	//m_Impl->m_PerfcapModel->TemplateMeshDataFlowOut()
+	//	.subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
 	///=================================
 	/// frame flow out from decoder task
 	///=================================

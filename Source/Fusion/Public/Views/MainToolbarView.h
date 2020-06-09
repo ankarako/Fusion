@@ -26,6 +26,7 @@ public:
 	rxcpp::observable<void*> OnFileMenu_OpenVideoFileClicked();
 	rxcpp::observable<void*> OnFileMenu_Open3DFileClicked();
 	rxcpp::observable<void*> OnFileMenu_OpenPerfcapFileClicked();
+	rxcpp::observable<void*> OnFileMenu_OpenFuFileClicked();
 	rxcpp::observable<void*> OnFiltersMenu_EstimateDepthClicked();
 	rxcpp::observable<void*> OnFiltersMenu_EstimateNormalsClicked();
 	rxcpp::observable<void*> OnFiltersMenu_EstimateIlluminationClicked();

@@ -21,7 +21,8 @@ enum class FileExplorerMode
 	SaveProject,
 	OpenVideoFile,
 	Open3DFile,
-	OpenPerfcapFile
+	OpenPerfcapFile,
+	OpenFuFile
 };	///	!enum FileExplorerCommand
 ///	\class FileExplorerView
 ///	\brief the file exploer widget
@@ -53,6 +54,7 @@ public:
 	rxcpp::observable<std::string>		OpenVideoFileFlowOut();
 	rxcpp::observable<std::string>		Open3DFileFlowOut();
 	rxcpp::observable<std::string>		OpenPerfcapFileFlowOut();
+	rxcpp::observable<std::string>		OpenFuFileFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

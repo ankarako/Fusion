@@ -50,6 +50,8 @@ public:
 	rxcpp::observable<BufferCPU<uchar4>>					TextureFlowOut();
 	rxcpp::observable<std::vector<BufferCPU<float>>>		CameraMatricesFlowOut();
 	rxcpp::observable<std::vector<DistCoeffs>>				DistortionCoefficientsFlowOut();
+	rxcpp::observable<unsigned int>							FrameCountFlowOut();
+	rxcpp::observable<void*>								ProgressTickFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

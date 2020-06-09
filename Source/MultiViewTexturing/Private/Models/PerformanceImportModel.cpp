@@ -154,6 +154,7 @@ void PerformanceImportModel::Destroy()
 				LOG_ERROR << "Failed to delete: " << path;
 			}
 		}
+		filesystem::remove(m_Impl->k_TempFolderPath);
 	}
 }
 

@@ -16,6 +16,7 @@ class PlayerModel;
 class ProjectModel;
 class Coordination;
 class PerfcapPlayerModel;
+class SettingsRepo;
 
 class FileMenuPresenter	: public app::Initializable
 {
@@ -27,6 +28,7 @@ public:
 	using prj_model_ptr_t = std::shared_ptr<ProjectModel>;
 	using coord_ptr_t = std::shared_ptr<Coordination>;
 	using perfcap_model_ptr_t = std::shared_ptr<PerfcapPlayerModel>;
+	using srepo_ptr_t = std::shared_ptr<SettingsRepo>;
 	/// Construction
 	FileMenuPresenter(
 		player_model_ptr_t	decoder_model,
@@ -35,7 +37,8 @@ public:
 		wrepo_ptr_t			wrepo,
 		prj_model_ptr_t		prj_model,
 		coord_ptr_t			coord,
-		perfcap_model_ptr_t perfcap_model);
+		perfcap_model_ptr_t perfcap_model,
+		srepo_ptr_t			srepo);
 
 	void Init() override;
 private:

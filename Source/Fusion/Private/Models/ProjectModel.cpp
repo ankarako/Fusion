@@ -1,5 +1,4 @@
 #include <Models/ProjectModel.h>
-#include <Settings/ProjectSettings.h>
 #include <Core/SettingsRepo.h>
 #include <filesystem>
 #include <plog/Log.h>
@@ -8,7 +7,7 @@ namespace fu {
 namespace fusion {
 struct ProjectModel::Impl
 {
-	using settings_ptr_t = std::shared_ptr<ProjectSettings>;
+	
 
 	settings_ptr_t	m_Settings;
 	srepo_ptr_t		m_Srepo;
@@ -16,11 +15,14 @@ struct ProjectModel::Impl
 
 	rxcpp::subjects::subject<DirEntry> m_CreateNewProjectFlowInSubj;
 	rxcpp::subjects::subject<DirEntry> m_LoadProjectFlowInSubj;
-	
+	rxcpp::subjects::behavior<settings_ptr_t> m_SettingsFlowOutSubj;
+	rxcpp::subjects::subject<void*>		m_SeaveProjectFlowInSubj;
+
 	/// Construction
 	Impl(srepo_ptr_t srepo)
 		: m_Settings(std::make_shared<ProjectSettings>())
 		, m_Srepo(srepo)
+		, m_SettingsFlowOutSubj(rxcpp::subjects::behavior<settings_ptr_t>(m_Settings))
 	{ }
 };
 /// Construction
@@ -54,6 +56,15 @@ void ProjectModel::Init()
 		.subscribe([this](const DirEntry& entry) 
 	{
 		LoadProject(entry.AbsPath);
+	});
+
+	m_Impl->m_SeaveProjectFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](auto _) 
+	{
+		if (m_Impl->m_IsSaved)
+		{
+			Save();
+		}
 	});
 }
 /// \brief create a new project
@@ -113,6 +124,14 @@ rxcpp::observer<DirEntry> fu::fusion::ProjectModel::CreateNewProjectFlowIn()
 rxcpp::observer<DirEntry> fu::fusion::ProjectModel::LoadProjectFlowIn()
 {
 	return m_Impl->m_LoadProjectFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observer<void*> ProjectModel::SaveProjectFlowIn()
+{
+	return m_Impl->m_SeaveProjectFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observable<ProjectModel::settings_ptr_t> ProjectModel::SettingsFlowOut()
+{
+	return m_Impl->m_SettingsFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

@@ -9,6 +9,10 @@
 #include <vector>
 #include <plog/Log.h>
 
+#ifdef GetObject
+#undef GetObject
+#endif	
+
 namespace fu {
 namespace io {
 ///	\brief import perfcap's skinning data from the specified file

@@ -6,6 +6,7 @@
 #include <Models/PlayerModel.h>
 #include <Core/Coordination.h>
 #include <Models/PerfcapPlayerModel.h>
+#include <Core/SettingsRepo.h>
 
 namespace fu {
 namespace fusion {
@@ -18,6 +19,7 @@ struct FileMenuPresenter::Impl
 	prj_model_ptr_t		m_ProjectModel;
 	coord_ptr_t			m_Coord;
 	perfcap_model_ptr_t m_PerfcapModel;
+	srepo_ptr_t			m_Srepo;
 
 	Impl(
 		player_model_ptr_t	decoder_model,
@@ -26,7 +28,8 @@ struct FileMenuPresenter::Impl
 		wrepo_ptr_t			wrepo,
 		prj_model_ptr_t		prj_model,
 		coord_ptr_t			coord,
-		perfcap_model_ptr_t perfcap_model)
+		perfcap_model_ptr_t perfcap_model,
+		srepo_ptr_t			srepo)
 		: m_View(view)
 		, m_FexpView(fexp_view)
 		, m_Wrepo(wrepo)
@@ -34,6 +37,7 @@ struct FileMenuPresenter::Impl
 		, m_ProjectModel(prj_model)
 		, m_Coord(coord)
 		, m_PerfcapModel(perfcap_model)
+		, m_Srepo(srepo)
 	{ }
 };	///	!struct Impl
 /// Construciton
@@ -44,7 +48,8 @@ FileMenuPresenter::FileMenuPresenter(
 	wrepo_ptr_t			wrepo,
 	prj_model_ptr_t		prj_model,
 	coord_ptr_t			coord,
-	perfcap_model_ptr_t perfcap_model)
+	perfcap_model_ptr_t perfcap_model,
+	srepo_ptr_t			srepo)
 	: m_Impl(spimpl::make_unique_impl<Impl>(
 		dec_model,
 		view,
@@ -52,7 +57,8 @@ FileMenuPresenter::FileMenuPresenter(
 		wrepo,
 		prj_model,
 		coord,
-		perfcap_model))
+		perfcap_model,
+		srepo))
 { }
 
 void FileMenuPresenter::Init()
@@ -84,6 +90,9 @@ void FileMenuPresenter::Init()
 		m_Impl->m_FexpView->Activate();
 	});
 
+	m_Impl->m_View->OnFileMenu_SaveProjectClicked()
+		.subscribe(m_Impl->m_ProjectModel->SaveProjectFlowIn());
+
 	m_Impl->m_View->OnFileMenu_OpenVideoFileClicked().subscribe(
 		[this](auto _)
 	{
@@ -104,6 +113,12 @@ void FileMenuPresenter::Init()
 		m_Impl->m_ProjectModel->Save();
 	});
 
+	m_Impl->m_View->OnFileMenu_OpenFuFileClicked()
+		.subscribe([this](auto) 
+	{
+		m_Impl->m_FexpView->SetMode(FileExplorerMode::OpenFuFile);
+		m_Impl->m_FexpView->Activate();
+	});
 	//m_Impl->m_View->OnActivated()
 	//	.subscribe([this](auto _)
 	//{
@@ -148,8 +163,8 @@ void FileMenuPresenter::Init()
 		m_Impl->m_FexpView->Activate();
 	});
 
-	m_Impl->m_FexpView->OpenPerfcapFileFlowOut()
-		.subscribe(m_Impl->m_PerfcapModel->PerfcapFilepathFlowIn());
+	//m_Impl->m_FexpView->OpenPerfcapFileFlowOut()
+	//	.subscribe(m_Impl->m_PerfcapModel->PerfcapFilepathFlowIn());
 
 	m_Impl->m_View->Activate();
 }

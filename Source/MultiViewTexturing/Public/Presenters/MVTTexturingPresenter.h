@@ -21,6 +21,7 @@ public:
 	using mv_player_model_ptr_t		= std::shared_ptr<MultiViewPlayerModel>;
 
 	MVTPresenter(model_ptr_t model, perf_import_model_ptr_t perf_import_model, viewport_model_ptr_t viewport_model, mv_player_model_ptr_t mv_player_model);
+	MVTPresenter(model_ptr_t model, perf_import_model_ptr_t perf_import_model, mv_player_model_ptr_t mvp_model);
 	void Init() override;
 private:
 	struct Impl;

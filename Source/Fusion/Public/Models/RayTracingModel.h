@@ -27,6 +27,7 @@ public:
 	using vec_t = std::array<float, 3>;
 
 	using srepo_ptr_t = std::shared_ptr<SettingsRepo>;
+	using template_mesh_t = std::tuple<io::MeshData, BufferCPU<uchar4>, uint2>;
 	/// Construction
 	RayTracingModel(srepo_ptr_t srepo);
 	/// \brief initialize the model
@@ -47,6 +48,8 @@ public:
 	rxcpp::observer<float>			CullingPlanePositionFlowIn();
 	rxcpp::observer<float>			PointcloudPointSizeFlowIn();
 	rxcpp::observer<io::MeshData>	MeshDataFlowIn();
+	rxcpp::observer<template_mesh_t>	TemplateMeshDataFlowIn();
+	rxcpp::observer<io::MeshData>	AnimatedMeshDataFlowIn();
 	rxcpp::observer<vec_t>			PerfcapTranslationFlowIn();
 	rxcpp::observer<vec_t>			PerfcapRotationFlowIn();
 	rxcpp::observer<float>			PerfcapScaleFlowIn();

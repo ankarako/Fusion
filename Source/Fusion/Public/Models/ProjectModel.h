@@ -3,6 +3,7 @@
 
 #include <Initializable.h>
 #include <Core/DirEntry.h>
+#include <Settings/ProjectSettings.h>
 #include <string>
 #include <spimpl.h>
 #include <rxcpp/rx.hpp>
@@ -17,6 +18,7 @@ class ProjectModel : public app::Initializable
 {
 public:
 	using srepo_ptr_t = std::shared_ptr<SettingsRepo>;
+	using settings_ptr_t = std::shared_ptr<ProjectSettings>;
 	/// Construction
 	ProjectModel(srepo_ptr_t srepo);
 	/// brief create a new project
@@ -32,6 +34,8 @@ public:
 
 	rxcpp::observer<DirEntry>	CreateNewProjectFlowIn();
 	rxcpp::observer<DirEntry>	LoadProjectFlowIn();
+	rxcpp::observer<void*>		SaveProjectFlowIn();
+	rxcpp::observable<settings_ptr_t> SettingsFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

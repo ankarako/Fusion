@@ -13,21 +13,35 @@ struct MVTPresenter::Impl
 	perf_import_model_ptr_t	m_PerformanceImportModel;
 	viewport_model_ptr_t	m_ViewportTracingModel;
 	mv_player_model_ptr_t	m_MultiViewPlayerModel;
+	bool					m_ViewportEnabled;
 
 	Impl(model_ptr_t model, perf_import_model_ptr_t perf_import_model, viewport_model_ptr_t viewport_model, mv_player_model_ptr_t mv_player_model)
 		: m_Model(model)
 		, m_PerformanceImportModel(perf_import_model)
 		, m_ViewportTracingModel(viewport_model)
 		, m_MultiViewPlayerModel(mv_player_model)
+		, m_ViewportEnabled(true)
+	{ }
+
+	Impl(model_ptr_t model, perf_import_model_ptr_t perf_import_model, mv_player_model_ptr_t mv_player_model)
+		: m_Model(model)
+		, m_PerformanceImportModel(perf_import_model)
+		, m_MultiViewPlayerModel(mv_player_model)
+		, m_ViewportEnabled(false)
 	{ }
 };
 /// Construction
 MVTPresenter::MVTPresenter(model_ptr_t model, perf_import_model_ptr_t perf_import_model, viewport_model_ptr_t viewport_model, mv_player_model_ptr_t mv_player_model)
 	: m_Impl(spimpl::make_unique_impl<Impl>(model, perf_import_model, viewport_model, mv_player_model))
 { }
+
+MVTPresenter::MVTPresenter(model_ptr_t model, perf_import_model_ptr_t perf_import_model, mv_player_model_ptr_t mvp_model)
+	: m_Impl(spimpl::make_unique_impl<Impl>(model, perf_import_model, mvp_model))
+{ }
 ///
 void MVTPresenter::Init()
 {
+	//m_Impl->m_ViewportEnabled = true;
 	///==============
 	/// Mesh Input
 	///=============
@@ -64,19 +78,22 @@ void MVTPresenter::Init()
 	m_Impl->m_Model->SeekFrameFlowOut()
 		.subscribe(m_Impl->m_MultiViewPlayerModel->SeekFrameIdFlowIn());
 
-	m_Impl->m_Model->CameraDataFlowOut()
-		.subscribe(m_Impl->m_ViewportTracingModel->CameraDataFlowIn());
+	if (m_Impl->m_ViewportEnabled)
+	{
+		m_Impl->m_Model->CameraDataFlowOut()
+			.subscribe(m_Impl->m_ViewportTracingModel->CameraDataFlowIn());
 
-	m_Impl->m_Model->MeshDataFlowOut()
-		.subscribe(m_Impl->m_ViewportTracingModel->MeshDataFlowIn());
+		m_Impl->m_Model->MeshDataFlowOut()
+			.subscribe(m_Impl->m_ViewportTracingModel->MeshDataFlowIn());
 
-	m_Impl->m_Model->AnimatedMeshDataFlowOut()
-		.subscribe(m_Impl->m_ViewportTracingModel->AnimatedMeshDataFlowIn());
-	///===============
-	/// texture Output
-	///===============
-	m_Impl->m_Model->TextureFlowOut()
-		.subscribe(m_Impl->m_ViewportTracingModel->TriangleMeshTextureFlowIn());
+		m_Impl->m_Model->AnimatedMeshDataFlowOut()
+			.subscribe(m_Impl->m_ViewportTracingModel->AnimatedMeshDataFlowIn());
+		///===============
+		/// texture Output
+		///===============
+		m_Impl->m_Model->TextureFlowOut()
+			.subscribe(m_Impl->m_ViewportTracingModel->TriangleMeshTextureFlowIn());
+	}
 	///================
 	/// Camera matrices
 	///================
@@ -88,19 +105,23 @@ void MVTPresenter::Init()
 	m_Impl->m_Model->DistortionCoefficientsFlowOut()
 		.subscribe(m_Impl->m_MultiViewPlayerModel->DistortionCoefficientsFlowIn());
 	///===========================================
-	m_Impl->m_Model->SetOutputDir("output");
-	m_Impl->m_Model->SetExportDir("export");
-	m_Impl->m_Model->SetTextureSize(make_uint2(2048, 2048));
-	m_Impl->m_Model->SetSeparateTextures(false);
-	m_Impl->m_Model->SetLaunchMult(4);
-	m_Impl->m_Model->SetViewportEnabled(false);
-	m_Impl->m_MultiViewPlayerModel->SetDebugFramesEnabled(false);
-	m_Impl->m_MultiViewPlayerModel->SetUndistortEnabled(true);
-	m_Impl->m_Model->SetTempFolderPath(m_Impl->m_PerformanceImportModel->TempFolderPath());
-	m_Impl->m_Model->SetSkeletonFilename(m_Impl->m_PerformanceImportModel->SkeletonFilename());
-	m_Impl->m_Model->SetSkinningFilename(m_Impl->m_PerformanceImportModel->SkinningFilename());
-	m_Impl->m_Model->SetTemplateMeshFilename(m_Impl->m_PerformanceImportModel->TemplateMeshFilename());
-	m_Impl->m_Model->SetTrackedParamsFilename(m_Impl->m_PerformanceImportModel->TrackedParamsFilename());
+	if (m_Impl->m_ViewportEnabled)
+	{
+		m_Impl->m_Model->SetOutputDir("output");
+		m_Impl->m_Model->SetExportDir("export");
+		m_Impl->m_Model->SetTextureSize(make_uint2(2048, 2048));
+		m_Impl->m_Model->SetSeparateTextures(false);
+		m_Impl->m_Model->SetLaunchMult(4);
+		m_Impl->m_Model->SetViewportEnabled(false);
+		m_Impl->m_MultiViewPlayerModel->SetDebugFramesEnabled(false);
+		m_Impl->m_MultiViewPlayerModel->SetUndistortEnabled(true);
+		m_Impl->m_Model->SetTempFolderPath(m_Impl->m_PerformanceImportModel->TempFolderPath());
+		m_Impl->m_Model->SetSkeletonFilename(m_Impl->m_PerformanceImportModel->SkeletonFilename());
+		m_Impl->m_Model->SetSkinningFilename(m_Impl->m_PerformanceImportModel->SkinningFilename());
+		m_Impl->m_Model->SetTemplateMeshFilename(m_Impl->m_PerformanceImportModel->TemplateMeshFilename());
+		m_Impl->m_Model->SetTrackedParamsFilename(m_Impl->m_PerformanceImportModel->TrackedParamsFilename());
+	}
+	
 }
 }	///	!namespace mvt
 }	///	!namespace fu

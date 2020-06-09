@@ -24,6 +24,7 @@ public:
 	using input_frame_t = BufferCPU<uchar4>;
 	using output_frame_t = BufferCPU<uchar4>;
 	using vec_t = std::array<float, 3>;
+	using template_mesh_t = std::tuple<io::MeshData, BufferCPU<uchar4>, uint2>;
 	///	Construction
 	VideoTracingModel();
 	///	\brief initialize the model
@@ -37,6 +38,8 @@ public:
 	///	\brief frame input
 	rxcpp::observer<input_frame_t>	FrameFlowIn();
 	rxcpp::observer<io::MeshData>	MeshDataFlowIn();
+	rxcpp::observer<template_mesh_t>	TemplateMeshDataFlowIn();
+	rxcpp::observer<io::MeshData>		AnimatedMeshDataFlowIn();
 	rxcpp::observer<vec_t>			PerfcapTranslationFlowIn();
 	rxcpp::observer<vec_t>			PerfcapRotationFlowIn();
 	rxcpp::observer<float>			PerfcapScaleFlowIn();

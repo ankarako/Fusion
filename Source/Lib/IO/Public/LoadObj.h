@@ -200,30 +200,36 @@ static void LoadObjWithSkinData(const std::string& filepath, io::MeshData& data,
 		return;
 	}
 	std::vector<int> indices;
-	std::vector<float3> vertices;
+	//std::vector<float3> vertices;
 	std::vector<float2> texcoords;
-	std::vector<float3> normals;
+	//std::vector<float3> normals;
 	tinyobj::shape_t shape = shapes[0];
 	int tid = 0;
 	int numWeightsPerVertex = denseSkinData->NumWeightsPerVertex;
+	
+	data->VertexBuffer = CreateBufferCPU<float3>(attrib.vertices.size() / 3);
+	data->NormalBuffer = CreateBufferCPU<float3>(attrib.normals.size() / 3);
+	std::memcpy(data->VertexBuffer->Data(), attrib.vertices.data(), attrib.vertices.size() * sizeof(float));
+	std::memcpy(data->NormalBuffer->Data(), attrib.normals.data(), attrib.normals.size() * sizeof(float));
+
 	for (const auto& index : shape.mesh.indices)
 	{
-		float3 vertex = make_float3(
-			attrib.vertices[3 * index.vertex_index + 0],
-			attrib.vertices[3 * index.vertex_index + 1],
-			attrib.vertices[3 * index.vertex_index + 2]
-		);
+		//float3 vertex = make_float3(
+		//	attrib.vertices[3 * index.vertex_index + 0],
+		//	attrib.vertices[3 * index.vertex_index + 1],
+		//	attrib.vertices[3 * index.vertex_index + 2]
+		//);
 
 		float2 texcoord = make_float2(
 			attrib.texcoords[2 * index.texcoord_index + 0],
 			attrib.texcoords[2 * index.texcoord_index + 1]
 		);
 
-		float3 normal = make_float3(
-			attrib.normals[3 * index.normal_index + 0],
-			attrib.normals[3 * index.normal_index + 1],
-			attrib.normals[3 * index.normal_index + 2]
-		);
+		//float3 normal = make_float3(
+		//	attrib.normals[3 * index.normal_index + 0],
+		//	attrib.normals[3 * index.normal_index + 1],
+		//	attrib.normals[3 * index.normal_index + 2]
+		//);
 
 		for (int w = 0; w < denseSkinData->NumWeightsPerVertex; ++w)
 		{
@@ -231,22 +237,22 @@ static void LoadObjWithSkinData(const std::string& filepath, io::MeshData& data,
 			denseSkinData->Jointdata.emplace_back(skin_data->Jointdata[index.vertex_index * numWeightsPerVertex + w]);
 		}
 
-		vertices.emplace_back(vertex);
-		normals.emplace_back(normal);
+		//vertices.emplace_back(vertex);
+		//normals.emplace_back(normal);
 		texcoords.emplace_back(texcoord);
-		indices.emplace_back(tid);
+		indices.emplace_back(index.vertex_index);
 		tid++;
 	}
 	denseSkinData->NumVertices = denseSkinData->WeightData.size() / numWeightsPerVertex;
 	///
 	//MeshData data = CreateMeshData();
-	if (!vertices.empty())
+	/*if (!vertices.empty())
 	{
 		int count = vertices.size();
 		int bsize = vertices.size() * sizeof(float3);
 		data->VertexBuffer = CreateBufferCPU<float3>(count);
 		std::memcpy(data->VertexBuffer->Data(), vertices.data(), bsize);
-	}
+	}*/
 	if (!indices.empty())
 	{
 		data->HasFaces = true;
@@ -255,14 +261,14 @@ static void LoadObjWithSkinData(const std::string& filepath, io::MeshData& data,
 		data->TIndexBuffer = CreateBufferCPU<uint3>(count);
 		std::memcpy(data->TIndexBuffer->Data(), indices.data(), bsize);
 	}
-	if (!normals.empty())
-	{
-		data->HasNormals = true;
-		int count = normals.size();
-		int bsize = normals.size() * sizeof(float3);
-		data->NormalBuffer = CreateBufferCPU<float3>(count);
-		std::memcpy(data->NormalBuffer->Data(), normals.data(), bsize);
-	}
+	//if (!normals.empty())
+	//{
+	//	data->HasNormals = true;
+	//	int count = normals.size();
+	//	int bsize = normals.size() * sizeof(float3);
+	//	data->NormalBuffer = CreateBufferCPU<float3>(count);
+	//	std::memcpy(data->NormalBuffer->Data(), normals.data(), bsize);
+	//}
 	// FIXME: Hack for colors
 	data->HasColors = true;
 	int count = attrib.vertices.size() / 3;

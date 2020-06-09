@@ -122,6 +122,7 @@ PrintList("${FusionSettingsSrcFiles}" "Gathered Settings source files")
 #################
 ### optix need no min max on windows
 add_compile_options("-DNOMINMAX")
+add_compile_options("/std:c++latest")
 add_executable(
 	Fusion
 	"Source/main.cpp"

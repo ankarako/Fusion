@@ -2,12 +2,14 @@
 #define __FUSION_PUBLIC_MODELS_PERFCAPPLAYERMODEL_H__
 
 #include <MeshData.h>
-#include <Perfcap/TemplateMesh.h>
-#include <Perfcap/AnimationFrame.h>
+#include <PerfcapAnimationData.h>
+#include <PerfcapTrackedData.h>
+#include <TrackedData.h>
 #include <Core/SequenceItem.h>
 #include <string>
 #include <rxcpp/rx.hpp>
 #include <spimpl.h>
+#include <tuple>
 
 namespace fu {
 namespace fusion {
@@ -15,6 +17,8 @@ namespace fusion {
 class PerfcapPlayerModel
 {
 public:
+	using perfcap_tex_mesh_t = std::tuple<io::MeshData, io::perfcap_skeleton_ptr_t, io::perfcap_skin_data_ptr_t, io::tracked_seq_ptr_t, std::string, std::string>;
+	using template_mesh_t = std::tuple<io::MeshData, BufferCPU<uchar4>, uint2>;
 	/// Construction
 	PerfcapPlayerModel();
 
@@ -25,11 +29,10 @@ public:
 	void SeekForward();
 	void SeekBackward();
 	/// 
-	rxcpp::observer<std::string>				PerfcapFilepathFlowIn();
-	rxcpp::observable<io::MeshData>				TemplateMeshDataFlowOut();
 	rxcpp::observable<SequenceItem>				SequenceItemFlowOut();
-	rxcpp::observable<io::TemplateMesh>			TemplateMeshFlowOut();
-	rxcpp::observable<io::AnimationFrame>		AnimationFrameFlowOut();
+	rxcpp::observable<template_mesh_t>			TemplateMeshDataFlowOut();
+	rxcpp::observable<io::MeshData>				AnimatedMeshDataFlowOut();
+	rxcpp::observer<perfcap_tex_mesh_t>			PerfcapMeshDataFlowIn();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

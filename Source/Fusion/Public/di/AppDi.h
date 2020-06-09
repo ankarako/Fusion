@@ -2,7 +2,7 @@
 #define __FUSION_PUBLIC_DI_APPDI_H__
 
 //#define __has_builtin(...)	1
-#define BOOST_DI_CFG_CTOR_LIMIT_SIZE 12
+//#define BOOST_DI_CFG_CTOR_LIMIT_SIZE 12
 
 #include <boost/di.hpp>
 /// Interfaces
@@ -37,6 +37,7 @@
 #include <Models/IlluminationEstimationModel.h>
 #include <Models/AnimationModel.h>
 #include <Models/WindowsMenuModel.h>
+#include <Models/FuImportModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -51,6 +52,7 @@
 #include <Presenters/WindowsMenuPresenter.h>
 #include <Presenters/TransformationsPresenter.h>
 #include <Presenters/IlluminationResultPresenter.h>
+#include <Presenters/FuImportPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -105,7 +107,9 @@ namespace di {
 			IlluminationResultPresenter,
 			AnimationModel,
 			WindowsMenuModel,
-			WindowsMenuPresenter
+			WindowsMenuPresenter,
+			FuImportModel,
+			FuImportPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,

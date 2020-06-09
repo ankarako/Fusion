@@ -99,6 +99,8 @@ struct MVTModel::Impl
 	rxcpp::subjects::subject<std::vector<DistCoeffs>>					m_DistortionCoefficientsFlowOutSubj;
 	rxcpp::subjects::subject<std::vector<BufferCPU<float>>>				m_CameraMatricesFlowOutSubj;
 	rxcpp::subjects::subject<void*>										m_RunExportTaskSubj;
+	rxcpp::subjects::subject<unsigned int>								m_FrameCountFlowOutSubj;
+	rxcpp::subjects::subject<void*>										m_ProgressTickFlowOutSubj;
 	/// Construction
 	Impl() 
 		: m_ContextComp(rt::CreateContextComponent())
@@ -194,6 +196,19 @@ void MVTModel::Init()
 		m_Impl->m_InitializedCameras = true;
 		if (m_Impl->m_InitializedCameras && m_Impl->m_InitializedGeometry)
 			m_Impl->m_PipelineInitializedSubj.get_subscriber().on_next(nullptr);
+	}, [this](std::exception_ptr ptr)
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
 	});
 	///================
 	/// MeshData FlowIn
@@ -253,6 +268,7 @@ void MVTModel::Init()
 		.subscribe([this](const io::tracked_seq_ptr_t& seq)
 	{
 		m_Impl->m_TrackedSequence = seq;
+		m_Impl->m_FrameCountFlowOutSubj.get_subscriber().on_next(m_Impl->m_TrackedSequence->size());
 		m_Impl->m_RunTexturingLoopSubj.get_subscriber().on_next(nullptr);
 	});
 	///=========================
@@ -283,6 +299,19 @@ void MVTModel::Init()
 		{
 			m_Impl->m_RunTextureMergingSubj.get_subscriber().on_next(nullptr);
 		}
+	}, [this](std::exception_ptr ptr)
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
 	});
 	///==============
 	/// Launch Task
@@ -291,10 +320,10 @@ void MVTModel::Init()
 		.subscribe([this](auto _) 
 	{
 		using namespace std::experimental;
-		/// create directory for saving the output
-		if (!filesystem::exists(m_Impl->m_OutputDir))
+		
+		if (!filesystem::exists(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
 		{
-			filesystem::create_directory(m_Impl->m_OutputDir);
+			filesystem::create_directory(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
 		}
 		///===============
 		/// Texturing Loop
@@ -326,9 +355,23 @@ void MVTModel::Init()
 			//run texturing
 			m_Impl->m_CurrentFrame = f;
 			m_Impl->m_SeekFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
+			m_Impl->m_ProgressTickFlowOutSubj.get_subscriber().on_next(nullptr);
 		}
 		LOG_INFO << "Sequence ended.";
 		m_Impl->m_RunExportTaskSubj.get_subscriber().on_next(nullptr);
+	}, [this](std::exception_ptr ptr)
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
 	});
 	///===========================
 	/// Separate Textures pipeline
@@ -389,6 +432,19 @@ void MVTModel::Init()
 		{
 			m_Impl->m_RunViewportMergingSubj.get_subscriber().on_next(nullptr);
 		}
+	}, [this](std::exception_ptr ptr)
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
 	});
 	///======================
 	/// Texture Merging Task
@@ -424,13 +480,26 @@ void MVTModel::Init()
 			}
 		}
 		std::stringstream ss;
-		ss << m_Impl->m_OutputDir + "\\texels_" << std::setw(3) << std::setfill('0') << std::to_string(m_Impl->m_CurrentFrame);
+		ss << m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath + "\\texels_" << std::setw(3) << std::setfill('0') << std::to_string(m_Impl->m_CurrentFrame);
 
 		std::string filepath = ss.str() + ".png";
 		m_Impl->m_TextureExportingNode->ExportTexture(filepath, m_Impl->m_OutputTextureBuffer, m_Impl->m_TextureSize);
 		if (m_Impl->m_ViewportEnabled)
 		{
 			m_Impl->m_TextureFlowOutSubj.get_subscriber().on_next(m_Impl->m_OutputTextureBuffer);
+		}
+	}, [this](std::exception_ptr ptr)
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
 		}
 	});
 	///=========================
@@ -452,6 +521,19 @@ void MVTModel::Init()
 				m_Impl->m_ViewportTextureBuffer->Data()[bufcoord] = color;
 			}
 		}
+	}, [this](std::exception_ptr ptr)
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
 	});
 	///=============
 	/// Export Task
@@ -465,13 +547,12 @@ void MVTModel::Init()
 			filesystem::create_directory(m_Impl->m_ExportDir);
 		}
 
-		m_Impl->m_EncodingNode->SetInputDirectory(m_Impl->m_OutputDir);
+		m_Impl->m_EncodingNode->SetInputDirectory(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
 		m_Impl->m_EncodingNode->SetInputFilenamePrefix(m_Impl->k_MergedTextureFilenamePrefix);
 		std::string filepath = m_Impl->m_ExportDir + "\\" + std::string(m_Impl->k_MergedTextureOuputFilename) + ".avi";
 		m_Impl->m_EncodingNode->SetOutputFilepath(filepath);
 		/// 
 		m_Impl->m_EncodingNode->ExportVideo();
-		// export (copy) skeleton file
 		try
 		{
 			std::string skeletonFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkeletonFilename;
@@ -487,9 +568,40 @@ void MVTModel::Init()
 		{
 			LOG_ERROR << ex.what();
 		}
+		/// delete temp folder data before zipping
+		for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
+		{
+			filesystem::remove(entry);
+		}
+		filesystem::remove(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
 		// zip the whole file
 		std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
 		std::system(cli.c_str());
+		// delete temp data
+		for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+		{
+			if (!filesystem::is_directory(entry))
+				filesystem::remove(entry);
+		}
+		for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+		{
+			filesystem::remove(entry);
+		}
+		filesystem::remove(m_Impl->m_OutputDir);
+
+	}, [this](std::exception_ptr ptr)
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
 	});
 
 }
@@ -503,7 +615,13 @@ void MVTModel::Destroy()
 }
 void MVTModel::SetOutputDir(const std::string & dir)
 {
+	using namespace std::experimental;
 	m_Impl->m_OutputDir = dir;
+	/// create directory for saving the output
+	if (!filesystem::exists(m_Impl->m_OutputDir))
+	{
+		filesystem::create_directory(m_Impl->m_OutputDir);
+	}
 }
 
 void MVTModel::SetExportDir(const std::string & dir)
@@ -617,6 +735,14 @@ rxcpp::observable<std::vector<BufferCPU<float>>> MVTModel::CameraMatricesFlowOut
 rxcpp::observable<std::vector<DistCoeffs>> MVTModel::DistortionCoefficientsFlowOut()
 {
 	return m_Impl->m_DistortionCoefficientsFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<unsigned int> MVTModel::FrameCountFlowOut()
+{
+	return m_Impl->m_FrameCountFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<void*> MVTModel::ProgressTickFlowOut()
+{
+	return m_Impl->m_ProgressTickFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace mvt
 }	///	!namespace fu
