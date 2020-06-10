@@ -52,7 +52,7 @@ public:
 		raygenComp->RaygenProg = ctxComp->Context->createProgramFromPTXFile(k_360RaygenPtxFilepath, k_360RaygenProgName);
 		raygenComp->Eye		= optix::make_float3(0.0f, 0.0f, 0.0f);
 		raygenComp->Lookat	= optix::make_float3(1.0f, 0.0f, 0.0f);
-		raygenComp->Up		= optix::make_float3(0.0f, 1.0f, 0.0f);
+		raygenComp->Up		= optix::make_float3(0.0f, -1.0f, 0.0f);
 		raygenComp->ViewWidth	= width;
 		raygenComp->ViewHeight	= height;
 		raygenComp->AspectRatio = static_cast<float>(width) / static_cast<float>(height);

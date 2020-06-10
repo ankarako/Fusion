@@ -112,7 +112,7 @@ void RayTracingModel::Init()
 	{
 		m_Impl->m_LaunchWidth = size.x;
 		m_Impl->m_LaunchHeight = size.y;
-		rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, size.x, size.y, make_float3(0.0f, 1.0f, 0.0f));
+		rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, size.x, size.y, make_float3(0.0f, -1.0f, 0.0f));
 		rt::RaygenSystem::SetRaygenAttributes(m_Impl->m_PinholeRaygenComp);
 		rt::MeshMappingSystem::MapAccelerationToRaygen(m_Impl->m_AccelerationComp, m_Impl->m_PinholeRaygenComp);
 

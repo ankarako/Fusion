@@ -183,7 +183,7 @@ void VideoTracingModel::Init()
 	m_Impl->m_AnimatedMeshDataFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](const io::MeshData& data) 
 	{
-		//rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TemplateMeshComp, data);
+		rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TemplateMeshComp, data);
 		//rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
 		///// copy output buffer
 		//rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);

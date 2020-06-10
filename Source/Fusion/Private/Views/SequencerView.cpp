@@ -226,11 +226,11 @@ struct FusionSequence : public ImSequencer::SequenceInterface
 				}
 			}
 		}
-		LOG_DEBUG << "Item properties";
-		LOG_DEBUG << "Sequence frame start: " << item.SeqFrameStart;
-		LOG_DEBUG << "Sequence frame end  : " << item.SeqFrameEnd;
-		LOG_DEBUG << "Frame start         : " << item.FrameStart;
-		LOG_DEBUG << "Frame end           : " << item.FrameEnd;
+		//LOG_DEBUG << "Item properties";
+		//LOG_DEBUG << "Sequence frame start: " << item.SeqFrameStart;
+		//LOG_DEBUG << "Sequence frame end  : " << item.SeqFrameEnd;
+		//LOG_DEBUG << "Frame start         : " << item.FrameStart;
+		//LOG_DEBUG << "Frame end           : " << item.FrameEnd;
 	}
 public:
 	rxcpp::subjects::subject<void*>			m_OnTranslationClickedSubj;
@@ -433,12 +433,12 @@ void SequencerView::Render()
 				for (int i = 0; i < count; i++)
 				{
 					auto& item = m_Impl->m_Sequence.GetItem(i);
-					LOG_DEBUG << "Current Sequencer Frame: " << current;
-					LOG_DEBUG << "Item: " << item.Name;
-					LOG_DEBUG << "\tStarts at    : " << item.SeqFrameStart;
+					//LOG_DEBUG << "Current Sequencer Frame: " << current;
+					//LOG_DEBUG << "Item: " << item.Name;
+					//LOG_DEBUG << "\tStarts at    : " << item.SeqFrameStart;
 
 					int itemCurrent = current - item.SeqFrameStart + item.FrameStart;
-					LOG_DEBUG << "\tCurrent Frame: " << itemCurrent;
+					//LOG_DEBUG << "\tCurrent Frame: " << itemCurrent;
 
 					/*int frame = current - item.SeqFrameStart + item.FrameStart;
 					LOG_DEBUG << "frame  : " << frame;

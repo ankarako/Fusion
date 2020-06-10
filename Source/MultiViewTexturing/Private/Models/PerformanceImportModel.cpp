@@ -118,7 +118,7 @@ void PerformanceImportModel::Init()
 		io::perfcap_skin_data_ptr_t denseSkinData = io::CreatePerfcapSkinData();
 		//io::LoadObjWithSkinData(templateMeshFilepath, meshData, skinData, denseSkinData);
 		io::PerfcapMeshImport(templateMeshFilepathPly, templateMeshFilepathObj, meshData);
-		//io::LoadObjWithSkinData(templateMeshFilepathObj, meshData, skinData, denseSkinData);
+		io::LoadObjWithSkinData(templateMeshFilepathObj, meshData, skinData, denseSkinData);
 		/// Mesh data is textured
 		meshData->TextureWidth = m_Impl->m_TextureResolution.x;
 		meshData->TextureHeight = m_Impl->m_TextureResolution.y;

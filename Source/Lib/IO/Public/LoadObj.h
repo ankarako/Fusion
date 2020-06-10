@@ -66,7 +66,7 @@ static void LoadObj(const std::string& filepath, io::MeshData& data)
 	std::vector<float3> normals;
 	tinyobj::shape_t shape = shapes[0];
 	int tid = 0;
-	for (int v = 0; v < attrib.vertices.size(); ++v)
+	for (int v = 0; v < attrib.vertices.size() / 3; ++v)
 	{
 		float3 vertex = make_float3(
 			attrib.vertices[3 * v + 0],
@@ -74,6 +74,13 @@ static void LoadObj(const std::string& filepath, io::MeshData& data)
 			attrib.vertices[3 * v + 2]
 		);
 		vertices.emplace_back(vertex);
+
+		float3 normal = make_float3(
+			attrib.normals[3 * v + 0],
+			attrib.normals[3 * v + 1],
+			attrib.normals[3 * v + 2]
+		);
+		normals.emplace_back(normal);
 	}
 	for (const auto& index : shape.mesh.indices)
 	{
@@ -82,16 +89,12 @@ static void LoadObj(const std::string& filepath, io::MeshData& data)
 			attrib.texcoords[2 * index.texcoord_index + 1]
 		);
 
-		float3 normal = make_float3(
-			attrib.normals[3 * index.normal_index + 0],
-			attrib.normals[3 * index.normal_index + 1],
-			attrib.normals[3 * index.normal_index + 2]
-		);
+		
 
 		//vertices.emplace_back(vertex);
-		normals.emplace_back(normal);
+		
 		texcoords.emplace_back(texcoord);
-		indices.emplace_back(tid);
+		indices.emplace_back(index.vertex_index);
 		tid++;
 	}
 	///
@@ -211,6 +214,8 @@ static void LoadObjWithSkinData(const std::string& filepath, io::MeshData& data,
 	data->NormalBuffer = CreateBufferCPU<float3>(attrib.normals.size() / 3);
 	std::memcpy(data->VertexBuffer->Data(), attrib.vertices.data(), attrib.vertices.size() * sizeof(float));
 	std::memcpy(data->NormalBuffer->Data(), attrib.normals.data(), attrib.normals.size() * sizeof(float));
+
+	data->HasNormals = true;
 
 	for (const auto& index : shape.mesh.indices)
 	{

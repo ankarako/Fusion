@@ -85,20 +85,20 @@ void FuImportModel::Init()
 			std::string skeletonFPath = unzipPath + "\\" + m_Impl->k_SkeletonFilename;
 			m_Impl->m_Settings->SkeletonFilepath = skeletonFPath;
 			io::perfcap_skeleton_ptr_t skeleton = io::ImportPerfcapSkeleton(skeletonFPath);
-			for (auto& jit = skeleton->begin(); jit != skeleton->end(); ++jit)
-			{
-				(*jit)->Position[1] *= -1.0f;
-			}
+			//for (auto& jit = skeleton->begin(); jit != skeleton->end(); ++jit)
+			//{
+			//	(*jit)->Position[1] *= -1.0f;
+			//}
 			/// import mesh
 			std::string meshFPath = unzipPath + "\\" + m_Impl->k_TemplateMeshFilenameObj;
 			m_Impl->m_Settings->TemplateMeshFilepath = meshFPath;
 			io::MeshData meshData = io::CreateMeshData();
 			io::perfcap_skin_data_ptr_t denseSkinData = io::CreatePerfcapSkinData();
 			io::LoadObjWithSkinData(meshFPath, meshData, skinData, denseSkinData);
-			for (int v = 0; v < meshData->VertexBuffer->Count(); ++v)
-			{
-				meshData->VertexBuffer->Data()[v].y *= -1.0f;
-			}
+			//for (int v = 0; v < meshData->VertexBuffer->Count(); ++v)
+			//{
+			//	meshData->VertexBuffer->Data()[v].y *= -1.0f;
+			//}
 			/// load texture video
 			std::string trackedFPath = unzipPath + "\\" + m_Impl->k_TrackedParamsFilename;
 			m_Impl->m_Settings->TrackedParamsFilepath = trackedFPath;
@@ -134,15 +134,15 @@ void FuImportModel::Init()
 
 			io::MeshData meshData = io::CreateMeshData();
 			io::perfcap_skin_data_ptr_t denseSkinData = io::CreatePerfcapSkinData();
-			io::LoadObjWithSkinData(meshFPath, meshData, skinData, denseSkinData);
-			for (int v = 0; v < meshData->VertexBuffer->Count(); ++v)
+			io::LoadObj(meshFPath, meshData/*, skinData, denseSkinData*/);
+			/*for (int v = 0; v < meshData->VertexBuffer->Count(); ++v)
 			{
 				meshData->VertexBuffer->Data()[v].y *= -1.0f;
-			}
+			}*/
 			/// load texture video
 
 			io::tracked_seq_ptr_t trackedData = io::ImportPerfcapTrackedParams(trackedFPath);
-			perfcap_tex_mesh_t perfMesh = std::make_tuple(meshData, skeleton, denseSkinData, trackedData, texFPath, name);
+			perfcap_tex_mesh_t perfMesh = std::make_tuple(meshData, skeleton, /*denseSkinData*/skinData, trackedData, texFPath, name);
 			m_Impl->m_PerfcapMeshFlowOutSubj.get_subscriber().on_next(perfMesh);
 		}
 	});
