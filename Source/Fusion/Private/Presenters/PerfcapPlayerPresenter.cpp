@@ -45,7 +45,9 @@ void PerfcapPlayerPresenter::Init()
 	/// Animated Mesh Data Flow Out
 	///============================
 	m_Impl->m_Model->AnimatedMeshDataFlowOut()
+		.observe_on(m_Impl->m_Coordination->ModelCoordination())
 		.subscribe(m_Impl->m_RayTracingModel->AnimatedMeshDataFlowIn());
+
 	m_Impl->m_Model->AnimatedMeshDataFlowOut()
 		.subscribe(m_Impl->m_VideoTracingModel->AnimatedMeshDataFlowIn());
 }

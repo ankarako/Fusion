@@ -293,7 +293,7 @@ void DecodingNodeObj::GenerateFrames(size_t frameCount)
 	{
 		LOG_DEBUG << "Generating frames on thread: " << std::this_thread::get_id();
 		unsigned int counter = 0;
-		while (m_Impl->m_GenerateFrames.load(std::memory_order_seq_cst) && m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
+		while (m_Impl->m_GenerateFrames.load(std::memory_order_seq_cst) && counter <= frameCount && m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
 		{
 			cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
 			/// get the byte size of the native frame
@@ -338,6 +338,11 @@ void fu::trans::DecodingNodeObj::SetScaledSize(size_t width, size_t height)
 void fu::trans::DecodingNodeObj::SetGeneratingFrames(bool val)
 {
 	m_Impl->m_GenerateFrames.store(val, std::memory_order_seq_cst);
+}
+
+bool DecodingNodeObj::IsGenerating() const
+{
+	return m_Impl->m_GenerateFrames.load(std::memory_order_seq_cst);
 }
 
 void DecodingNodeObj::RotateFrames90CW(bool rot)

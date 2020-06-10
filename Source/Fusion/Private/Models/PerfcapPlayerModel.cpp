@@ -90,20 +90,20 @@ PerfcapPlayerModel::PerfcapPlayerModel()
 
 void PerfcapPlayerModel::Start()
 {
-	m_Impl->m_PlaybackLifetime.add(
-		m_Impl->m_PlaybackObservable.subscribe(
-			[this](auto _)
-	{
-		size_t dur = m_Impl->m_TrackedParams->size();
-		if (m_Impl->m_CurrentFrame < dur)
-		{
-			
-			io::TrackedParams trackedFrame = m_Impl->m_TrackedParams->at(m_Impl->m_CurrentFrame);
-			io::MeshData animatedData = rt::AnimationSystem::AnimateMesh(m_Impl->m_TemplateMesh, m_Impl->m_Skeleton, m_Impl->m_SkinData, trackedFrame);
-			m_Impl->m_AnimatedMeshDataFlowOutSubj.get_subscriber().on_next(animatedData);
-			m_Impl->m_CurrentFrame++;
-		}
-	}));
+	//m_Impl->m_PlaybackLifetime.add(
+	//	m_Impl->m_PlaybackObservable.subscribe(
+	//		[this](auto _)
+	//{
+	//	size_t dur = m_Impl->m_TrackedParams->size();
+	//	if (m_Impl->m_CurrentFrame < dur && m_Impl->m_CurrentFrame >= 1)
+	//	{
+	//		
+	//		io::TrackedParams trackedFrame = m_Impl->m_TrackedParams->at(m_Impl->m_CurrentFrame);
+	//		io::MeshData animatedData = rt::AnimationSystem::AnimateMesh(m_Impl->m_TemplateMesh, m_Impl->m_Skeleton, m_Impl->m_SkinData, trackedFrame);
+	//		m_Impl->m_AnimatedMeshDataFlowOutSubj.get_subscriber().on_next(animatedData);
+	//		m_Impl->m_CurrentFrame++;
+	//	}
+	//}));
 }
 
 void PerfcapPlayerModel::Pause()
@@ -120,7 +120,7 @@ void PerfcapPlayerModel::Stop()
 void PerfcapPlayerModel::SeekFrame(size_t frameId)
 {
 	size_t dur = m_Impl->m_TrackedParams->size();
-	if (frameId < dur)
+	if (frameId < dur && frameId >= 1)
 	{
 
 		io::TrackedParams trackedFrame = m_Impl->m_TrackedParams->at(frameId);

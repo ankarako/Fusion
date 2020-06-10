@@ -80,6 +80,8 @@ public:
 	void SetScaledSize(size_t width, size_t height);
 	///
 	void SetGeneratingFrames(bool val);
+
+	bool IsGenerating() const;
 	///	\brief frame output
 	///	decoding nodes have only output frame streams
 	rxcpp::observable<frame_t> FrameFlowOut();

@@ -80,17 +80,14 @@ void PlayerViewportPresenter::Init()
 	/// 3D file loading task
 	///======================
 	m_Impl->m_AssetModel->MeshDataFlowOut()
-		.filter([this](auto _) 
-	{
-		LOG_DEBUG << "perk";
-		return true;
-	}).subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
+		.subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
 	//m_Impl->m_PerfcapModel->TemplateMeshDataFlowOut()
 	//	.subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
 	///=================================
 	/// frame flow out from decoder task
 	///=================================
 	m_Impl->m_Model->CurrentFrameFlowOut()
+		.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_TracerModel->FrameFlowIn());
 	///================================
 	/// frame flow out from tracer task

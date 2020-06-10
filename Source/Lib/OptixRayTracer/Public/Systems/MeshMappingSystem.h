@@ -1197,6 +1197,8 @@ public:
 	{
 		std::memcpy(trComp->VertexBuffer->map(), data->VertexBuffer->Data(), data->VertexBuffer->ByteSize());
 		trComp->VertexBuffer->unmap();
+		std::memcpy(trComp->NormalBuffer->map(), data->NormalBuffer->Data(), data->NormalBuffer->ByteSize());
+		trComp->NormalBuffer->unmap();
 		trComp->Acceleration->markDirty();
 	}
 

@@ -40,7 +40,7 @@ static void DepthColorToPCL(const std::string& colorFilepath, const std::string&
 			}
 			else
 			{
-				const float az = (static_cast<float>(w) / static_cast<float>(dw) - 0.5f) * 2.0f * CV_PI;
+				const float az = (static_cast<float>(w) / static_cast<float>(dw)- 0.5f) * 2.0f * CV_PI /*+ CV_PI*/;
 				const float el = (static_cast<float>(h) / static_cast<float>(dh) - 0.5f) * CV_PI;
 				const float x = std::cos(el) * std::cos(az) * radius;
 				const float z = std::cos(el) * std::sin(az) * radius;

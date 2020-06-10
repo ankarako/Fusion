@@ -390,7 +390,12 @@ void SequencerView::Render()
 			{
 				m_Impl->m_StartTime = std::chrono::high_resolution_clock::now();
 				m_Impl->m_State = Impl::SequencerState::Playing;
-				//m_Impl->m_OnPlayButtonClickedSubj.get_subscriber().on_next(nullptr);
+				m_Impl->m_OnPlayButtonClickedSubj.get_subscriber().on_next(nullptr);
+				for (int i = 0; i < count; ++i)
+				{
+					auto& item = m_Impl->m_Sequence.GetItem(i);
+					//item.OnStartPlayback.get_subscriber().on_next(nullptr);
+				}
 			}
 		}
 		else
@@ -454,10 +459,10 @@ void SequencerView::Render()
 							//item.OnStartPlayback.get_subscriber().on_next(nullptr);
 						}
 					}
-					//if (itemCurrent == 0)
-					//{
-					//	//item.OnStartPlayback.get_subscriber().on_next(nullptr);
-					//}
+					if (itemCurrent == 0)
+					{
+						//item.OnStartPlayback.get_subscriber().on_next(nullptr);
+					}
 				}
 				m_Impl->m_CurrentFrame++;
 			}
@@ -474,10 +479,11 @@ void SequencerView::Render()
 			for (int i = 0; i < count; i++)
 			{
 				auto& item = m_Impl->m_Sequence.GetItem(i);
-				if (item.SeqFrameStart <= m_Impl->m_CurrentFrame && item.SeqFrameEnd >= m_Impl->m_CurrentFrame)
-				{
-					item.OnStop.get_subscriber().on_next(nullptr);
-				}
+				item.OnStop.get_subscriber().on_next(nullptr);
+				//if (item.SeqFrameStart <= m_Impl->m_CurrentFrame && item.SeqFrameEnd >= m_Impl->m_CurrentFrame)
+				//{
+				//	
+				//}
 			}
 			m_Impl->m_CurrentFrame = 0;
 		}

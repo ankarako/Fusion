@@ -59,6 +59,8 @@ public:
 	uint2 GetFrameSize() const;
 
 	const BufferCPU<uchar4>& GetCurrentFrame();
+
+	int GetCurrentFrameId() const;
 	///	\brief current frame id output
 	rxcpp::observable<size_t> CurrentFrameIdFlowOut();
 	///	\brief frame duration output

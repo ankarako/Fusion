@@ -17,7 +17,8 @@ namespace fusion {
 struct PlayerModel::Impl
 {
 	///	const initial buffer prefetching samples
-	static constexpr size_t	k_InitialFramesPrefetch = 120;
+	static constexpr size_t	k_InitialFramesPrefetch = 256;
+	static constexpr size_t k_FrameQueueSizeThreshold = k_InitialFramesPrefetch / 2;
 	///	\typedef settings_ptr_t
 	///	\brief type of a pointer to our settings type
 	using settings_ptr_t = std::shared_ptr<PlayerSettings>;
@@ -44,7 +45,8 @@ struct PlayerModel::Impl
 	srepo_ptr_t						m_SettingsRepo;
 	settings_ptr_t					m_Settings;
 	/// framme FIFO queue	
-	std::deque<frame_t>				m_FrameQueue;
+	using frame_data_t = std::pair<int, frame_t>;
+	std::deque<frame_data_t>			m_FrameQueue;
 	///	frame rate (actually frame period)
 	std::chrono::milliseconds			m_FramePeriod;
 	/// current frame id output
@@ -85,23 +87,10 @@ PlayerModel::PlayerModel(coord_ptr_t coord, srepo_ptr_t srepo)
 ///	Initializes the owned transcoding context
 void PlayerModel::Init()
 {
-	///================================================
-	///	Prefetching frames completed notification task:
-	///	set is generating to false
-	///================================================
-	m_Impl->m_DecodingNode->PrefetchFramesCompleted().observe_on(m_Impl->m_Coord->ModelCoordination())
-		.subscribe([this](auto _) 
-	{
-		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-	});
-
 	/// create out settings
 	m_Impl->m_Settings = std::make_shared<PlayerSettings>();
-	/// register them to the repo
 	m_Impl->m_SettingsRepo->RegisterSettings(m_Impl->m_Settings);
-	/// set settinsgs frames prtefetch
 	m_Impl->m_Settings->PrefetchFrameCount = m_Impl->k_InitialFramesPrefetch;
-
 	/// settings loaded task
 	/// FIXME: take(1) is a workaround because subscription hits two times for some reason
 	m_Impl->m_Settings->OnSettingsLoaded().take(1)
@@ -125,6 +114,36 @@ void PlayerModel::Init()
 				LOG_ERROR << ex.what();
 			}
 		}
+	});
+	///=========================
+	/// Prefetching frames task
+	///=========================
+	m_Impl->m_StartPrefetchEventSubj.get_observable().as_dynamic()
+		.observe_on(rxcpp::observe_on_new_thread())
+		.subscribe([this](auto _) 
+	{
+		m_Impl->m_DecodingNode->SetGeneratingFrames(true);
+		m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
+		m_Impl->m_DecodingNode->GenerateFrames(m_Impl->k_InitialFramesPrefetch);
+	});
+	///================================================
+	///	Prefetching frames completed notification task:
+	///	set is generating to false
+	///================================================
+	m_Impl->m_DecodingNode->PrefetchFramesCompleted().observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe([this](auto _)
+	{
+		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
+		m_Impl->m_DecodingNode->SetGeneratingFrames(false);
+	});
+	///==============================
+	/// Decoding node output to queue
+	///==============================
+	m_Impl->m_DecodingNode->FrameFlowOut()
+		.subscribe([this](const BufferCPU<uchar4>& frameData) 
+	{
+		auto data = std::make_pair(m_Impl->m_DecodingNode->GetCurrentFramePosition(), frameData);
+		m_Impl->m_FrameQueue.emplace_back(data);
 	});
 }
 ///	\brief destroy the player
@@ -154,7 +173,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	m_Impl->m_DecodingNode->LoadFile(filepath);
 	m_Impl->m_Settings->LoadedVideoFilepath = filepath;
 	/// create our scaling node
-	m_Impl->m_ScalingNode = trans::CreateScalingNode(m_Impl->m_DecodingNode->GetFrameWidth(), m_Impl->m_DecodingNode->GetFrameHeight());
+	//m_Impl->m_ScalingNode = trans::CreateScalingNode(m_Impl->m_DecodingNode->GetFrameWidth(), m_Impl->m_DecodingNode->GetFrameHeight());
 	/// check fps to create interval observable
 	size_t frameCount = m_Impl->m_DecodingNode->GetFrameCount();
 	double fps = m_Impl->m_DecodingNode->GetFrameRate();
@@ -170,31 +189,10 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	/// create the interval observable according to the frame rate
 	std::chrono::nanoseconds periodNano = std::chrono::duration_cast<std::chrono::nanoseconds>(m_Impl->m_FramePeriod);
 	m_Impl->m_PlaybackObs		= rxcpp::observable<>::interval(periodNano).as_dynamic();
-	//m_Impl->m_CheckPrefetchObs	
-	//	= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(1.0f))).as_dynamic();
-	
-	m_Impl->m_NodeTopology.add(
-	///====================================
-	/// hook scaling node to decodning node
-	///====================================
-	m_Impl->m_DecodingNode->NativeFrameFlowOut()
-		.subscribe(m_Impl->m_ScalingNode->NativeFrameFlowIn()));
 
-	m_Impl->m_NodeTopology.add(
-	///=================================
-	///	scaling node Frame flow in Task
-	///	push frame in buffer
-	///=================================
-	m_Impl->m_DecodingNode->FrameFlowOut()
-		.subscribe([this](frame_t frame)
-	{
-		m_Impl->m_FrameQueue.emplace_back(frame);
-	}));
+	m_Impl->m_CheckPrefetchObs	
+		= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(1.0f))).as_dynamic();
 	
-	/// start prefetching
-	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
-	m_Impl->m_OnVideoLoadedSubj.get_subscriber().on_next(nullptr);
-
 	SequenceItem item; 
 	item.Name = filename;
 	item.Type = SequenceItemType::Video;
@@ -206,14 +204,20 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	item.SeqFrameEnd = item.Duration;
 	item.Id = 1;
 	m_Impl->m_SequenceItemFlowOutSubj.get_subscriber().on_next(item);
+	///===================
+	/// start prefetching
+	///===================
+	m_Impl->m_OnVideoLoadedSubj.get_subscriber().on_next(nullptr);
+	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 }
+///==================
+/// Playback function
+///==================
 ///	\brief start playback
 void PlayerModel::Start()
 {
 	LOG_DEBUG << "Started PLayback on thread: " << std::this_thread::get_id();
 	m_Impl->m_IsPlaying.store(true, std::memory_order_seq_cst);
-
-	m_Impl->m_DecodingNode->SetGeneratingFrames(true);
 	/// Play one frame task
 	m_Impl->m_PlaybackLifetime.add(
 		m_Impl->m_PlaybackObs.subscribe(
@@ -222,50 +226,30 @@ void PlayerModel::Start()
 		size_t dur	= m_Impl->m_DecodingNode->GetFrameCount();
 		size_t dist = m_Impl->m_Settings->CurrentFrameId;
 		size_t queuesz = m_Impl->m_FrameQueue.size();
-		bool playbackPred = m_Impl->m_FrameQueue.size() > (size_t)(ceilf(m_Impl->m_DecodingNode->GetFrameRate() / 2)) && m_Impl->m_IsPlaying.load(std::memory_order_seq_cst);
-
+		bool playbackPred = m_Impl->m_FrameQueue.size() > m_Impl->k_FrameQueueSizeThreshold && m_Impl->m_IsPlaying.load(std::memory_order_seq_cst);
 		if (playbackPred)
 		{
 			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.front());
-			m_Impl->m_Settings->CurrentFrameId++;
 			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
+			m_Impl->m_Settings->CurrentFrameId++;
 			m_Impl->m_FrameQueue.pop_front();
 		}
+		if (m_Impl->m_FrameQueue.size() <= m_Impl->k_FrameQueueSizeThreshold && !m_Impl->m_DecodingNode->IsGenerating())
+		{
+			m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+		}
 	}));
-
-	///=================================================
-	/// tasks that checks the queue size for prefetching
-	///=================================================
-	/*m_Impl->m_PlaybackLifetime.add(
-		m_Impl->m_CheckPrefetchObs.subscribe(
-			[this](auto _)
-	{
-		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
-	}));*/
-	///
-	
-	///============================
-	///	initialize prefetching task
-	///=============================
-	m_Impl->m_PlaybackLifetime.add(
-		m_Impl->m_StartPrefetchEventSubj.get_observable().observe_on(rxcpp::synchronize_new_thread())
-		.subscribe([this](auto _)
-	{
-		m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
-		m_Impl->m_DecodingNode->GenerateFrames((unsigned int)ceilf(m_Impl->m_DecodingNode->GetFrameRate() * 4));
-	}));
-	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 }
 ///	\brief pause playback
 void PlayerModel::Pause()
 {
 	m_Impl->m_DecodingNode->SetGeneratingFrames(false);
 	m_Impl->m_PlaybackLifetime.clear();
+	m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
 	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
 	{
-
+		//LOG_DEBUG << "Generating";
 	}
-	m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
 }
 ///	\brief stop playback
 void PlayerModel::Stop()
@@ -278,10 +262,10 @@ void PlayerModel::Stop()
 		//m_Impl->m_PrefetchLifetime.clear();
 		/*m_Impl->m_PlaybackLifetime.clear();
 		m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);*/
-		while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
-		{
-			//LOG_DEBUG << "Stop. Waiting";
-		}
+		//while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+		//{
+		//	//LOG_DEBUG << "Stop. Waiting";
+		//}
 		
 		/// erase frame queue
 		m_Impl->m_FrameQueue.clear();
@@ -291,11 +275,13 @@ void PlayerModel::Stop()
 		m_Impl->m_DecodingNode->GenerateFrame();
 		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 		/// send the first frame
-		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
+		
 		/// set current frame
 		m_Impl->m_Settings->CurrentFrameId = 0;
 		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(0);
 		/// signal a prefetch event
+		if (!m_Impl->m_FrameQueue.empty())
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
 		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 		/// and we should be OK
 	}
@@ -303,19 +289,25 @@ void PlayerModel::Stop()
 ///	\brief seek to a specified frame position
 void PlayerModel::Seek(int framePos)
 {
-	bool wasPlaying = m_Impl->m_IsPlaying.load(std::memory_order_seq_cst);
-	Pause();
-	m_Impl->m_FrameQueue.clear();
-	m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
-	m_Impl->m_DecodingNode->SetCurrentFramePos(framePos);
-	m_Impl->m_Settings->CurrentFrameId = framePos;
-	m_Impl->m_DecodingNode->GenerateFrame();
-	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-	/// send the frame
-	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
-	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
-	if (wasPlaying)
-		Start();
+	//bool wasPlaying = m_Impl->m_IsPlaying.load(std::memory_order_seq_cst);
+	//Pause();
+	//m_Impl->m_FrameQueue.clear();
+	//m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
+	//m_Impl->m_DecodingNode->SetCurrentFramePos(framePos);
+	//m_Impl->m_Settings->CurrentFrameId = framePos;
+	//m_Impl->m_DecodingNode->GenerateFrame();
+	//m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
+	///// send the frame
+	//m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
+	//m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
+	//m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+	if (!m_Impl->m_FrameQueue.empty())
+	{
+		if (std::find(m_Impl->m_FrameQueue.begin(), m_Impl->m_FrameQueue.end(), [this, framePos](auto _) { return framePos == _.first}))
+		{
+
+		}
+	}
 }
 ///	\brief seek forward one frame
 void PlayerModel::SeekForward()
@@ -367,32 +359,32 @@ bool fu::fusion::PlayerModel::IsOpen() const
 ///	\param	size	the size to set
 void fu::fusion::PlayerModel::SetScalingSize(uint2 size)
 {
-	if (!m_Impl->m_Settings->LoadedVideoFilepath.empty())
-	{
-		while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
-		{
+	//if (!m_Impl->m_Settings->LoadedVideoFilepath.empty())
+	//{
+	//	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	//	{
 
-		}
-		m_Impl->m_NodeTopology.clear();
-		//m_Impl->m_ScalingNode = trans::CreateScalingNode(s.x, s.y);
-		m_Impl->m_ScalingNode->SetScalingSize(size);
-		m_Impl->m_NodeTopology.add(
-			/// hook scaling node to decodning node
-			m_Impl->m_DecodingNode->NativeFrameFlowOut()
-			.subscribe(m_Impl->m_ScalingNode->NativeFrameFlowIn()));
-		m_Impl->m_NodeTopology.add(
-			///=================================
-			///	scaling node Frame flow in Task
-			///	push frame in buffer
-			///=================================
-			m_Impl->m_ScalingNode->FrameFlowOut()
-			.subscribe([this](frame_t frame)
-		{
-			m_Impl->m_FrameQueue.emplace_back(frame);
-		}));
-		/// start prefetching
-		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
-	}
+	//	}
+	//	m_Impl->m_NodeTopology.clear();
+	//	//m_Impl->m_ScalingNode = trans::CreateScalingNode(s.x, s.y);
+	//	m_Impl->m_ScalingNode->SetScalingSize(size);
+	//	m_Impl->m_NodeTopology.add(
+	//		/// hook scaling node to decodning node
+	//		m_Impl->m_DecodingNode->NativeFrameFlowOut()
+	//		.subscribe(m_Impl->m_ScalingNode->NativeFrameFlowIn()));
+	//	m_Impl->m_NodeTopology.add(
+	//		///=================================
+	//		///	scaling node Frame flow in Task
+	//		///	push frame in buffer
+	//		///=================================
+	//		m_Impl->m_ScalingNode->FrameFlowOut()
+	//		.subscribe([this](frame_t frame)
+	//	{
+	//		m_Impl->m_FrameQueue.emplace_back(frame);
+	//	}));
+	//	/// start prefetching
+	//	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+	//}
 }
 
 uint2 fu::fusion::PlayerModel::GetFrameSize() const
@@ -404,9 +396,13 @@ const BufferCPU<uchar4>& fu::fusion::PlayerModel::GetCurrentFrame()
 {
 	if (!m_Impl->m_FrameQueue.empty())
 	{
-		return m_Impl->m_FrameQueue.front();
+		return m_Impl->m_FrameQueue.front().second;
 	}
 	return CreateBufferCPU<uchar4>(0);
+}
+int PlayerModel::GetCurrentFrameId() const
+{
+	return m_Impl->m_Settings->CurrentFrameId;
 }
 ///	\brief current frame id output
 rxcpp::observable<size_t> fu::fusion::PlayerModel::CurrentFrameIdFlowOut()

@@ -183,7 +183,12 @@ void VideoTracingModel::Init()
 	m_Impl->m_AnimatedMeshDataFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](const io::MeshData& data) 
 	{
-		rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TemplateMeshComp, data);
+		//rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TemplateMeshComp, data);
+		//rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
+		///// copy output buffer
+		//rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);
+		///// send frame to output
+		//m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameBuffer);
 	});
 	///=============================
 	/// perfcap translation flow in
@@ -191,7 +196,7 @@ void VideoTracingModel::Init()
 	m_Impl->m_PerfcapTranslationFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](const vec_t& trans) 
 	{
-		rt::MeshMappingSystem::SetTriangleMeshComponentTranslation(m_Impl->m_TriangleMeshComps.back(), trans[0], trans[1], trans[2]);
+		rt::MeshMappingSystem::SetTriangleMeshComponentTranslation(m_Impl->m_TemplateMeshComp, trans[0], trans[1], trans[2]);
 		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelrationComp);
 		if (m_Impl->m_FrameBuffer)
 		{
@@ -208,7 +213,7 @@ void VideoTracingModel::Init()
 	m_Impl->m_PerfcapRotationFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](const vec_t& rot) 
 	{
-		rt::MeshMappingSystem::SetTriangleMeshComponentRotation(m_Impl->m_TriangleMeshComps.back(), rot[0], rot[1], rot[2]);
+		rt::MeshMappingSystem::SetTriangleMeshComponentRotation(m_Impl->m_TemplateMeshComp, rot[0], rot[1], rot[2]);
 		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelrationComp);
 		if (m_Impl->m_FrameBuffer)
 		{
@@ -225,7 +230,7 @@ void VideoTracingModel::Init()
 	m_Impl->m_PerfcapScaleFlowInSubj.get_observable().as_dynamic()
 		.subscribe([this](float scale) 
 	{
-		rt::MeshMappingSystem::SetTriangleMeshComponentScale(m_Impl->m_TriangleMeshComps.back(), scale);
+		rt::MeshMappingSystem::SetTriangleMeshComponentScale(m_Impl->m_TemplateMeshComp, scale);
 		rt::MeshMappingSystem::AccelerationCompMapDirty(m_Impl->m_AccelrationComp);
 		if (m_Impl->m_FrameBuffer)
 		{

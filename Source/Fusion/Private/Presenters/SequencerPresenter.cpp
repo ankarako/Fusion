@@ -114,7 +114,7 @@ void SequencerPresenter::Init()
 		///	Seek
 		///======
 		item.OnSeekFrame.get_observable().as_dynamic()
-			.observe_on(m_Impl->m_Coord->ModelCoordination())
+			//.observe_on(m_Impl->m_Coord->ModelCoordination())
 			.subscribe([this](int idx) 
 		{
 			m_Impl->m_PlayerModel->Seek(idx);
@@ -170,7 +170,6 @@ void SequencerPresenter::Init()
 		});
 
 		item.OnSeekFrame.get_observable().as_dynamic()
-			.observe_on(m_Impl->m_Coord->ModelCoordination())
 			.subscribe([this](int frameId)
 		{
 			m_Impl->m_PerfcapPlayer->SeekFrame(frameId);
