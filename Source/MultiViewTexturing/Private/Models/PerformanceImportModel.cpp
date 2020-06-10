@@ -115,9 +115,10 @@ void PerformanceImportModel::Init()
 		std::string templateMeshFilepathObj = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenameObj).generic_string();
 		std::string templateMeshFilepathPly = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenamePly).generic_string();
 		//io::LoadObj(templateMeshFilepath, meshData);
-		//io::perfcap_skin_data_ptr_t denseSkinData = io::CreatePerfcapSkinData();
+		io::perfcap_skin_data_ptr_t denseSkinData = io::CreatePerfcapSkinData();
 		//io::LoadObjWithSkinData(templateMeshFilepath, meshData, skinData, denseSkinData);
 		io::PerfcapMeshImport(templateMeshFilepathPly, templateMeshFilepathObj, meshData);
+		//io::LoadObjWithSkinData(templateMeshFilepathObj, meshData, skinData, denseSkinData);
 		/// Mesh data is textured
 		meshData->TextureWidth = m_Impl->m_TextureResolution.x;
 		meshData->TextureHeight = m_Impl->m_TextureResolution.y;

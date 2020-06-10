@@ -521,6 +521,7 @@ void MVTModel::Init()
 				m_Impl->m_ViewportTextureBuffer->Data()[bufcoord] = color;
 			}
 		}
+		m_Impl->m_TextureFlowOutSubj.get_subscriber().on_next(m_Impl->m_ViewportTextureBuffer);
 	}, [this](std::exception_ptr ptr)
 	{
 		if (ptr)

@@ -229,7 +229,7 @@ void PlayerModel::Start()
 		bool playbackPred = m_Impl->m_FrameQueue.size() > m_Impl->k_FrameQueueSizeThreshold && m_Impl->m_IsPlaying.load(std::memory_order_seq_cst);
 		if (playbackPred)
 		{
-			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.front());
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.front().second);
 			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 			m_Impl->m_Settings->CurrentFrameId++;
 			m_Impl->m_FrameQueue.pop_front();
@@ -281,7 +281,7 @@ void PlayerModel::Stop()
 		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(0);
 		/// signal a prefetch event
 		if (!m_Impl->m_FrameQueue.empty())
-			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back().second);
 		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 		/// and we should be OK
 	}
@@ -303,10 +303,18 @@ void PlayerModel::Seek(int framePos)
 	//m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 	if (!m_Impl->m_FrameQueue.empty())
 	{
-		if (std::find(m_Impl->m_FrameQueue.begin(), m_Impl->m_FrameQueue.end(), [this, framePos](auto _) { return framePos == _.first}))
+		auto it = std::find_if(m_Impl->m_FrameQueue.begin(), m_Impl->m_FrameQueue.end(), [this, framePos](auto i) 
 		{
-
+			return i.first == framePos;
+		});
+		if (it != m_Impl->m_FrameQueue.end())
+		{
+			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(it->second);
+			m_Impl->m_Settings->CurrentFrameId = it->first;
+			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
+			m_Impl->m_FrameQueue.pop_front();
 		}
+
 	}
 }
 ///	\brief seek forward one frame
@@ -323,7 +331,7 @@ void PlayerModel::SeekForward()
 	m_Impl->m_DecodingNode->GenerateFrame();
 	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 	/// send the frame
-	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
+	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back().second);
 	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 }
 ///	\brief seek backward one frame
@@ -340,7 +348,7 @@ void PlayerModel::SeekBackward()
 	m_Impl->m_DecodingNode->GenerateFrame();
 	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
 	/// send the frame
-	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
+	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back().second);
 	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 }
 ///	\brief set the number of frames to prefetch

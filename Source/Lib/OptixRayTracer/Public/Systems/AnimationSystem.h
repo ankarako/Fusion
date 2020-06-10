@@ -299,9 +299,9 @@ public:
 				newVertexPos.y += weight * transVertexPosHomo.y / transVertexPosHomo.w;
 				newVertexPos.z += weight * transVertexPosHomo.z / transVertexPosHomo.w;
 
-				newNormal.x += weight * transNormalHomo.x / transNormalHomo.w;
-				newNormal.y += weight * transNormalHomo.y / transNormalHomo.w;
-				newNormal.z += weight * transNormalHomo.z / transNormalHomo.w;
+				newNormal.x += weight * transNormalHomo.x /*/ transNormalHomo.w*/;
+				newNormal.y += weight * transNormalHomo.y /*/ transNormalHomo.w*/;
+				newNormal.z += weight * transNormalHomo.z /*/ transNormalHomo.w*/;
 			}
 			newNormal = optix::normalize(newNormal);
 			outMesh->VertexBuffer->Data()[v] = newVertexPos;

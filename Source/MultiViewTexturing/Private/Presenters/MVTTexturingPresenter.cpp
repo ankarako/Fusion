@@ -41,7 +41,12 @@ MVTPresenter::MVTPresenter(model_ptr_t model, perf_import_model_ptr_t perf_impor
 ///
 void MVTPresenter::Init()
 {
-	//m_Impl->m_ViewportEnabled = true;
+#if defined(WITH_VIEWPORT)
+	m_Impl->m_ViewportEnabled = true;
+	m_Impl->m_MultiViewPlayerModel->SetUndistortEnabled(true);
+	m_Impl->m_MultiViewPlayerModel->SetDebugFramesEnabled(true);
+	m_Impl->m_MultiViewPlayerModel->SetDebugOutDir("debug");
+#endif
 	///==============
 	/// Mesh Input
 	///=============
@@ -110,9 +115,9 @@ void MVTPresenter::Init()
 		m_Impl->m_Model->SetOutputDir("output");
 		m_Impl->m_Model->SetExportDir("export");
 		m_Impl->m_Model->SetTextureSize(make_uint2(2048, 2048));
-		m_Impl->m_Model->SetSeparateTextures(false);
+		m_Impl->m_Model->SetSeparateTextures(true);
 		m_Impl->m_Model->SetLaunchMult(4);
-		m_Impl->m_Model->SetViewportEnabled(false);
+		m_Impl->m_Model->SetViewportEnabled(true);
 		m_Impl->m_MultiViewPlayerModel->SetDebugFramesEnabled(false);
 		m_Impl->m_MultiViewPlayerModel->SetUndistortEnabled(true);
 		m_Impl->m_Model->SetTempFolderPath(m_Impl->m_PerformanceImportModel->TempFolderPath());

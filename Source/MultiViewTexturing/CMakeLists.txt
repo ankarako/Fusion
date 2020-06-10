@@ -133,6 +133,7 @@ add_executable(
 )
 set_target_properties(RayMVT PROPERTIES FOLDER "RayMVT")
 set_property(TARGET RayMVT PROPERTY CXX_STANDARD 17)
+target_compile_options(RayMVT PRIVATE "-DWITH_VIEWPORT")
 # set include directory
 target_include_directories(RayMVT PUBLIC "Public")
 ###############

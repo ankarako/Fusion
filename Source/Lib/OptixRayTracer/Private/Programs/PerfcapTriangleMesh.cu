@@ -26,6 +26,11 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 	const float3 v1 = vertex_buffer[vertexIdx.y];
 	const float3 v2 = vertex_buffer[vertexIdx.z];
 
+	optix::float3 n0 = normal_buffer[vertexIdx.x];
+	optix::float3 n1 = normal_buffer[vertexIdx.y];
+	optix::float3 n2 = normal_buffer[vertexIdx.z];
+	//rtPrintf("n: %f, %f, %f\n", n0.x, n0.y, n0.z);
+
 	float3 normal;
 	float t;
 	float beta;
@@ -43,9 +48,7 @@ RT_PROGRAM void triangle_mesh_intersect(int primIdx)
 			}
 			else
 			{
-				optix::float3 n0 = normal_buffer[vertexIdx.x];
-				optix::float3 n1 = normal_buffer[vertexIdx.y];
-				optix::float3 n2 = normal_buffer[vertexIdx.z];
+				
 				/// just for debuggin
 				optix::float3 n = (n0 + n1 + n2) / 3;
 				cur_geom_normal = optix::normalize(n);

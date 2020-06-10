@@ -14,9 +14,10 @@ RT_PROGRAM void closest_hit_texturing()
 	optix::float3 world_shading_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, cur_shad_normal));
 	optix::float3 world_geometric_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, cur_geom_normal));
 
-	optix::float3 ffnormal = optix::faceforward(world_shading_normal, -ray.direction, world_geometric_normal);
-	const float weight = optix::dot(cur_shad_normal, -ray.direction);
-	// rtPrintf("w: %f\n", weight);
+	//optix::float3 ffnormal = optix::faceforward(world_shading_normal, -ray.direction, world_geometric_normal);
+	const float weight = optix::dot(world_geometric_normal, -ray.direction);
+	//rtPrintf("n: %f, %f, %f\n", world_geometric_normal.x, world_geometric_normal.y, world_geometric_normal.z);
+	//rtPrintf("w: %f\n", weight);
 	prd_texturing.Output.Color =  prd_texturing.PixelValue;
 	prd_texturing.Output.Texcoord = cur_texcoord;
 	prd_texturing.Output.Weight = weight;
