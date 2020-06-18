@@ -41,7 +41,11 @@ void LoggerModel::Init()
 	m_Impl->m_ConsoleAppender = std::make_shared<plog::ColorConsoleAppender<plog::TxtFormatter>>();
 	/// TODO: implement logger settings
 	m_Impl->m_FileAppender = std::make_shared<plog::RollingFileAppender<plog::TxtFormatter>>(m_Impl->k_LogFilename);
+#if defined(_DEBUG)
 	plog::init(plog::debug, m_Impl->m_ConsoleAppender.get()).addAppender(m_Impl->m_FileAppender.get());
+#else
+	plog::init(plog::error, m_Impl->m_ConsoleAppender.get()).addAppender(m_Impl->m_FileAppender.get());
+#endif	///	!_DEBUG
 }
 }	///	!namespace fusion
 }	///	!namespace fu
