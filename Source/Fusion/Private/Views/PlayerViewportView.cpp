@@ -8,12 +8,6 @@
 
 #include <chrono>
 
-// FIXME: delete
-// #include <opencv2/core.hpp>
-// #include <opencv2/imgcodecs.hpp>
-// #include <opencv2/imgproc.hpp>
-// #include <opencv2/videoio.hpp>
-
 namespace fu {
 namespace fusion {
 ///	\struct Impl
@@ -36,6 +30,10 @@ struct PlayerViewportView::Impl
 	GLuint m_PixelBufferHandle{ 0 };
 	/// gl texture to display to viewport
 	GLuint m_TextureHandle{ 0 };
+	/// 
+	size_t m_FrameCounter{ 0 };
+	/// fps counter
+	std::chrono::milliseconds	m_Fps = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
 	///	inputs
 	///	frame input
 	rxcpp::subjects::subject<BufferCPU<uchar4>> m_FrameFlowInSubj;
@@ -111,6 +109,10 @@ void PlayerViewportView::Init()
 	m_Impl->m_FrameFlowInSubj.get_observable()
 		.subscribe([this](BufferCPU<uchar4>& frame) 
 	{
+		//auto now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());
+		//auto fps = (now - m_Impl->m_Fps).count();
+		//LOG_DEBUG << "fps: " << 1 / (double)fps * 1000.0;
+		//m_Impl->m_Fps = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch());;
 		/// bind our gl texture to gl state
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_Impl->m_TextureHandle);

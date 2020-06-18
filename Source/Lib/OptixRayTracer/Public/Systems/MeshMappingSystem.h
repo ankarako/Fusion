@@ -9,6 +9,7 @@
 #include <Components/PointCloudComp.h>
 #include <Components/ViewportFrustrumComp.h>
 #include <Components/QuadComp.h>
+#include <Components/PlaneComp.h>
 #include <Systems/ResourseDesc.h>
 #include <MeshData.h>
 #include <thread>
@@ -155,6 +156,7 @@ public:
 	static void MapAccelerationToRaygen(AccelerationComp& mInstComp, RaygenProgComp& rayComp)
 	{
 		rayComp->RaygenProg["top_object"]->set(mInstComp->Group);
+		rayComp->RaygenProg["top_shadower"]->set(mInstComp->Group);
 	}
 	///	\brief Create a triagle mesh components's vertex buffer
 	///	\param	meshComp	the mesh component to create its vertex buffer
@@ -1193,6 +1195,69 @@ public:
 		qComp->GInstance["solid_color"]->setFloat(qComp->Color);
 	}
 
+	static void MapPlaneComp(PlaneComp& qComp, ContextComp& ctxComp)
+	{
+		/// create quad's vertices
+		float w = qComp->Width;
+		float h = qComp->Height;
+		optix::float3 a = qComp->Anchor;
+		optix::float3 v0 = optix::make_float3(a.x - w * 0.5f, a.y, a.z + h * 0.5f);
+		optix::float3 v1 = optix::make_float3(a.x + w * 0.5f, a.y, a.z + h * 0.5f);
+		optix::float3 v2 = optix::make_float3(a.x - w * 0.5f, a.y, a.z - h * 0.5f);
+		optix::float3 v3 = optix::make_float3(a.x + w * 0.5f, a.y, a.z - h * 0.5f);
+		BufferCPU<optix::float3> vBuf = CreateBufferCPU<optix::float3>(4);
+		vBuf->Data()[0] = v0;
+		vBuf->Data()[1] = v1;
+		vBuf->Data()[2] = v2;
+		vBuf->Data()[3] = v3;
+		/// create vertex buffer
+		qComp->VertexBuffer = ctxComp->Context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, 4);
+		std::memcpy(qComp->VertexBuffer->map(), vBuf->Data(), 4 * sizeof(optix::float3));
+		qComp->VertexBuffer->unmap();
+		/// dummy color
+		// qComp->Color = optix::make_float3(1.0f, 1.0f, 1.0f);
+		///
+		qComp->Geometry = ctxComp->Context->createGeometry();
+		qComp->Material = ctxComp->Context->createMaterial();
+		qComp->GInstance = ctxComp->Context->createGeometryInstance();
+		qComp->GGroup = ctxComp->Context->createGeometryGroup();
+		qComp->Acceleration = ctxComp->Context->createAcceleration("Sbvh");
+		qComp->Transform = ctxComp->Context->createTransform();
+		qComp->TransMat = optix::Matrix4x4::identity();
+		try
+		{
+			qComp->IntersectionProgram = ctxComp->Context->createProgramFromPTXFile(k_QuadPtxFilepath, k_QuadIntersectionProgName);
+			qComp->BoundingBoxProgram = ctxComp->Context->createProgramFromPTXFile(k_QuadPtxFilepath, k_QuadBoundingBoxProgName);
+			qComp->ClosestHitProgram = ctxComp->Context->createProgramFromPTXFile(k_TransparentColorHitgroupPtxFilepath, k_TransparentColorHitgroupClosestHitName);
+			qComp->AnyHitProgram = ctxComp->Context->createProgramFromPTXFile(k_TransparentColorHitgroupPtxFilepath, k_TransparentColorHitgroupAnyHitName);
+		}
+		catch (optix::Exception & ex)
+		{
+			LOG_ERROR << ex.what();
+		}
+		qComp->Geometry->setIntersectionProgram(qComp->IntersectionProgram);
+		qComp->Geometry->setBoundingBoxProgram(qComp->BoundingBoxProgram);
+		qComp->Geometry->setPrimitiveCount(1);
+		qComp->Material->setClosestHitProgram(0, qComp->ClosestHitProgram);
+		qComp->Material->setAnyHitProgram(0, qComp->AnyHitProgram);
+		qComp->GInstance->setGeometry(qComp->Geometry);
+		qComp->GInstance->setMaterialCount(1);
+		qComp->GInstance->setMaterial(0, qComp->Material);
+		qComp->GGroup->setChildCount(1);
+		qComp->GGroup->setChild(0, qComp->GInstance);
+		qComp->GGroup->setAcceleration(qComp->Acceleration);
+		qComp->Transform->setChild(qComp->GGroup);
+		qComp->Transform->setMatrix(false, qComp->TransMat.getData(), nullptr);
+		qComp->GInstance["vertex_buffer"]->setBuffer(qComp->VertexBuffer);
+		qComp->GInstance["transparent_color"]->setFloat(qComp->Color);
+	}
+
+	static void AttachPlaneCompToTopLevelAcceleration(PlaneComp& pComp, AccelerationComp& acc)
+	{
+		acc->Group->addChild(pComp->Transform);
+		acc->Acceleration->markDirty();
+	}
+
 	static void CopyAnimatedMeshDataToTriangleComp(TriangleMeshComp& trComp, const io::MeshData& data)
 	{
 		std::memcpy(trComp->VertexBuffer->map(), data->VertexBuffer->Data(), data->VertexBuffer->ByteSize());
@@ -1243,6 +1308,9 @@ private:
 	static constexpr const char* k_PerfcapTriangleMeshPtxFilepath			= "FusionLib/Resources/Programs/PerfcapTriangleMesh.ptx";
 	static constexpr const char* k_PerfcapTriangleMeshIntersectionProgName	= "triangle_mesh_intersect";
 	static constexpr const char* k_PerfcapTriangleMeshBbboxProgName			= "triangle_mesh_bounds";
+	static constexpr const char* k_TransparentColorHitgroupPtxFilepath 		= "FusionLib/Resources/Programs/TransparentColorHitgroup.ptx";
+	static constexpr const char* k_TransparentColorHitgroupClosestHitName 	= "transparent_color_closest_hit";
+	static constexpr const char* k_TransparentColorHitgroupAnyHitName 		= "transparent_color_any_hit";
 };	///	!class MeshMappingSystem
 }	///	!namespace rt
 }	///	!namespace fu

@@ -9,7 +9,7 @@ rtDeclareVariable(float3, W, , );
 rtDeclareVariable(float,  scene_epsilon, , );
 
 rtDeclareVariable(rtObject, top_object, , );
-rtDeclareVariable(unsigned int, radiance_ray_type, , );
+rtDeclareVariable(rtObject, top_shadower, , );
 rtDeclareVariable(uint2, launch_index, rtLaunchIndex, );
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 
@@ -22,7 +22,7 @@ RT_PROGRAM void EnvMapRaygen()
 	optix::float3 angle = optix::make_float3(cos(d.x) * sin(d.y), -cos(d.y), sin(d.x) * sin(d.y));
 	optix::float3 ray_origin = eye;
 	optix::float3 ray_direction = optix::normalize(angle.x * optix::normalize(U) + angle.y * optix::normalize(V) + angle.z * optix::normalize(W));
-	optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, radiance_ray_type, scene_epsilon, RT_DEFAULT_MAX);
+	optix::Ray ray = optix::make_Ray(ray_origin, ray_direction, RadianceRayType, scene_epsilon, RT_DEFAULT_MAX);
 
 	fu::rt::PerRayData_Radiance prd;
 	prd.Importance = 1.0f;

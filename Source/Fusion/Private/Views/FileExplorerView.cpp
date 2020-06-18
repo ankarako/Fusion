@@ -280,6 +280,11 @@ void FileExplorerView::Render()
 			memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
 			this->Deactivate();
 		}
+		if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)))
+		{
+			memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+			this->Deactivate();
+		}
 	}
 	ImGui::End();
 	ImGui::PopFont();

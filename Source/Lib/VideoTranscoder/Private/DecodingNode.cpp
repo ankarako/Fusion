@@ -21,7 +21,7 @@ struct DecodingNodeObj::Impl
 	using dec_t = std::shared_ptr<cv::VideoCapture>;
 	/// loaded filepath
 	/// TODO: maybe redundant
-	std::string m_LoadedFile{ " " };
+	std::string m_LoadedFile{ "" };
 	std::string m_DebugOutDir{ "" };
 	///	current frfame buffer
 	frame_t				m_CurrentFrame;
@@ -58,7 +58,7 @@ struct DecodingNodeObj::Impl
 	///	prefetch event task
 	rxcpp::subjects::subject<size_t>			m_GenerateFramesTask;
 	///	frame output
-	rxcpp::subjects::subject<frame_t>			m_FrameFlowOutSubj;
+	rxcpp::subjects::subject<frame_out_t>			m_FrameFlowOutSubj;
 	/// native frame output
 	rxcpp::subjects::subject<native_frame_t>	m_NativeFrameFlowOutSubj;
 	///	finished prefetching notification
@@ -79,42 +79,42 @@ DecodingNodeObj::DecodingNodeObj()
 	///	Generate frames task
 	///=====================
 	///	param frameCount	the number of frames to generate
-	m_Impl->m_GenerateFramesTask.get_observable()
-		.subscribe([this](size_t frameCount) 
-	{
-		if (m_Impl->m_Decoder->isOpened() && m_Impl->m_CurrentFramePosition < m_Impl->m_FrameCount)
-		{
-			LOG_DEBUG << "Generating on thread: " << std::this_thread::get_id();
-			unsigned int counter = 0;
-			while (counter < frameCount)
-			{
-				if (m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
-				{
-					m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative);
-					cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
-					/// get the byte size of the native frame
-					size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
-					size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
-					/// check that our frame and the native have the same byte size
-					DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
-					/// copy native frame data to our buffer
-					std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
-					/// notify subscriber's about the current frame
-					m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
-					m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
-					///	increment counter
-					counter++;
-					m_Impl->m_CurrentFramePosition++;
-				}
-				else
-				{
-					break;
-				}
-			}
-			LOG_DEBUG << "Finished Generating on thread: " << std::this_thread::get_id();
-			m_Impl->m_GenerateFramesTaskCompetedSubj.get_subscriber().on_next(nullptr);
-		}
-	});
+	//m_Impl->m_GenerateFramesTask.get_observable().as_dynamic()
+	//	.subscribe([this](const size_t frameCount) 
+	//{
+	//	if (m_Impl->m_Decoder->isOpened() && m_Impl->m_CurrentFramePosition < m_Impl->m_FrameCount)
+	//	{
+	//		LOG_DEBUG << "Generating on thread: " << std::this_thread::get_id();
+	//		unsigned int counter = 0;
+	//		while (counter < frameCount && m_Impl->m_GenerateFrames.load(std::memory_order_seq_cst))
+	//		{
+	//			if (m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
+	//			{
+	//				cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
+	//				/// get the byte size of the native frame
+	//				size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+	//				size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
+	//				/// check that our frame and the native have the same byte size
+	//				DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
+	//				/// copy native frame data to our buffer
+	//				std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+	//				/// notify subscriber's about the current frame
+	//				m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
+	//				m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
+	//				///	increment counter
+	//				counter++;
+	//				m_Impl->m_CurrentFramePosition++;
+	//				m_Impl->m_Decoder->set(cv::CAP_PROP_POS_FRAMES, m_Impl->m_CurrentFramePosition);
+	//			}
+	//			else
+	//			{
+	//				break;
+	//			}
+	//		}
+	//		LOG_DEBUG << "Finished Generating on thread: " << std::this_thread::get_id() << "counter: " << counter;
+	//		m_Impl->m_GenerateFramesTaskCompetedSubj.get_subscriber().on_next(nullptr);
+	//	}
+	//});
 }
 ///	\brief load a video file
 ///	\param	filepath the path to the file to load
@@ -142,6 +142,7 @@ void DecodingNodeObj::LoadFile(const std::string& filepath)
 		LOG_DEBUG << "Loaded Video file: " << filepath;
 		LOG_DEBUG << "Frame Size       : " << m_Impl->m_FrameWidth << " x " << m_Impl->m_FrameHeight;
 		LOG_DEBUG << "Frame Rate       : " << m_Impl->m_FrameRate;
+		m_Impl->m_Decoder->set(cv::CAP_PROP_POS_FRAMES, 0.0);
 	}
 }
 ///	\brief release the underlying decoding context
@@ -205,9 +206,11 @@ void DecodingNodeObj::GenerateFrame()
 		/// check that our frame and the native have the same byte size
 		DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
 		/// copy native frame data to our buffer
-		std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+		BufferCPU<uchar4> currentFrame = CreateBufferCPU<uchar4>(m_Impl->m_CurrentFrame->Count());
+		std::memcpy(currentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
 		/// notify subscriber's about the current frame
-		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
+		m_Impl->m_CurrentFramePosition = (size_t)m_Impl->m_Decoder->get(cv::CAP_PROP_POS_FRAMES);
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(std::make_pair(m_Impl->m_CurrentFramePosition, currentFrame));
 		m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
 	}
 }
@@ -293,36 +296,38 @@ void DecodingNodeObj::GenerateFrames(size_t frameCount)
 	{
 		LOG_DEBUG << "Generating frames on thread: " << std::this_thread::get_id();
 		unsigned int counter = 0;
-		while (m_Impl->m_GenerateFrames.load(std::memory_order_seq_cst) && counter <= frameCount && m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
-		{
-			cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
-			/// get the byte size of the native frame
-			size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
-			size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
-			/// check that our frame and the native have the same byte size
-			DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
-			if (m_Impl->m_Rotate)
-			{
-				double angle = 90.0;
-				cv::Point2f center((m_Impl->m_CurrentFrameNative.cols - 1.0f) / 2.0f, (m_Impl->m_CurrentFrameNative.rows - 1.0f) / 2.0f);
-				cv::Mat rot = cv::getRotationMatrix2D(center, angle, 1.0f);
-				cv::Rect2f bbox = cv::RotatedRect(cv::Point2f(), m_Impl->m_CurrentFrameNative.size(), angle).boundingRect2f();
-				///
-				rot.at<double>(0, 2) += bbox.width / 2.0f - m_Impl->m_CurrentFrameNative.cols / 2.0;
-				rot.at<double>(1, 2) += bbox.height / 2.0f - m_Impl->m_CurrentFrameNative.rows / 2.0;
+		bool gen = m_Impl->m_GenerateFrames.load(std::memory_order_seq_cst);
 
-				cv::warpAffine(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, rot, bbox.size());
+		m_Impl->m_CurrentFramePosition = (size_t)m_Impl->m_Decoder->get(cv::CAP_PROP_POS_FRAMES);
+		m_Impl->m_GenerateFrames.store(true, std::memory_order::memory_order_seq_cst);
+		while (counter < frameCount) 
+		{
+			if (m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
+			{
+				cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
+					/// get the byte size of the native frame
+				size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+				size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
+				/// check that our frame and the native have the same byte size
+				DebugAssertMsg(bsize == m_Impl->m_CurrentFrame->ByteSize(), "Decoded native frame type has different byte size.");
+				BufferCPU<uchar4> currentFrame = CreateBufferCPU<uchar4>(m_Impl->m_CurrentFrame->Count());
+				/// copy native frame data to our buffer
+				std::memcpy(currentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+				///
+				//m_Impl->m_CurrentFramePosition = (size_t)m_Impl->m_Decoder->get(cv::CAP_PROP_POS_FRAMES);
+				m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(std::make_pair(m_Impl->m_CurrentFramePosition, currentFrame));
+				m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
+				m_Impl->m_CurrentFramePosition = (size_t)m_Impl->m_Decoder->get(cv::CAP_PROP_POS_FRAMES);
+				///	increment counter
+				counter++;
 			}
-			/// copy native frame data to our buffer
-			std::memcpy(m_Impl->m_CurrentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
-			/// notify subscriber's about the current frame
-			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrame);
-			m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
-			///	increment counter
-			counter++;
-			m_Impl->m_CurrentFramePosition++;
+			else
+			{
+				break;
+			}
 		}
-		LOG_DEBUG << "Generation finished on thread: " << std::this_thread::get_id();
+		m_Impl->m_GenerateFrames.store(false, std::memory_order::memory_order_seq_cst);
+		LOG_DEBUG << "Generation finished on thread: " << std::this_thread::get_id() << "counter: " << counter;
 		m_Impl->m_GenerateFramesTaskCompetedSubj.get_subscriber().on_next(nullptr);
 	}
 }
@@ -382,7 +387,7 @@ void DecodingNodeObj::SetDebugFramesOutDir(const std::string & outdir)
 }
 ///	\brief frame output
 ///	decoding nodes have only output frame streams
-rxcpp::observable<DecodingNodeObj::frame_t> DecodingNodeObj::FrameFlowOut()
+rxcpp::observable<DecodingNodeObj::frame_out_t> DecodingNodeObj::FrameFlowOut()
 {
 	return m_Impl->m_FrameFlowOutSubj.get_observable().as_dynamic();
 }

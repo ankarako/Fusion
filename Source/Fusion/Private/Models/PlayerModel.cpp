@@ -1,8 +1,9 @@
 #include <Models/PlayerModel.h>
 #include <Core/Coordination.h>
 #include <DecodingNode.h>
-#include <ScalingNode.h>
+#include <TextureExportingNode.h>
 #include <Core/SettingsRepo.h>
+#include <Core/ThreadSafeQueue.h>
 #include <Settings/PlayerSettings.h>
 #include <plog/Log.h>
 #include <rxcpp/rx-scheduler.hpp>
@@ -17,8 +18,9 @@ namespace fusion {
 struct PlayerModel::Impl
 {
 	///	const initial buffer prefetching samples
-	static constexpr size_t	k_InitialFramesPrefetch = 256;
+	static constexpr size_t	k_InitialFramesPrefetch = 128;
 	static constexpr size_t k_FrameQueueSizeThreshold = k_InitialFramesPrefetch / 2;
+	static constexpr float k_FrameQueueSizeFactor = 1.5f;
 	///	\typedef settings_ptr_t
 	///	\brief type of a pointer to our settings type
 	using settings_ptr_t = std::shared_ptr<PlayerSettings>;
@@ -26,8 +28,7 @@ struct PlayerModel::Impl
 	coord_ptr_t						m_Coord;
 	///	a decoding node used to decode video files
 	trans::DecodingNode				m_DecodingNode{ nullptr };
-	/// a scaling node for scaling the incoming decoded frames
-	trans::ScalingNode				m_ScalingNode{ nullptr };
+	trans::TextureExportingNode		m_EncodingNode{ nullptr };
 	///
 	std::chrono::steady_clock::time_point	m_StartedPlayback;
 	///
@@ -39,14 +40,15 @@ struct PlayerModel::Impl
 	rxcpp::composite_subscription	m_PrefetchLifetime;
 	///	atomic flags for signifying playbck and frame generation
 	std::atomic_bool				m_IsPlaying{ false };
-	std::atomic_bool				m_IsGenerating{ false };
 	std::atomic_bool				m_SignalledGeneration{ false };
+	bool							m_IsGenerating{ false };
 	/// Our settingss
 	srepo_ptr_t						m_SettingsRepo;
 	settings_ptr_t					m_Settings;
 	/// framme FIFO queue	
 	using frame_data_t = std::pair<int, frame_t>;
-	std::deque<frame_data_t>			m_FrameQueue;
+	std::map<int, frame_t>					m_FrameMap;
+	ThreadSafeQueue<frame_data_t>			m_FrameQueue;
 	///	frame rate (actually frame period)
 	std::chrono::milliseconds			m_FramePeriod;
 	/// current frame id output
@@ -54,9 +56,9 @@ struct PlayerModel::Impl
 	/// current frame count
 	rxcpp::subjects::subject<size_t>	m_FrameCountFlowOutSubj;
 	///	frame width output
-	rxcpp::subjects::subject<int>		m_FrameWidthFlowOutSubj;
+	rxcpp::subjects::subject<size_t>	m_FrameWidthFlowOutSubj;
 	///	frame height output
-	rxcpp::subjects::subject<int>		m_FrameHeightFlowOutSubj;
+	rxcpp::subjects::subject<size_t>	m_FrameHeightFlowOutSubj;
 	/// frame size output
 	rxcpp::subjects::subject<uint2>		m_FrameSizeFlowOutSubj;
 	///	current frame output
@@ -66,15 +68,17 @@ struct PlayerModel::Impl
 
 	rxcpp::subjects::subject<void*>		m_OnVideoLoadedSubj;
 
-	rxcpp::subjects::subject<SequenceItem> m_SequenceItemFlowOutSubj;
+	rxcpp::subjects::subject<SequenceItem>	m_SequenceItemFlowOutSubj;
+
+	rxcpp::subjects::subject<float>			m_FrameLoadProgressFlowOutSubj;
+	rxcpp::subjects::subject<std::string>	m_ProgressMsgFlowOutSubj;
 	/// Construction
 	/// \brief default constructor
 	///	does nothing
 	Impl(coord_ptr_t coord, srepo_ptr_t srepo)
-		: m_Coord(coord), m_SettingsRepo(srepo), m_DecodingNode(trans::CreateDecodingNode())
+		: m_Coord(coord), m_SettingsRepo(srepo), m_DecodingNode(trans::CreateDecodingNode()), m_EncodingNode(trans::CreateTextureExportingNode())
 	{ 
 		m_IsPlaying.store(false, std::memory_order_seq_cst);
-		m_IsGenerating.store(false, std::memory_order_seq_cst);
 	}
 };
 ///	Construction
@@ -117,14 +121,27 @@ void PlayerModel::Init()
 	});
 	///=========================
 	/// Prefetching frames task
+	/// operates on new thread
 	///=========================
 	m_Impl->m_StartPrefetchEventSubj.get_observable().as_dynamic()
 		.observe_on(rxcpp::observe_on_new_thread())
 		.subscribe([this](auto _) 
 	{
-		m_Impl->m_DecodingNode->SetGeneratingFrames(true);
-		m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
+		m_Impl->m_IsGenerating = true;
 		m_Impl->m_DecodingNode->GenerateFrames(m_Impl->k_InitialFramesPrefetch);
+	}, [this](std::exception_ptr ptr) 
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception & ex)
+			{
+				LOG_ERROR << "Error when prefetching frames: " << ex.what();
+			}
+		}
 	});
 	///================================================
 	///	Prefetching frames completed notification task:
@@ -133,47 +150,52 @@ void PlayerModel::Init()
 	m_Impl->m_DecodingNode->PrefetchFramesCompleted().observe_on(m_Impl->m_Coord->ModelCoordination())
 		.subscribe([this](auto _)
 	{
-		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-		m_Impl->m_DecodingNode->SetGeneratingFrames(false);
+		m_Impl->m_IsGenerating = false;
 	});
 	///==============================
 	/// Decoding node output to queue
 	///==============================
 	m_Impl->m_DecodingNode->FrameFlowOut()
-		.subscribe([this](const BufferCPU<uchar4>& frameData) 
+		.subscribe([this](const std::pair<int, BufferCPU<uchar4>>& frameData) 
 	{
-		auto data = std::make_pair(m_Impl->m_DecodingNode->GetCurrentFramePosition(), frameData);
-		m_Impl->m_FrameQueue.emplace_back(data);
+		m_Impl->m_FrameMap.insert(frameData);	
 	});
 }
 ///	\brief destroy the player
 ///	Closes the MFSession
 void PlayerModel::Destroy()
 {
-	if (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	if (m_Impl->m_DecodingNode->IsGenerating())
 	{
 		m_Impl->m_DecodingNode->SetGeneratingFrames(false);
 	}
 	/// if decoder is generating frames wait
-	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	while (m_Impl->m_DecodingNode->IsGenerating())
 	{
 
 	}
+	/// Stop (clears frame queue)
 	Stop();
-	/// clear the frame queue
-	m_Impl->m_FrameQueue.clear();
+	/// Release the decoding node
 	m_Impl->m_DecodingNode->Release();
 }
 ///	\brief load a media file
 ///	\param	filepath	the path of the file to load
 void PlayerModel::LoadFile(const std::string& filepath)
 {
+	/// check if there is alreaduy a file loaded
+	if (!m_Impl->m_Settings->LoadedVideoFilepath.empty() || m_Impl->m_DecodingNode->IsGenerating() || m_Impl->m_IsPlaying.load(std::memory_order_seq_cst))
+	{
+		Destroy();
+	}
 	std::string filename = std::filesystem::path(filepath).filename().generic_string();
-	/// load 
+	std::string msg = "Loading: " + filename;
+	m_Impl->m_ProgressMsgFlowOutSubj.get_subscriber().on_next(msg);
+	m_Impl->m_FrameLoadProgressFlowOutSubj.get_subscriber().on_next(0.0f);
+	/// load in the decoder
 	m_Impl->m_DecodingNode->LoadFile(filepath);
 	m_Impl->m_Settings->LoadedVideoFilepath = filepath;
 	/// create our scaling node
-	//m_Impl->m_ScalingNode = trans::CreateScalingNode(m_Impl->m_DecodingNode->GetFrameWidth(), m_Impl->m_DecodingNode->GetFrameHeight());
 	/// check fps to create interval observable
 	size_t frameCount = m_Impl->m_DecodingNode->GetFrameCount();
 	double fps = m_Impl->m_DecodingNode->GetFrameRate();
@@ -188,10 +210,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	m_Impl->m_FrameSizeFlowOutSubj.get_subscriber().on_next(make_uint2(m_Impl->m_DecodingNode->GetFrameWidth(), m_Impl->m_DecodingNode->GetFrameHeight()));
 	/// create the interval observable according to the frame rate
 	std::chrono::nanoseconds periodNano = std::chrono::duration_cast<std::chrono::nanoseconds>(m_Impl->m_FramePeriod);
-	m_Impl->m_PlaybackObs		= rxcpp::observable<>::interval(periodNano).as_dynamic();
-
-	m_Impl->m_CheckPrefetchObs	
-		= rxcpp::observable<>::interval(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(1.0f))).as_dynamic();
+	m_Impl->m_PlaybackObs = rxcpp::observable<>::interval(periodNano).as_dynamic();
 	
 	SequenceItem item; 
 	item.Name = filename;
@@ -203,11 +222,85 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	item.SeqFrameStart = 0;
 	item.SeqFrameEnd = item.Duration;
 	item.Id = 1;
+	/// attach playback callbacks
+	///===============
+	/// Start Playback
+	///===============
+	item.OnStartPlayback.get_observable().as_dynamic()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe([this](auto _) 
+	{
+	
+	
+	});
+	///================
+	/// Pause playback
+	///================
+	item.OnPause.get_observable().as_dynamic()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe([this](auto _) 
+	{
+		this->Pause();
+	});
+	///===============
+	/// Stop playback
+	///===============
+	item.OnStop.get_observable().as_dynamic()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe([this](auto _) 
+	{
+		this->Stop();
+	});
+	///=======
+	/// Seek
+	///=======
+	item.OnSeekFrame.get_observable().as_dynamic()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe([this](int frameId) 
+	{
+		this->Seek(frameId);
+	}, [this](std::exception_ptr ptr) 
+	{
+		if (ptr)
+		{
+			try
+			{
+				std::rethrow_exception(ptr);
+			}
+			catch (std::exception & ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+		}
+	});
+	///==============
+	/// Seek Backward
+	///==============
+	item.OnSeekBackward.get_observable().as_dynamic()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe([this](auto _) 
+	{
+		this->SeekBackward();
+	});
+	///==============
+	/// Seek Forward
+	///==============
+	item.OnSeekForward.get_observable().as_dynamic()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.subscribe([this](auto _)
+	{
+		this->SeekForward();
+	});
 	m_Impl->m_SequenceItemFlowOutSubj.get_subscriber().on_next(item);
 	///===================
 	/// start prefetching
 	///===================
 	m_Impl->m_OnVideoLoadedSubj.get_subscriber().on_next(nullptr);
+	/// prefetch frames
+	m_Impl->m_DecodingNode->SetCurrentFramePos(0);
+	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrame(0));
+	//// needed beacause now the decoding node is at frame 1
+	m_Impl->m_DecodingNode->SetCurrentFramePos(0);
 	m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 }
 ///==================
@@ -220,136 +313,106 @@ void PlayerModel::Start()
 	m_Impl->m_IsPlaying.store(true, std::memory_order_seq_cst);
 	/// Play one frame task
 	m_Impl->m_PlaybackLifetime.add(
-		m_Impl->m_PlaybackObs.subscribe(
+		m_Impl->m_PlaybackObs.subscribe_on(m_Impl->m_Coord->ModelCoordination()).subscribe(
 			[this](auto _)
 	{
-		size_t dur	= m_Impl->m_DecodingNode->GetFrameCount();
-		size_t dist = m_Impl->m_Settings->CurrentFrameId;
-		size_t queuesz = m_Impl->m_FrameQueue.size();
-		bool playbackPred = m_Impl->m_FrameQueue.size() > m_Impl->k_FrameQueueSizeThreshold && m_Impl->m_IsPlaying.load(std::memory_order_seq_cst);
-		if (playbackPred)
-		{
-			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.front().second);
-			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
-			m_Impl->m_Settings->CurrentFrameId++;
-			m_Impl->m_FrameQueue.pop_front();
-		}
-		if (m_Impl->m_FrameQueue.size() <= m_Impl->k_FrameQueueSizeThreshold && !m_Impl->m_DecodingNode->IsGenerating())
-		{
-			m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
-		}
+		Seek(m_Impl->m_Settings->CurrentFrameId);
+		m_Impl->m_Settings->CurrentFrameId++;
 	}));
 }
 ///	\brief pause playback
 void PlayerModel::Pause()
 {
-	m_Impl->m_DecodingNode->SetGeneratingFrames(false);
-	m_Impl->m_PlaybackLifetime.clear();
-	m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);
-	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
-	{
-		//LOG_DEBUG << "Generating";
-	}
+	
 }
 ///	\brief stop playback
 void PlayerModel::Stop()
 {	
-	if (this->IsOpen())
+	m_Impl->m_IsGenerating = false;
+	auto it = m_Impl->m_FrameMap.find(0);
+	if (it != m_Impl->m_FrameMap.end())
 	{
-		Pause();
-		/// set playback
-		/// clear playback subscription
-		//m_Impl->m_PrefetchLifetime.clear();
-		/*m_Impl->m_PlaybackLifetime.clear();
-		m_Impl->m_IsPlaying.store(false, std::memory_order_seq_cst);*/
-		//while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
-		//{
-		//	//LOG_DEBUG << "Stop. Waiting";
-		//}
-		
-		/// erase frame queue
-		m_Impl->m_FrameQueue.clear();
-		/// generate the first frame of the video
-		m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(it->second);
+		m_Impl->m_Settings->CurrentFrameId = it->first;
+		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
+		m_Impl->m_FrameMap.clear();
 		m_Impl->m_DecodingNode->SetCurrentFramePos(0);
-		m_Impl->m_DecodingNode->GenerateFrame();
-		m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-		/// send the first frame
-		
-		/// set current frame
-		m_Impl->m_Settings->CurrentFrameId = 0;
-		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(0);
-		/// signal a prefetch event
-		if (!m_Impl->m_FrameQueue.empty())
-			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back().second);
 		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
-		/// and we should be OK
+	}
+	else
+	{
+		while (m_Impl->m_DecodingNode->IsGenerating())
+		{
+			LOG_WARNING << "Generating...";
+		}
+		m_Impl->m_FrameMap.clear();
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrame(0));
+		if (!m_Impl->m_IsGenerating)
+		{
+			m_Impl->m_DecodingNode->SetCurrentFramePos(0);
+			m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+		}
 	}
 }
 ///	\brief seek to a specified frame position
 void PlayerModel::Seek(int framePos)
 {
-	//bool wasPlaying = m_Impl->m_IsPlaying.load(std::memory_order_seq_cst);
-	//Pause();
-	//m_Impl->m_FrameQueue.clear();
-	//m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
-	//m_Impl->m_DecodingNode->SetCurrentFramePos(framePos);
-	//m_Impl->m_Settings->CurrentFrameId = framePos;
-	//m_Impl->m_DecodingNode->GenerateFrame();
-	//m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-	///// send the frame
-	//m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back());
-	//m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
-	//m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
-	if (!m_Impl->m_FrameQueue.empty())
+	if (!m_Impl->m_FrameMap.empty())
 	{
-		auto it = std::find_if(m_Impl->m_FrameQueue.begin(), m_Impl->m_FrameQueue.end(), [this, framePos](auto i) 
-		{
-			return i.first == framePos;
-		});
-		if (it != m_Impl->m_FrameQueue.end())
+		auto it = m_Impl->m_FrameMap.find(framePos);
+		int frameCount = m_Impl->m_DecodingNode->GetFrameCount();
+		int lastFrameId = m_Impl->m_FrameMap.rbegin()->first;
+		if (it != m_Impl->m_FrameMap.end())
 		{
 			m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(it->second);
 			m_Impl->m_Settings->CurrentFrameId = it->first;
 			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
-			m_Impl->m_FrameQueue.pop_front();
+			m_Impl->m_FrameMap.erase(framePos);
 		}
-
+		if (
+			(m_Impl->m_FrameMap.size() < (m_Impl->k_FrameQueueSizeThreshold * m_Impl->k_FrameQueueSizeFactor))
+			&& (!m_Impl->m_IsGenerating)
+			&& (lastFrameId != frameCount - 1))
+		{
+			m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+		}
 	}
 }
 ///	\brief seek forward one frame
 void PlayerModel::SeekForward()
 {
-	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	int frame = m_Impl->m_Settings->CurrentFrameId++;
+	auto it = m_Impl->m_FrameMap.find(frame);
+	if (it != m_Impl->m_FrameMap.end())
 	{
-		/// do nothing
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(it->second);
+		m_Impl->m_Settings->CurrentFrameId = frame;
 	}
-	Pause();
-	m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
-	m_Impl->m_Settings->CurrentFrameId++;
-	m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
-	m_Impl->m_DecodingNode->GenerateFrame();
-	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-	/// send the frame
-	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back().second);
-	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
+	else
+	{	
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrame(m_Impl->m_Settings->CurrentFrameId));
+		m_Impl->m_FrameMap.clear();
+		m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
+		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+	}
 }
 ///	\brief seek backward one frame
 void PlayerModel::SeekBackward()
 {
-	while (m_Impl->m_IsGenerating.load(std::memory_order_seq_cst))
+	int frame = m_Impl->m_Settings->CurrentFrameId--;
+	auto it = m_Impl->m_FrameMap.find(frame);
+	if (it != m_Impl->m_FrameMap.end())
 	{
-		/// do nothing
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(it->second);
+		m_Impl->m_Settings->CurrentFrameId = frame;
 	}
-	Pause();
-	m_Impl->m_IsGenerating.store(true, std::memory_order_seq_cst);
-	m_Impl->m_Settings->CurrentFrameId--;
-	m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
-	m_Impl->m_DecodingNode->GenerateFrame();
-	m_Impl->m_IsGenerating.store(false, std::memory_order_seq_cst);
-	/// send the frame
-	m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_FrameQueue.back().second);
-	m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
+	else
+	{
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrame(m_Impl->m_Settings->CurrentFrameId));
+		m_Impl->m_FrameMap.clear();
+		m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
+		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+	}
 }
 ///	\brief set the number of frames to prefetch
 ///	\param	frameCount	the number of frames to prefetch
@@ -402,12 +465,14 @@ uint2 fu::fusion::PlayerModel::GetFrameSize() const
 
 const BufferCPU<uchar4>& fu::fusion::PlayerModel::GetCurrentFrame()
 {
-	if (!m_Impl->m_FrameQueue.empty())
+	auto it = m_Impl->m_FrameMap.find(m_Impl->m_Settings->CurrentFrameId);
+	if (it != m_Impl->m_FrameMap.end())
 	{
-		return m_Impl->m_FrameQueue.front().second;
+		return it->second;
 	}
 	return CreateBufferCPU<uchar4>(0);
 }
+
 int PlayerModel::GetCurrentFrameId() const
 {
 	return m_Impl->m_Settings->CurrentFrameId;
@@ -428,12 +493,12 @@ rxcpp::observable<PlayerModel::frame_t> fu::fusion::PlayerModel::CurrentFrameFlo
 	return m_Impl->m_FrameFlowOutSubj.get_observable().as_dynamic();
 }
 
-rxcpp::observable<int> fu::fusion::PlayerModel::FrameWidthFlowOut()
+rxcpp::observable<size_t> fu::fusion::PlayerModel::FrameWidthFlowOut()
 {
 	return m_Impl->m_FrameWidthFlowOutSubj.get_observable().as_dynamic();
 }
 
-rxcpp::observable<int> fu::fusion::PlayerModel::FrameHeightFlowOut()
+rxcpp::observable<size_t> fu::fusion::PlayerModel::FrameHeightFlowOut()
 {
 	return m_Impl->m_FrameHeightFlowOutSubj.get_observable().as_dynamic();
 }
@@ -451,6 +516,14 @@ rxcpp::observable<void*> fu::fusion::PlayerModel::OnVideoLoaded()
 rxcpp::observable<SequenceItem> fu::fusion::PlayerModel::SequenceItemFlowOut()
 {
 	return m_Impl->m_SequenceItemFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<std::string> PlayerModel::ProgressMessageFlowOut()
+{
+	return m_Impl->m_ProgressMsgFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<float> PlayerModel::LoadingProgressFlowOut()
+{
+	return m_Impl->m_FrameLoadProgressFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

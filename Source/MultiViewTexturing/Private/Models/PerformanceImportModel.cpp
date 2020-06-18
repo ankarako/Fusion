@@ -25,8 +25,8 @@ struct PerformanceImportModel::Impl
 	static constexpr const char* k_CalibrationFilename		= "calibration.json";
 	static constexpr const char* k_SkinningFilename			= "skinning.json";
 	static constexpr const char* k_SkeletonFilename			= "skeleton.json";
-	static constexpr const char* k_TemplateMeshFilenameObj	= "template_mesh.obj";
-	static constexpr const char* k_TemplateMeshFilenamePly	= "template_mesh.ply";
+	static constexpr const char* k_TemplateMeshFilenameObj	= "template_mesh_uv.obj";
+	static constexpr const char* k_TemplateMeshFilenamePly	= "template_mesh_uv.ply";
 	static constexpr const char* k_TextureAtlasFilename		= "texture_atlas.jpg";
 	static constexpr const char* k_TrackedParamsFilename	= "tracked_params.json";
 	/// members
@@ -116,9 +116,10 @@ void PerformanceImportModel::Init()
 		std::string templateMeshFilepathPly = filesystem::absolute(targetDir + "\\" + m_Impl->k_TemplateMeshFilenamePly).generic_string();
 		//io::LoadObj(templateMeshFilepath, meshData);
 		io::perfcap_skin_data_ptr_t denseSkinData = io::CreatePerfcapSkinData();
-		//io::LoadObjWithSkinData(templateMeshFilepath, meshData, skinData, denseSkinData);
-		io::PerfcapMeshImport(templateMeshFilepathPly, templateMeshFilepathObj, meshData);
 		io::LoadObjWithSkinData(templateMeshFilepathObj, meshData, skinData, denseSkinData);
+		//io::PerfcapMeshImport(templateMeshFilepathPly, templateMeshFilepathObj, meshData);
+		//io::LoadObjWithSkinData(templateMeshFilepathObj, meshData, skinData, denseSkinData);
+		//meshData = io::LoadPly(templateMeshFilepathPly);
 		/// Mesh data is textured
 		meshData->TextureWidth = m_Impl->m_TextureResolution.x;
 		meshData->TextureHeight = m_Impl->m_TextureResolution.y;

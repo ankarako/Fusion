@@ -68,15 +68,18 @@ public:
 	///	\brief frame buffer output
 	rxcpp::observable<frame_t> CurrentFrameFlowOut();
 	///	\brief frame width output event
-	rxcpp::observable<int>	FrameWidthFlowOut();
+	rxcpp::observable<size_t>	FrameWidthFlowOut();
 	///	\brief frame height output event
-	rxcpp::observable<int>	FrameHeightFlowOut();
+	rxcpp::observable<size_t>	FrameHeightFlowOut();
 	///	\brief frame size flow out
 	rxcpp::observable<uint2> FrameSizeFlowOut();
 
 	rxcpp::observable<void*> OnVideoLoaded();
 
 	rxcpp::observable<SequenceItem> SequenceItemFlowOut();
+
+	rxcpp::observable<std::string>	ProgressMessageFlowOut();
+	rxcpp::observable<float>		LoadingProgressFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

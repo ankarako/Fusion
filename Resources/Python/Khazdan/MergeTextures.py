@@ -4,7 +4,7 @@ import os
 
 argParser = argparse.ArgumentParser()
 argParser.add_argument("--input_dir", type = str, help = "Directory with the multi-view texture folders")
-argParser.add_argument("--output_file", type = str, help = "filepath to save the output video texture maps")
+argParser.add_argument("--output_dir", type = str, help = "filepath to save the output video texture maps")
 
 k_TSPPath = "D:\\_dev\\_Projects\\f360\\Resources\\TSP\\TextureStitching.exe"
 k_UVAtlasPAth = "D:\\Tools\\UVAtlas-master\\Bin\\uvatlastool.exe"
@@ -17,15 +17,19 @@ k_meshName = "animated_template.ply"
 
 def main(args):
 	inputDir = args.input_dir
-	output = args.output_file
-	outputDir = os.path.dirname(output)
-	tempOutputPath = os.path.join(outputDir, "temp")
+	outputDir = args.output_dir
 
-	print("input: {}".format(inputDir))
+	
+
+	print("input: {}".format(outputDir))
 	print("output: {}".format(outputDir))
 
 	frameFolders = os.listdir(inputDir)
 	frameFolders.sort(key=int)
+
+	if (not os.path.exists(outputDir)):
+		os.makedirs(outputDir)
+		
 	counter = 0
 	for frameFolder in frameFolders:
 		# get absolute paths
@@ -34,7 +38,7 @@ def main(args):
 		texelName = os.path.join(absPath, k_texelName)
 		maskName = os.path.join(absPath, k_maskName)
 		outName = "texture_{:03}.png".format(int(frameFolder))
-		out = os.path.join(tempOutputPath, outName)
+		out = os.path.join(outputDir, outName)
 		# absKhazdan = os.path.abspath(k_TSPPath)
 		cli = "{} --in {} {} {} --multi --out {}".format(k_TSPPath, meshName, texelName, maskName, out)
 		print("Running: {}".format(cli))

@@ -6,6 +6,8 @@
 #include <Components/TriangleMeshComp.h>
 #include <Components/MeshMaterialComp.h> 
 #include <Components/SolidColorMissComp.h>
+#include <Components/PlaneComp.h>
+
 
 #include <Systems/CreateContextSystem.h>
 #include <Systems/RaygenSystem.h>
@@ -45,6 +47,7 @@ struct RayTracingModel::Impl
 	std::vector<rt::TriangleMeshComp>	m_TriangleMeshComps;
 	std::vector<rt::PointCloudComp>		m_PointCloudComps;
 	rt::TriangleMeshComp				m_TemplateMeshComp;
+	rt::PlaneComp						m_PlaneComp;
 	/// our launch size
 	unsigned int m_LaunchWidth;
 	unsigned int m_LaunchHeight;
@@ -85,6 +88,7 @@ void RayTracingModel::Init()
 {
 	/// create contenxt component
 	m_Impl->m_ContextComp = rt::CreateContextComponent();
+	m_Impl->m_PlaneComp = rt::CreatePlaneComponent(make_float4(1.0f, 1.0f, 1.0f, 0.2f), make_float3(0.0f, -0.8f, 0.0f), 5.0f, 5.0f);
 	rt::CreateContextSystem::CreateContext(m_Impl->m_ContextComp, 1, 1);
 	/// create a miss program
 	m_Impl->m_SolidColorMissComp = rt::CreateSolidColorMissComponent(optix::make_float3(0.1f, 0.1f, 0.1f));
@@ -104,6 +108,9 @@ void RayTracingModel::Init()
 	rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_AccelerationComp);
 	rt::MissSystem::AttachSolidColorMissToContext(m_Impl->m_SolidColorMissComp, m_Impl->m_ContextComp);
 
+	rt::MeshMappingSystem::MapPlaneComp(m_Impl->m_PlaneComp, m_Impl->m_ContextComp);
+	rt::MeshMappingSystem::AttachPlaneCompToTopLevelAcceleration(m_Impl->m_PlaneComp, m_Impl->m_AccelerationComp);
+	
 	///==========================
 	/// launch size flow in task
 	///==========================
@@ -115,7 +122,7 @@ void RayTracingModel::Init()
 		rt::RaygenSystem::CreatePinholeRaygenProg(m_Impl->m_PinholeRaygenComp, m_Impl->m_ContextComp, size.x, size.y, make_float3(0.0f, -1.0f, 0.0f));
 		rt::RaygenSystem::SetRaygenAttributes(m_Impl->m_PinholeRaygenComp);
 		rt::MeshMappingSystem::MapAccelerationToRaygen(m_Impl->m_AccelerationComp, m_Impl->m_PinholeRaygenComp);
-
+		m_Impl->m_PlaneComp->GInstance["top_object"]->set(m_Impl->m_PinholeRaygenComp->RaygenProg["top_object"]->getTextureSampler());
 		m_Impl->m_FrameBuffer = CreateBufferCPU<uchar4>(m_Impl->m_LaunchWidth * m_Impl->m_LaunchHeight);
 		/// Launch on frame
 		this->OnLaunch().on_next(nullptr);
@@ -264,6 +271,7 @@ void RayTracingModel::Init()
 		.subscribe([this](const io::MeshData& data) 
 	{
 		rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TemplateMeshComp, data);
+		m_Impl->m_AccelerationComp->Acceleration->markDirty();
 		this->OnLaunch().on_next(nullptr);
 	});
 	///=================================

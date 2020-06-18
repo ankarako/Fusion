@@ -21,8 +21,8 @@ public:
 	void Render() override;
 
 	rxcpp::observer<SequenceItem>	SequencerItemFlowIn();
-	rxcpp::observer<int>			CurrentFrameFlowIn();
-	rxcpp::observer<void*>			CurrentFrameTickFlowIn();
+	//rxcpp::observer<int>			CurrentFrameFlowIn();
+	rxcpp::observer<size_t>			CurrentFrameTickFlowIn();
 
 	rxcpp::observable<void*>		OnPlayButtonClicked();
 	rxcpp::observable<void*>		OnPauseButtonClicked();

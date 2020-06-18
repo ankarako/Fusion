@@ -3,6 +3,9 @@
 
 #include <optix_world.h>
 
+#define RadianceRayType 0
+#define ShadowRayType	1
+
 namespace fu {
 namespace rt {
 ///	\struct PerRayData_Radiance
@@ -13,6 +16,11 @@ struct PerRayData_Radiance
 	float			Importance;
 	int				Depth;
 };	///	!struct PerRayData_Radiance
+
+struct PerRayData_Shadow
+{
+	float Attenuation;
+};
 ///	\struct PerRayData_Texturing
 ///	\brief ray payload for texturing
 struct TexturingOutput

@@ -172,6 +172,7 @@ void ViewportTracingModel::Init()
 		.subscribe([this](const io::MeshData& data) 
 	{
 		rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TriangleMeshComps.back(), data);
+		m_Impl->m_TopLevelAccelerationComp->Acceleration->markDirty();
 	});
 	///=================
 	/// Camera Rotation

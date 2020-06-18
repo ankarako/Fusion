@@ -4,6 +4,7 @@
 #include <Components/RaygenProgComp.h>
 #include <Components/TriangleMeshComp.h>
 #include <Components/AccelerationComp.h>
+#include <Components/PlaneComp.h>
 #include <Systems/CreateContextSystem.h>
 #include <Systems/EnvMapSystem.h>
 #include <Systems/RaygenSystem.h>
@@ -38,9 +39,10 @@ struct VideoTracingModel::Impl
 	/// mesh instance component
 	rt::AccelerationComp	m_AccelrationComp;
 	///	triangle meshes
-	std::vector<rt::TriangleMeshComp> m_TriangleMeshComps;
+	std::vector<rt::TriangleMeshComp>	m_TriangleMeshComps;
 
-	rt::TriangleMeshComp		m_TemplateMeshComp;
+	rt::TriangleMeshComp				m_TemplateMeshComp;
+	rt::PlaneComp						m_PlaneComp;
 	/// the context launch size
 	uint2 m_LaunchSize;
 	/// frame size flow in
@@ -92,6 +94,12 @@ void VideoTracingModel::Init()
 	rt::MeshMappingSystem::NullInitializeAcceleration(m_Impl->m_AccelrationComp, m_Impl->m_ContextComp);
 	/// attach triangle mesh component to acceleration
 	rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_AccelrationComp);
+
+	m_Impl->m_PlaneComp = rt::CreatePlaneComponent(make_float4(1.0f, 1.0f, 1.0f, 0.02f), make_float3(0.0f, -0.8f, 0.0f), 8.0f, 8.0f);
+
+	rt::MeshMappingSystem::MapPlaneComp(m_Impl->m_PlaneComp, m_Impl->m_ContextComp);
+	rt::MeshMappingSystem::AttachPlaneCompToTopLevelAcceleration(m_Impl->m_PlaneComp, m_Impl->m_AccelrationComp);
+	
 	///==========================
 	/// frame size flow in task
 	/// create the raygen program
@@ -104,6 +112,7 @@ void VideoTracingModel::Init()
 		rt::RaygenSystem::SetRaygenAttributes(m_Impl->m_360RaygenComp);
 		rt::EnvMapSystem::CreateTextureBuffer(m_Impl->m_EnvMapComp, m_Impl->m_ContextComp, size.x, size.y);
 		rt::MeshMappingSystem::MapAccelerationToRaygen(m_Impl->m_AccelrationComp, m_Impl->m_360RaygenComp);
+		m_Impl->m_PlaneComp->GInstance["top_object"]->set(m_Impl->m_360RaygenComp->RaygenProg["top_object"]->getTextureSampler());
 		/// create our frame buffer
 		m_Impl->m_FrameBuffer = CreateBufferCPU<uchar4>(size.x * size.y);
 	});
@@ -184,6 +193,7 @@ void VideoTracingModel::Init()
 		.subscribe([this](const io::MeshData& data) 
 	{
 		rt::MeshMappingSystem::CopyAnimatedMeshDataToTriangleComp(m_Impl->m_TemplateMeshComp, data);
+		m_Impl->m_AccelrationComp->Acceleration->markDirty();
 		//rt::LaunchSystem::Launch(m_Impl->m_ContextComp, m_Impl->m_LaunchSize.x, m_Impl->m_LaunchSize.y, 0);
 		///// copy output buffer
 		//rt::LaunchSystem::CopyOutputBuffer(m_Impl->m_360RaygenComp, m_Impl->m_FrameBuffer);

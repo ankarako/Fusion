@@ -62,8 +62,11 @@ void PlayerViewportPresenter::Init()
 	/// frame size subscription
 	///========================
 	m_Impl->m_Model->FrameSizeFlowOut()
+		.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_TracerModel->FrameSizeFlowIn());
+
 	m_Impl->m_Model->FrameSizeFlowOut()
+		.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_View->FrameSizeFlowIn());
 	///============================
 	///	viewport size changed task
@@ -81,8 +84,6 @@ void PlayerViewportPresenter::Init()
 	///======================
 	m_Impl->m_AssetModel->MeshDataFlowOut()
 		.subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
-	//m_Impl->m_PerfcapModel->TemplateMeshDataFlowOut()
-	//	.subscribe(m_Impl->m_TracerModel->MeshDataFlowIn());
 	///=================================
 	/// frame flow out from decoder task
 	///=================================
@@ -92,7 +93,8 @@ void PlayerViewportPresenter::Init()
 	///================================
 	/// frame flow out from tracer task
 	///================================
-	m_Impl->m_TracerModel->FrameFlowOut().observe_on(m_Impl->m_Coord->UICoordination())
+	m_Impl->m_TracerModel->FrameFlowOut()
+		.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_View->FrameFlowIn());
 	m_Impl->m_View->Activate();
 }

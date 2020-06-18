@@ -11,8 +11,8 @@
 			"program": "${file}",
 			"console": "integratedTerminal",
 			"args": [
-				"--input_dir", "D:\\_dev\\_Projects\\MVT\\output",
-				"--output", "D:\\_dev\\_RayMVTExports\\KhazdanOutputs\\texture.avi"
+				"--input_dir", "D:\\_dev\\_RayMVTExports\\forKhazdan\\aldoum_casual_narration_near",
+				"--output_dir", "D:\\_dev\\_RayMVTExports\\forKhazdan\\aldoum_casual_narration_near\\textureKhazdan"
 			]
 		}
 	]

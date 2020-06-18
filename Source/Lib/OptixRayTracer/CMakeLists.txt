@@ -190,6 +190,7 @@ CompilePtx(OptixRayTracer CompilePtxTexturingRaygen "Private/Programs/TexturingR
 CompilePtx(OptixRayTracer CompilePtxTexturedMeshMaterial "Private/Programs/TexturedMeshMaterial.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TexturedMeshMaterial.ptx")
 CompilePtx(OptixRayTracer CompilePtxTriangleTexturingHitgroup "Private/Programs/TriangleTexturingHitGroup.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TriangleTexturingHitGroup.ptx")
 CompilePtx(OptixRayTracer CompilePtxPerfcapTriangleMesh "Private/Programs/PerfcapTriangleMesh.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "PerfcapTriangleMesh.ptx")
+CompilePtx(OptixRayTracer CompilePtxTransparentColorHitgroup "Private/Programs/TransparentColorHitgroup.cu" "CUDACustomTargets" ${CUDA_GENERATED_OUTPUT_DIR} "TransparentColorHitgroup.ptx")
 ##############
 # Dependencies
 ##############

@@ -542,54 +542,56 @@ void MVTModel::Init()
 	m_Impl->m_RunExportTaskSubj.get_observable().as_dynamic()
 		.subscribe([this](auto _) 
 	{
-		using namespace std::experimental;
-		if (!filesystem::exists(m_Impl->m_ExportDir))
+		if (!m_Impl->m_ViewportEnabled)
 		{
-			filesystem::create_directory(m_Impl->m_ExportDir);
-		}
+			using namespace std::experimental;
+			if (!filesystem::exists(m_Impl->m_ExportDir))
+			{
+				filesystem::create_directory(m_Impl->m_ExportDir);
+			}
 
-		m_Impl->m_EncodingNode->SetInputDirectory(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
-		m_Impl->m_EncodingNode->SetInputFilenamePrefix(m_Impl->k_MergedTextureFilenamePrefix);
-		std::string filepath = m_Impl->m_ExportDir + "\\" + std::string(m_Impl->k_MergedTextureOuputFilename) + ".avi";
-		m_Impl->m_EncodingNode->SetOutputFilepath(filepath);
-		/// 
-		m_Impl->m_EncodingNode->ExportVideo();
-		try
-		{
-			std::string skeletonFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkeletonFilename;
-			std::string skinningFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkinningFilename;
-			std::string tempMeshFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TemplateMeshFilename;
-			std::string trackedFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TrackedParamsFilename;
-			filesystem::copy_file(skeletonFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkeletonFilename);
-			filesystem::copy_file(skinningFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkinningFilename);
-			filesystem::copy_file(tempMeshFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TemplateMeshFilename);
-			filesystem::copy_file(trackedFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TrackedParamsFilename);
-		}
-		catch (std::exception& ex)
-		{
-			LOG_ERROR << ex.what();
-		}
-		/// delete temp folder data before zipping
-		for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
-		{
-			filesystem::remove(entry);
-		}
-		filesystem::remove(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
-		// zip the whole file
-		std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
-		std::system(cli.c_str());
-		// delete temp data
-		for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
-		{
-			if (!filesystem::is_directory(entry))
+			m_Impl->m_EncodingNode->SetInputDirectory(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
+			m_Impl->m_EncodingNode->SetInputFilenamePrefix(m_Impl->k_MergedTextureFilenamePrefix);
+			std::string filepath = m_Impl->m_ExportDir + "\\" + std::string(m_Impl->k_MergedTextureOuputFilename) + ".avi";
+			m_Impl->m_EncodingNode->SetOutputFilepath(filepath);
+			/// 
+			m_Impl->m_EncodingNode->ExportVideo();
+			try
+			{
+				std::string skeletonFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkeletonFilename;
+				std::string skinningFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkinningFilename;
+				std::string tempMeshFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TemplateMeshFilename;
+				std::string trackedFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TrackedParamsFilename;
+				filesystem::copy_file(skeletonFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkeletonFilename);
+				filesystem::copy_file(skinningFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkinningFilename);
+				filesystem::copy_file(tempMeshFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TemplateMeshFilename);
+				filesystem::copy_file(trackedFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TrackedParamsFilename);
+			}
+			catch (std::exception& ex)
+			{
+				LOG_ERROR << ex.what();
+			}
+			/// delete temp folder data before zipping
+			for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
+			{
 				filesystem::remove(entry);
+			}
+			filesystem::remove(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
+			// zip the whole file
+			std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
+			std::system(cli.c_str());
+			// delete temp data
+			for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+			{
+				if (!filesystem::is_directory(entry))
+					filesystem::remove(entry);
+			}
+			for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+			{
+				filesystem::remove(entry);
+			}
+			filesystem::remove(m_Impl->m_OutputDir);
 		}
-		for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
-		{
-			filesystem::remove(entry);
-		}
-		filesystem::remove(m_Impl->m_OutputDir);
-
 	}, [this](std::exception_ptr ptr)
 	{
 		if (ptr)

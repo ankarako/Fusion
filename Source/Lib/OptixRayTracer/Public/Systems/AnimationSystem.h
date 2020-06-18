@@ -165,18 +165,23 @@ public:
 			joint->Swing2[1],
 			joint->Swing2[2]
 		);
-		optix::float3 twist = optix::make_float3(
-			joint->Twist[0],
-			joint->Twist[1],
-			joint->Twist[2]
-		);
+		//optix::float3 twist = optix::make_float3(
+		//	joint->Twist[0],
+		//	joint->Twist[1],
+		//	joint->Twist[2]
+		//);
 		optix::float3 expMap = GetExpMap(swing1, swing2, rotation);
 		optix::float4 q = ExpMapToQuaternion(expMap);
 		int parentId = joint->ParentId;
-		optix::float3 initBoneDir = optix::make_float3(joint->Twist[0], joint->Twist[1], joint->Twist[2]);
+		optix::float3 initBoneDir = 
+			optix::make_float3(joint->Position[0], joint->Position[1], joint->Position[2])
+			- optix::make_float3(skeleton->at(parentId)->Position[0], skeleton->at(parentId)->Position[1], skeleton->at(parentId)->Position[2]);
+
+		//optix::float3 initBoneDir = optix::make_float3(joint->Twist[0], joint->Twist[1], joint->Twist[2]);
+
 		optix::float4 initBoneQuaternion = NormalizeQuaternion(optix::make_float4(initBoneDir, 0.0f));
 		optix::float4 qConj = optix::make_float4(-q.x, -q.y, -q.z, q.w);
-		optix::float4 qMultConj = MultQuaternions(initBoneQuaternion, qConj);
+		optix::float4 qMultConj = MultQuaternions(qConj, initBoneQuaternion);
 		optix::float4 boneQuaternion = NormalizeQuaternion(MultQuaternions(qMultConj, q));
 		optix::float3 newTwist = optix::make_float3(boneQuaternion.x, boneQuaternion.y, boneQuaternion.z);
 

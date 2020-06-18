@@ -15,6 +15,7 @@ namespace fusion {
 class PlayerControllerView;
 class PlayerModel;
 class FileExplorerView;
+class ProgressBarView;
 class Coordination;
 ///	\class PlayerControllerPresenter
 ///	\brief presenter for controlling playeback
@@ -30,12 +31,14 @@ public:
 	using wrepo_ptr_t = std::shared_ptr<app::WidgetRepo>;
 	///	\typedef 
 	using fexp_view_ptr_t = std::shared_ptr<FileExplorerView>;
+	using prog_view_ptr_t = std::shared_ptr<ProgressBarView>;
 	/// Construction
 	///	\brief construct from model and view
 	PlayerControllerPresenter(
 		model_ptr_t model, 
 		view_ptr_t view, 
 		fexp_view_ptr_t fexp_view, 
+		prog_view_ptr_t prog_view,
 		wrepo_ptr_t wrepo,
 		coord_ptr_t coord);
 	///	\brief initialize the presenter

@@ -114,13 +114,13 @@ void PerfcapPlayerModel::Pause()
 void PerfcapPlayerModel::Stop()
 {
 	m_Impl->m_PlaybackLifetime.clear();
-	SeekFrame(0);
+	SeekFrame(1);
 }
 
 void PerfcapPlayerModel::SeekFrame(size_t frameId)
 {
 	size_t dur = m_Impl->m_TrackedParams->size();
-	if (frameId < dur && frameId >= 1)
+	if (frameId < dur && frameId >= 0)
 	{
 
 		io::TrackedParams trackedFrame = m_Impl->m_TrackedParams->at(frameId);

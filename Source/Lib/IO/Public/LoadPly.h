@@ -71,10 +71,9 @@ static MeshData LoadPly(const std::string& filepath)
 	try { faces = file.request_properties_from_element("face", { "vertex_indices" }, 3); }
 	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
 
-	// Tristrips must always be read with a 0 list size hint (unless you know exactly how many elements
-	// are specifically in the file, which is unlikely); 
-	try { tripstrip = file.request_properties_from_element("tristrips", { "vertex_indices" }, 0); }
+	try { texcoords = file.request_properties_from_element("face", { "texcoord" }, 6); }
 	catch (const std::exception & e) { LOG_WARNING << "tinyply exception: " << e.what(); }
+
 
 	file.read(*fStream);
 

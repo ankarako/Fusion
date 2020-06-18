@@ -22,6 +22,7 @@ public:
 	///	\brief the frame object type
 	///	a decoding node's frame type is the same as the underlying librarie's type (for now)
 	using frame_t = BufferCPU<uchar4>;
+	using frame_out_t = std::pair<int, BufferCPU<uchar4>>;
 	///	\typedef native_frame_t
 	///	\brief the native frame type (the type of the decoding library)
 	using native_frame_t = cv::Mat;
@@ -84,12 +85,12 @@ public:
 	bool IsGenerating() const;
 	///	\brief frame output
 	///	decoding nodes have only output frame streams
-	rxcpp::observable<frame_t> FrameFlowOut();
+	rxcpp::observable<frame_out_t> FrameFlowOut();
 	///	\brief native frame output
 	///	native frame output for hooking in other nodes
 	rxcpp::observable<native_frame_t> NativeFrameFlowOut();
 	///	\brief generate the specified amount of frames
-	rxcpp::observer<size_t>		PrefetchFrames();
+	rxcpp::observer<size_t>	PrefetchFrames();
 	///	\brief generate frames task completed notification
 	rxcpp::observable<void*>	PrefetchFramesCompleted();
 private:

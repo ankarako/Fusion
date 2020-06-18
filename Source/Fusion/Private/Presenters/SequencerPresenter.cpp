@@ -65,63 +65,15 @@ void SequencerPresenter::Init()
 		m_Impl->m_Wrepo->UnregisterWidget(m_Impl->m_View);
 	});
 	///==============================
-	/// PlayerModel Loaded video Task
+	/// Sequnce Item in
 	///==============================
 	m_Impl->m_PlayerModel->SequenceItemFlowOut()
-		.map([this](SequenceItem& item)
-	{
-		///===============
-		/// Playback task
-		///===============
-		item.OnStartPlayback.get_observable().as_dynamic()
-			.subscribe([this](auto _)
-		{
-			//m_Impl->m_PlayerModel->Start();
-		});
-		///============
-		///	Pause Task
-		///============
-		item.OnPause.get_observable().as_dynamic()
-			.subscribe([this](auto _) 
-		{
-			m_Impl->m_PlayerModel->Pause();
-		});
-		///===========
-		/// Stop Task
-		///===========
-		item.OnStop.get_observable().as_dynamic()
-			.subscribe([this](auto _) 
-		{
-			m_Impl->m_PlayerModel->Stop();
-		});
-		///==============
-		/// Seek forward
-		///=============
-		item.OnSeekForward.get_observable().as_dynamic()
-			.subscribe([this](auto _)
-		{
-			m_Impl->m_PlayerModel->SeekForward();
-		});
-		///==============
-		/// Seek forward
-		///=============
-		item.OnSeekBackward.get_observable().as_dynamic()
-			.subscribe([this](auto _)
-		{
-			m_Impl->m_PlayerModel->SeekBackward();
-		});
-		///======
-		///	Seek
-		///======
-		item.OnSeekFrame.get_observable().as_dynamic()
-			//.observe_on(m_Impl->m_Coord->ModelCoordination())
-			.subscribe([this](int idx) 
-		{
-			m_Impl->m_PlayerModel->Seek(idx);
-		});
-		return item;
-	}).subscribe(m_Impl->m_View->SequencerItemFlowIn());
-
+		.subscribe(m_Impl->m_View->SequencerItemFlowIn());
+	///==================
+	/// Current Frame ID
+	///==================
+	m_Impl->m_PlayerModel->CurrentFrameIdFlowOut()
+		.subscribe(m_Impl->m_View->CurrentFrameTickFlowIn());
 	///======================
 	/// sequence Loaded task
 	///======================

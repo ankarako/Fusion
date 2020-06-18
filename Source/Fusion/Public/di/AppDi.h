@@ -53,6 +53,7 @@
 #include <Presenters/TransformationsPresenter.h>
 #include <Presenters/IlluminationResultPresenter.h>
 #include <Presenters/FuImportPresenter.h>
+#include <Presenters/ProgressBarPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -65,6 +66,7 @@
 #include <Views/NormalsResultView.h>
 #include <Views/TransformationView.h>
 #include <Views/IlluminationResultView.h>
+#include <Views/ProgressBarView.h>
 
 namespace fu {
 namespace fusion {
@@ -109,7 +111,8 @@ namespace di {
 			WindowsMenuModel,
 			WindowsMenuPresenter,
 			FuImportModel,
-			FuImportPresenter
+			FuImportPresenter,
+			ProgressBarPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,
@@ -136,7 +139,8 @@ namespace di {
 			SequencerView,
 			NormalsResultView,
 			TransformationView,
-			IlluminationResultView
+			IlluminationResultView,
+			ProgressBarView
 			>(),
 			boost::di::bind<Settings<WriterType::File>>().to<SettingsRepo>()
 		);

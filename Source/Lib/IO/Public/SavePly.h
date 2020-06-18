@@ -41,11 +41,23 @@ static void SavePly(const std::string& filepath, const io::MeshData& data)
 		reinterpret_cast<uint8_t*>(data->TIndexBuffer->Data()),
 		Type::UINT8, 3);
 
+
+	std::vector<float2> tex;
+	//for (int t = 0; t < data->TIndexBuffer->Count(); ++t)
+	//{
+	//	float2 t1 = data->TexcoordBuffer->Data()[data->TIndexBuffer->Data()[t].x];
+	//	float2 t2 = data->TexcoordBuffer->Data()[data->TIndexBuffer->Data()[t].y];
+	//	float2 t3 = data->TexcoordBuffer->Data()[data->TIndexBuffer->Data()[t].z];
+	//	
+	//	tex.emplace_back(t1);
+	//	tex.emplace_back(t2);
+	//	tex.emplace_back(t3);
+	//}
 	mesh_file.add_properties_to_element(
 		"face",
 		{ "texcoord" },
 		Type::FLOAT32,
-		vertexCount,
+		data->TexcoordBuffer->Count(),
 		reinterpret_cast<uint8_t*>(data->TexcoordBuffer->Data()),
 		Type::UINT8, 6
 	);
