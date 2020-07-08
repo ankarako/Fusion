@@ -107,7 +107,7 @@ void PerformanceImportModel::Init()
 		///=====================
 		std::string skinningDataFilepath = targetDir + "\\" + m_Impl->k_SkinningFilename;
 		io::perfcap_skin_data_ptr_t skinData = io::ImportPerfcapSkinningData(skinningDataFilepath);
-		m_Impl->m_PerfcapSkinDataFlowOutSubj.get_subscriber().on_next(skinData);
+		//m_Impl->m_PerfcapSkinDataFlowOutSubj.get_subscriber().on_next(skinData);
 		///==============
 		/// template mesh
 		///==============
@@ -117,8 +117,8 @@ void PerformanceImportModel::Init()
 		//io::LoadObj(templateMeshFilepath, meshData);
 		io::perfcap_skin_data_ptr_t denseSkinData = io::CreatePerfcapSkinData();
 		io::LoadObjWithSkinData(templateMeshFilepathObj, meshData, skinData, denseSkinData);
+		m_Impl->m_PerfcapSkinDataFlowOutSubj.get_subscriber().on_next(skinData);
 		//io::PerfcapMeshImport(templateMeshFilepathPly, templateMeshFilepathObj, meshData);
-		//io::LoadObjWithSkinData(templateMeshFilepathObj, meshData, skinData, denseSkinData);
 		//meshData = io::LoadPly(templateMeshFilepathPly);
 		/// Mesh data is textured
 		meshData->TextureWidth = m_Impl->m_TextureResolution.x;

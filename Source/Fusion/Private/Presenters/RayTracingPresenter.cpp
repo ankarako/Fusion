@@ -139,7 +139,8 @@ void RayTracingPresenter::Init()
 	///=================================
 	///	tracing  context frame flow out
 	///=================================
-	m_Impl->m_Model->FrameFlowOut().observe_on(m_Impl->m_Coord->UICoordination())
+	m_Impl->m_Model->FrameFlowOut()
+		.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_View->FrameFlowIn());
 	///=================================
 	/// camera rotation output to input

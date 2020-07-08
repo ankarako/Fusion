@@ -31,7 +31,7 @@ void EncodingNodeObj::SetOutputFilepath(const std::string& filepath)
 }
 void EncodingNodeObj::ExportVideo()
 {
-	std::string cli = m_Impl->k_FfmpegPath + std::string(" -start_number 0 -r 29.99 -i ") + m_Impl->m_InputDirectory + "\\texels_%03d.png -c:v mjpeg -qscale:v 0 " + m_Impl->m_OutputFilepath;
+	std::string cli = m_Impl->k_FfmpegPath + std::string(" -start_number 0 -r 29.99 -i ") + m_Impl->m_InputDirectory + "\\texels_%04d.png -c:v mjpeg -qscale:v 0 " + m_Impl->m_OutputFilepath;
 	std::system(cli.c_str());
 }
 }	///	!namespace trans

@@ -19,6 +19,7 @@ class Coordination;
 class FileExplorerView;
 class AssetLoadingModel;
 class PerfcapPlayerModel;
+class FusedExportModel;
 ///	\class PlayerViewportPresenter
 ///	\brief presents the video frames
 class PlayerViewportPresenter : public app::Initializable
@@ -32,6 +33,7 @@ public:
 	using fexp_view_ptr_t		= std::shared_ptr<FileExplorerView>;
 	using asset_model_ptr_t		= std::shared_ptr<AssetLoadingModel>;
 	using perfcap_model_ptr_t	= std::shared_ptr<PerfcapPlayerModel>;
+	using fused_export_model_ptr_t = std::shared_ptr<FusedExportModel>;
 	/// Construction
 	PlayerViewportPresenter(
 		model_ptr_t model, 
@@ -41,7 +43,8 @@ public:
 		coord_ptr_t coord,
 		fexp_view_ptr_t fexp_view,
 		asset_model_ptr_t asset_model,
-		perfcap_model_ptr_t perfcap_model);
+		perfcap_model_ptr_t perfcap_model,
+		fused_export_model_ptr_t fused_export_model);
 	void Init() override;
 private:
 	struct Impl;

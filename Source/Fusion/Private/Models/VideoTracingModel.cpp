@@ -56,6 +56,7 @@ struct VideoTracingModel::Impl
 
 	rxcpp::subjects::subject<template_mesh_t>		m_TemplateMeshDataFlowInSubj;
 	rxcpp::subjects::subject<io::MeshData>			m_AnimatedMeshDataFlowInSubj;
+	
 
 	rxcpp::subjects::subject<vec_t>				m_PerfcapTranslationFlowInSubj;
 	rxcpp::subjects::subject<vec_t>				m_PerfcapRotationFlowInSubj;
@@ -95,7 +96,7 @@ void VideoTracingModel::Init()
 	/// attach triangle mesh component to acceleration
 	rt::MeshMappingSystem::AttachTriangleMeshToAcceleration(m_Impl->m_TriangleMeshComps.back(), m_Impl->m_AccelrationComp);
 
-	m_Impl->m_PlaneComp = rt::CreatePlaneComponent(make_float4(1.0f, 1.0f, 1.0f, 0.02f), make_float3(0.0f, -0.8f, 0.0f), 8.0f, 8.0f);
+	m_Impl->m_PlaneComp = rt::CreatePlaneComponent(make_float4(1.0f, 1.0f, 1.0f, 0.0f), make_float3(0.0f, -0.8f, 0.0f), 8.0f, 8.0f);
 
 	rt::MeshMappingSystem::MapPlaneComp(m_Impl->m_PlaneComp, m_Impl->m_ContextComp);
 	rt::MeshMappingSystem::AttachPlaneCompToTopLevelAcceleration(m_Impl->m_PlaneComp, m_Impl->m_AccelrationComp);

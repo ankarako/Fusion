@@ -35,6 +35,8 @@ public:
 	void SetSkeletonFilename(const std::string& filename);
 	void SetTrackedParamsFilename(const std::string& filename);
 	void SetTemplateMeshFilename(const std::string& filename);
+	void SetSaveAnimatedMeshEnabled(const bool enabled);
+	void SetExtraDataDir(const std::string& dir);
 	rxcpp::observer<io::MeshData>							MeshDataFlowIn();
 	rxcpp::observable<io::MeshData>							MeshDataFlowOut();
 	rxcpp::observable<io::MeshData>							AnimatedMeshDataFlowOut();

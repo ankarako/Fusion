@@ -131,6 +131,7 @@ add_executable(
 	"${MVTSettingsHdrFiles}"
 	"${MVTSettingsSrcFiles}"
 )
+
 set_target_properties(RayMVT PROPERTIES FOLDER "RayMVT")
 set_property(TARGET RayMVT PROPERTY CXX_STANDARD 17)
 target_compile_options(RayMVT PRIVATE "-DWITH_VIEWPORT")
@@ -148,6 +149,13 @@ target_link_libraries(RayMVT PRIVATE FusionApplication)
 target_link_libraries(RayMVT PRIVATE OptixRayTracer)
 target_link_libraries(RayMVT PRIVATE FusionTranscoder)
 target_link_libraries(RayMVT PRIVATE FusionIO)
+
+option(WITH_DEFORMED_FRAMES "Set to build with deformed animation")
+if (WITH_DEFORMED_FRAMES)
+	target_compile_definitions(RayMVT PUBLIC WITH_DEFORMED_FRAMES)
+	target_compile_definitions(OptixRayTracer PUBLIC WITH_DEFORMED_FRAMES)
+endif()
+
 # ImGuizmo
 cmake_policy(SET CMP0079 NEW)
 add_subdirectory("${3rdPartyPath}/imguizmo" ImGuizmo)
@@ -208,6 +216,7 @@ configure_file(
 #####################
 # RayMVT CLI Project
 #####################
+add_compile_options("/bigobj")
 add_executable(
 	RayMVTCli
 	"Source/maincli.cpp"

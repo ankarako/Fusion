@@ -30,8 +30,8 @@ public:
 	void Init() override;
 	rxcpp::observer<std::string>			FuFilepathFlowIn();
 	rxcpp::observer<prj_settings_ptr_t>		PrjSettingsFlowIn();
-
 	rxcpp::observable<perfcap_tex_mesh_t>	PerfcapMeshDataFlowOut();
+	rxcpp::observable<std::string>			DeformedFramesDirectoryFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

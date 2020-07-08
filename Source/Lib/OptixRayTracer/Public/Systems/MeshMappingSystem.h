@@ -1264,6 +1264,10 @@ public:
 		trComp->VertexBuffer->unmap();
 		std::memcpy(trComp->NormalBuffer->map(), data->NormalBuffer->Data(), data->NormalBuffer->ByteSize());
 		trComp->NormalBuffer->unmap();
+		#if defined(WITH_DYNAMIC_PERFCAP_TEXTURE)
+			std::memcpy(trComp->TextureBuffer->map(), data->TextureBuffer->Data(), data->TextureBuffer->ByteSize());
+			trComp->TextureBuffer->unmap();
+		#endif	///	!WITH_DYNAMIC_PERFCAP_TEXTURE
 		trComp->Acceleration->markDirty();
 	}
 

@@ -78,6 +78,9 @@ public:
 
 	rxcpp::observable<SequenceItem> SequenceItemFlowOut();
 
+	rxcpp::observer<void*> ChromaKeyBGFlowIn();
+	rxcpp::observer<void*> RemoveChromaKeyBGFlowIn();
+
 	rxcpp::observable<std::string>	ProgressMessageFlowOut();
 	rxcpp::observable<float>		LoadingProgressFlowOut();
 private:

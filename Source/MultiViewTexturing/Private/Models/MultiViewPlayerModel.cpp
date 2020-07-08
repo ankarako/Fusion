@@ -113,6 +113,11 @@ void MultiViewPlayerModel::SetDebugOutDir(const std::string & outdir)
 	}
 }
 
+const std::string& MultiViewPlayerModel::GetDebugOutDir() const
+{
+	return m_Impl->m_DebugOutputDir;
+}
+
 
 rxcpp::observer<std::vector<BufferCPU<float>>> MultiViewPlayerModel::CameraMatricesFlowIn()
 {

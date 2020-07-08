@@ -42,6 +42,8 @@ struct FileExplorerView::Impl
 	rxcpp::subjects::subject<std::string>		OpenFuFileSubj;
 	rxcpp::subjects::subject<void*>				OnMoveUpButtonClickedSubj;
 	rxcpp::subjects::subject<std::string>		OnMoveIntoClickedSubj;
+	rxcpp::subjects::subject<std::string>		OnExportFusedVideoFilepathFlowOutSubj;
+	rxcpp::subjects::subject<std::string>		OnExportMentorLayerFilePathFlowOutSubj;
 	
 
 	Impl(fman_ptr_t fman)
@@ -274,6 +276,36 @@ void FileExplorerView::Render()
 				this->Deactivate();
 			}
 		}
+		else if (m_Impl->m_Mode == FileExplorerMode::ExportFusedVideo)
+		{
+			if (ImGui::Button("Export"))
+			{
+				std::string name = std::string(m_Impl->m_InputTextBuffer);
+				std::string abspath = m_Impl->m_CurrentDirectory + "/" + name;
+				//DirEntry exportEntry;
+				//exportEntry.EntryType = DirEntry::Type::File;
+				//exportEntry.AbsPath = abspath;
+				//exportEntry.Name = name;
+				m_Impl->OnExportFusedVideoFilepathFlowOutSubj.get_subscriber().on_next(abspath);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+				this->Deactivate();
+			}
+		}
+		else if (m_Impl->m_Mode == FileExplorerMode::ExportMentorLayer)
+		{
+			if (ImGui::Button("Export"))
+			{
+				std::string name = std::string(m_Impl->m_InputTextBuffer);
+				std::string abspath = m_Impl->m_CurrentDirectory + "/" + name;
+				//DirEntry exportEntry;
+				//exportEntry.EntryType = DirEntry::Type::File;
+				//exportEntry.AbsPath = abspath;
+				//exportEntry.Name = name;
+				m_Impl->OnExportMentorLayerFilePathFlowOutSubj.get_subscriber().on_next(abspath);
+				memset(m_Impl->m_InputTextBuffer, 0, m_Impl->k_InputBufferSize * sizeof(char));
+				this->Deactivate();
+			}
+		}
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel"))
 		{
@@ -360,6 +392,14 @@ rxcpp::observable<std::string> fu::fusion::FileExplorerView::OpenPerfcapFileFlow
 rxcpp::observable<std::string> FileExplorerView::OpenFuFileFlowOut()
 {
 	return m_Impl->OpenFuFileSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<std::string> FileExplorerView::ExportFusedVideoFilepathFlowOut()
+{
+	return m_Impl->OnExportFusedVideoFilepathFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<std::string> FileExplorerView::ExportMentorLayerFilepathFlowOut()
+{
+	return m_Impl->OnExportMentorLayerFilePathFlowOutSubj.get_observable().as_dynamic();
 }
 }	///	!namespace fusion
 }	///	!namespace fu

@@ -26,6 +26,7 @@ public:
 	void SetUndistortEnabled(bool enabled);
 	void SetDebugFramesEnabled(bool enabled);
 	void SetDebugOutDir(const std::string& outdir);
+	const std::string& GetDebugOutDir() const;
 	/// io
 	rxcpp::observer<std::vector<BufferCPU<float>>>		CameraMatricesFlowIn();
 	rxcpp::observer<std::vector<DistCoeffs>>			DistortionCoefficientsFlowIn();

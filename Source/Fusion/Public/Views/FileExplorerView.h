@@ -22,7 +22,9 @@ enum class FileExplorerMode
 	OpenVideoFile,
 	Open3DFile,
 	OpenPerfcapFile,
-	OpenFuFile
+	OpenFuFile,
+	ExportFusedVideo,
+	ExportMentorLayer,
 };	///	!enum FileExplorerCommand
 ///	\class FileExplorerView
 ///	\brief the file exploer widget
@@ -55,6 +57,8 @@ public:
 	rxcpp::observable<std::string>		Open3DFileFlowOut();
 	rxcpp::observable<std::string>		OpenPerfcapFileFlowOut();
 	rxcpp::observable<std::string>		OpenFuFileFlowOut();
+	rxcpp::observable<std::string>		ExportFusedVideoFilepathFlowOut();
+	rxcpp::observable<std::string>		ExportMentorLayerFilepathFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

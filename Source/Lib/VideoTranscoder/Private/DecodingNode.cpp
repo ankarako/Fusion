@@ -53,6 +53,8 @@ struct DecodingNodeObj::Impl
 	cv::Mat		m_DistCoeffs;
 	bool		m_Undistort{ false };
 	bool		m_DebugFramesEnabled{ false };
+	bool		m_ChromaKeyBGEnabled{ false };
+	uchar4		m_ChromaKey{ 0, 255, 0, 255 };
 	///
 	std::atomic_bool	m_GenerateFrames{ false };
 	///	prefetch event task
@@ -236,11 +238,13 @@ BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
 			#else		
 				using namespace std::experimental;
 			#endif
+			std::stringstream ss;
 			std::string vfname = filesystem::path(m_Impl->m_LoadedFile).filename().replace_extension("").generic_string();
-			std::string fname = m_Impl->m_DebugOutDir + "\\" + vfname + "_distorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
+			ss << m_Impl->m_DebugOutDir << "\\" << vfname << "_distorted_" << std::setw(4) << std::setfill('0') << std::to_string(m_Impl->m_CurrentFramePosition) << ".png";
+			//std::string fname = m_Impl->m_DebugOutDir + "\\" + vfname + "_distorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
 			cv::Mat out;
 			cv::cvtColor(m_Impl->m_CurrentFrameNative, out, cv::COLOR_RGB2BGR);
-			cv::imwrite(fname, out);
+			cv::imwrite(ss.str(), out);
 		}
 		if (m_Impl->m_Undistort)
 		{
@@ -261,11 +265,13 @@ BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
 				#else		
 					using namespace std::experimental;
 				#endif
+				std::stringstream ss;
 				std::string vfname = filesystem::path(m_Impl->m_LoadedFile).filename().replace_extension("").generic_string();
-				std::string fname = m_Impl->m_DebugOutDir + "\\" + vfname + "_undistorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
+				ss << m_Impl->m_DebugOutDir << "\\" << vfname << "_undistorted_" << std::setw(4) << std::setfill('0') << std::to_string(m_Impl->m_CurrentFramePosition) << ".png";
+				//std::string fname = m_Impl->m_DebugOutDir + "\\" + vfname + "_undistorted_" + std::to_string(m_Impl->m_CurrentFramePosition) + ".png";
 				cv::Mat out;
 				cv::cvtColor(m_Impl->m_CurrentFrameNative, out, cv::COLOR_RGB2BGR);
-				cv::imwrite(fname, out);
+				cv::imwrite(ss.str(), out);
 			}
 		}
 		if (m_Impl->m_Rotate)
@@ -302,6 +308,17 @@ void DecodingNodeObj::GenerateFrames(size_t frameCount)
 		m_Impl->m_GenerateFrames.store(true, std::memory_order::memory_order_seq_cst);
 		while (counter < frameCount) 
 		{
+			if (m_Impl->m_ChromaKeyBGEnabled)
+			{
+				m_Impl->m_CurrentFrameNative = cv::Mat(cv::Size(m_Impl->m_FrameWidth, m_Impl->m_FrameHeight), CV_8UC4, cv::Scalar(m_Impl->m_ChromaKey.x, m_Impl->m_ChromaKey.y, m_Impl->m_ChromaKey.z, m_Impl->m_ChromaKey.w));
+				size_t bsize = m_Impl->m_CurrentFrameNative.total() * m_Impl->m_CurrentFrameNative.elemSize();
+				size_t fbsize = m_Impl->m_CurrentFrame->ByteSize();
+				BufferCPU<uchar4> currentFrame = CreateBufferCPU<uchar4>(m_Impl->m_CurrentFrame->Count());
+				std::memcpy(currentFrame->Data(), m_Impl->m_CurrentFrameNative.data, m_Impl->m_FrameByteSize);
+				m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(std::make_pair(m_Impl->m_CurrentFramePosition, currentFrame));
+				m_Impl->m_NativeFrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_CurrentFrameNative);
+				m_Impl->m_CurrentFramePosition = (size_t)m_Impl->m_Decoder->get(cv::CAP_PROP_POS_FRAMES);
+			}
 			if (m_Impl->m_Decoder->read(m_Impl->m_CurrentFrameNative))
 			{
 				cv::cvtColor(m_Impl->m_CurrentFrameNative, m_Impl->m_CurrentFrameNative, cv::COLOR_BGR2RGBA);
@@ -384,6 +401,14 @@ void DecodingNodeObj::SetSaveDebugFramesEnabled(bool enabled)
 void DecodingNodeObj::SetDebugFramesOutDir(const std::string & outdir)
 {
 	m_Impl->m_DebugOutDir = outdir;
+}
+void DecodingNodeObj::SetChromaKeyBGEnabled(bool enabled)
+{
+	m_Impl->m_ChromaKeyBGEnabled = enabled;
+}
+void DecodingNodeObj::SetChromaKeyBGVal(const uchar4& chroma)
+{
+	m_Impl->m_ChromaKey = chroma;
 }
 ///	\brief frame output
 ///	decoding nodes have only output frame streams

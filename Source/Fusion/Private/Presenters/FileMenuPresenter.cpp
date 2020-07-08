@@ -119,6 +119,20 @@ void FileMenuPresenter::Init()
 		m_Impl->m_FexpView->SetMode(FileExplorerMode::OpenFuFile);
 		m_Impl->m_FexpView->Activate();
 	});
+
+	m_Impl->m_View->OnFileMenu_ExportFusedVideoClicked()
+		.subscribe([this](auto _) 
+	{
+		m_Impl->m_FexpView->SetMode(FileExplorerMode::ExportFusedVideo);
+		m_Impl->m_FexpView->Activate();
+	});
+
+	m_Impl->m_View->OnFileMenu_ExportMentorLayerClicked()
+		.subscribe([this](auto _) 
+	{
+		m_Impl->m_FexpView->SetMode(FileExplorerMode::ExportMentorLayer);
+		m_Impl->m_FexpView->Activate();
+	});
 	//m_Impl->m_View->OnActivated()
 	//	.subscribe([this](auto _)
 	//{

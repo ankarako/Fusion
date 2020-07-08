@@ -103,13 +103,13 @@ int main(int argc, char* argv[])
 	CLI::App app{ "RayMVT - Multi-View Texturing via RayCasting" };
 	app.add_option("-i,--input_file",		arg_InputFile,			"The input .perf file.");
 	app.add_option("-o,--output_dir",		arg_OutputDir,			"The output directory (where the computed texture maps will be saved).");
-	app.add_option("--tex_width",	arg_TextureWidth,		"The output texture map width (default=2048).");
-	app.add_option("--tex_height",	arg_TextureHeight,		"The output texture map height (default=2048).");
+	app.add_option("--tex_width",			arg_TextureWidth,		"The output texture map width (default=2048).");
+	app.add_option("--tex_height",			arg_TextureHeight,		"The output texture map height (default=2048).");
 	app.add_option("-s,--subsample_factor", arg_SubSampleFactor,	"The ray casting subsampling factor (default=4).");
-	app.add_flag("-m,--merge",			arg_Merge,				"use this flag to merge the textures from every view");
-	app.add_flag("-b,--blend",			arg_Blend,				"use this flag together with <--merge> to blend the merged texture map (not implemented at the moment)");
-	app.add_flag("-u,--undistort",		arg_Undistort,			"use this flag to undistort the viewpoint images");
-	app.add_flag("-e,--extra_data",		arg_SaveExtraData,		"use this flag to save extra data (distorted & undistorted viewpoint textures for every frame).");
+	app.add_flag("-m,--merge",				arg_Merge,				"use this flag to merge the textures from every view");
+	app.add_flag("-b,--blend",				arg_Blend,				"use this flag together with <--merge> to blend the merged texture map (not implemented at the moment)");
+	app.add_flag("-u,--undistort",			arg_Undistort,			"use this flag to undistort the viewpoint images");
+	app.add_flag("-e,--extra_data",			arg_SaveExtraData,		"use this flag to save extra data (distorted & undistorted viewpoint textures for every frame).");
 
 	/// create out models
 	mvt_model_ptr_t mvt_model = std::make_shared<fu::mvt::MVTModel>();
@@ -154,10 +154,12 @@ int main(int argc, char* argv[])
 	mvt_model->SetOutputDir(arg_OutputDir);
 	mvt_model->SetExportDir(arg_OutputDir);
 	mvp_model->SetDebugOutDir(arg_OutputDir + "\\extra");
+	mvt_model->SetExtraDataDir(arg_OutputDir + "\\extra");
 	mvt_model->SetTextureSize(make_uint2(arg_TextureWidth, arg_TextureHeight));
 	mvt_model->SetSeparateTextures(!arg_Merge);
 	mvt_model->SetLaunchMult(arg_SubSampleFactor);
 	mvt_model->SetViewportEnabled(false);
+	mvt_model->SetSaveAnimatedMeshEnabled(arg_SaveExtraData);
 	mvt_model->SetTempFolderPath("temp");
 	mvt_model->SetSkeletonFilename(perfimport_model->SkeletonFilename());
 	mvt_model->SetSkinningFilename(perfimport_model->SkinningFilename());

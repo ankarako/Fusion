@@ -12,6 +12,7 @@
 #include <Systems/AnimationSystem.h>
 #include <TextureExportingNode.h>
 #include <EncodingNode.h>
+#include <LoadPly.h>
 #include <SavePly.h>
 #include <DebugMsg.h>
 #include <filesystem>
@@ -30,6 +31,8 @@ struct MVTModel::Impl
 	static constexpr const char* k_AnimatedMeshFilename			= "animated_template.ply";
 	static constexpr const char* k_MergedTextureFilenamePrefix	= "texels_";
 	static constexpr const char* k_MergedTextureOuputFilename	= "texels";
+	static constexpr const char* k_DeformedFramesFolder			= "deformed_frames";
+	static constexpr const char* k_TSPExecutable = "Resources\\TSP\\TextureStitching.exe";
 	/// ray tracing related
 	rt::ContextComp							m_ContextComp;
 	rt::AccelerationComp					m_TopLevelAcceleration;
@@ -71,6 +74,7 @@ struct MVTModel::Impl
 	bool m_SeparateTextures{ true };
 	bool m_ViewportEnabled{ false };
 	bool m_DeleteOutputEnabled{ false };
+	bool m_SaveAnimatedMeshEnabled{ false };
 	trans::TextureExportingNode						m_TextureExportingNode;
 	///
 	std::string	m_TempFolderPath;
@@ -79,6 +83,7 @@ struct MVTModel::Impl
 	std::string m_TrackedParamsFilename;
 	std::string m_TemplateMeshFilename;
 	std::string m_ExportDir;
+	std::string m_ExtraDataDir;
 
 	rxcpp::subjects::subject<io::MeshData>								m_MeshDataFlowInSubj;
 	rxcpp::subjects::subject<io::MeshData>								m_MeshDataFlowOutSubj;
@@ -345,7 +350,27 @@ void MVTModel::Init()
 			/// Animate
 			///=========
 			BufferCPU<float> tracked_params = m_Impl->m_TrackedSequence->at(f);
-			m_Impl->m_AnimatedMesh = rt::AnimationSystem::AnimateMesh(m_Impl->m_TemplateMesh, m_Impl->m_PerfcapSkeleton, m_Impl->m_SkinningMatrix, tracked_params);
+			#if defined(WITH_DEFORMED_FRAMES)
+				std::stringstream ss;
+				ss << m_Impl->m_TempFolderPath
+					<< "\\deformed_points_"
+					<< std::setw(4) << std::setfill('0') << f << ".ply";
+				m_Impl->m_AnimatedMesh = io::LoadPly(ss.str());
+				m_Impl->m_AnimatedMesh->TIndexBuffer = CreateBufferCPU<uint3>(m_Impl->m_TemplateMesh->TIndexBuffer->Count());
+				std::memcpy(m_Impl->m_AnimatedMesh->TIndexBuffer->Data(), m_Impl->m_TemplateMesh->TIndexBuffer->Data(), m_Impl->m_TemplateMesh->TIndexBuffer->ByteSize());
+				m_Impl->m_AnimatedMesh->TexcoordBuffer = CreateBufferCPU<float2>(m_Impl->m_TemplateMesh->TexcoordBuffer->Count());
+				std::memcpy(m_Impl->m_AnimatedMesh->TexcoordBuffer->Data(), m_Impl->m_TemplateMesh->TexcoordBuffer->Data(), m_Impl->m_TemplateMesh->TexcoordBuffer->ByteSize());
+			#else		
+				m_Impl->m_AnimatedMesh = rt::AnimationSystem::AnimateMesh(m_Impl->m_TemplateMesh, m_Impl->m_PerfcapSkeleton, m_Impl->m_SkinningMatrix, tracked_params);
+			#endif
+			{
+				if (m_Impl->m_SaveAnimatedMeshEnabled)
+				{
+					std::stringstream ss;
+					ss << m_Impl->m_ExtraDataDir << "\\animated_mesh_" << std::setw(4) << std::setfill('0') << std::to_string(f) << ".ply";
+					io::SavePly(ss.str(), m_Impl->m_AnimatedMesh);
+				}
+			}
 			if (m_Impl->m_ViewportEnabled)
 			{
 				m_Impl->m_AnimatedMeshDataFlowOutSubj.get_subscriber().on_next(m_Impl->m_AnimatedMesh);
@@ -428,6 +453,43 @@ void MVTModel::Init()
 		std::string filepath = m_Impl->m_CurrentFrameDir + "\\" + m_Impl->k_AnimatedMeshFilename;
 		io::SavePly(filepath, m_Impl->m_AnimatedMesh);
 
+		/// Here Run Khazdan
+		std::string directoryToMerge = m_Impl->m_CurrentFrameDir;
+		std::string texels = "texels-%02d.png";
+		std::string weights = "mask-%02d.png";
+		std::string mesh = "animated_template.ply";
+		std::stringstream ss;
+		ss << m_Impl->k_TextureMapsPrefix << "_" << std::setw(4) << std::setfill('0') << m_Impl->m_CurrentFrame << ".png";
+		std::string cli = std::string(m_Impl->k_TSPExecutable) + " --in "
+			+ directoryToMerge + "\\" + mesh + " "
+			+ directoryToMerge + "\\" + texels + " "
+			+ directoryToMerge + "\\" + weights + " "
+			+ "--multi --out " + m_Impl->m_OutputDir + "\\temp\\" + ss.str();
+
+		//std::system(cli.c_str());
+		/// delete the folder with the separate multi view data
+		for (auto& path : std::experimental::filesystem::directory_iterator(directoryToMerge))
+		{
+			if (!std::experimental::filesystem::is_directory(path))
+			{
+				try
+				{
+					std::experimental::filesystem::remove(path);
+				}
+				catch (std::exception& ex)
+				{
+					LOG_ERROR << "Failed to delete path (" << path << "): " << ex.what();
+				}
+			}
+		}
+		try
+		{
+			std::experimental::filesystem::remove(directoryToMerge);
+		}
+		catch (std::exception& ex)
+		{
+			LOG_ERROR << "Failed to delete path (" << directoryToMerge << "): " << ex.what();
+		}
 		if (m_Impl->m_ViewportEnabled)
 		{
 			m_Impl->m_RunViewportMergingSubj.get_subscriber().on_next(nullptr);
@@ -480,10 +542,11 @@ void MVTModel::Init()
 			}
 		}
 		std::stringstream ss;
-		ss << m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath + "\\texels_" << std::setw(3) << std::setfill('0') << std::to_string(m_Impl->m_CurrentFrame);
+		ss << m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath + "\\texels_" << std::setw(4) << std::setfill('0') << std::to_string(m_Impl->m_CurrentFrame);
 
 		std::string filepath = ss.str() + ".png";
 		m_Impl->m_TextureExportingNode->ExportTexture(filepath, m_Impl->m_OutputTextureBuffer, m_Impl->m_TextureSize);
+		
 		if (m_Impl->m_ViewportEnabled)
 		{
 			m_Impl->m_TextureFlowOutSubj.get_subscriber().on_next(m_Impl->m_OutputTextureBuffer);
@@ -542,55 +605,121 @@ void MVTModel::Init()
 	m_Impl->m_RunExportTaskSubj.get_observable().as_dynamic()
 		.subscribe([this](auto _) 
 	{
+		using namespace std::experimental;
 		if (!m_Impl->m_ViewportEnabled)
 		{
-			using namespace std::experimental;
-			if (!filesystem::exists(m_Impl->m_ExportDir))
+			if (m_Impl->m_SeparateTextures)
 			{
-				filesystem::create_directory(m_Impl->m_ExportDir);
-			}
+				if (!filesystem::exists(m_Impl->m_ExportDir))
+				{
+					filesystem::create_directory(m_Impl->m_ExportDir);
+				}
 
-			m_Impl->m_EncodingNode->SetInputDirectory(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
-			m_Impl->m_EncodingNode->SetInputFilenamePrefix(m_Impl->k_MergedTextureFilenamePrefix);
-			std::string filepath = m_Impl->m_ExportDir + "\\" + std::string(m_Impl->k_MergedTextureOuputFilename) + ".avi";
-			m_Impl->m_EncodingNode->SetOutputFilepath(filepath);
-			/// 
-			m_Impl->m_EncodingNode->ExportVideo();
-			try
-			{
-				std::string skeletonFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkeletonFilename;
-				std::string skinningFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkinningFilename;
-				std::string tempMeshFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TemplateMeshFilename;
-				std::string trackedFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TrackedParamsFilename;
-				filesystem::copy_file(skeletonFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkeletonFilename);
-				filesystem::copy_file(skinningFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkinningFilename);
-				filesystem::copy_file(tempMeshFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TemplateMeshFilename);
-				filesystem::copy_file(trackedFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TrackedParamsFilename);
-			}
-			catch (std::exception& ex)
-			{
-				LOG_ERROR << ex.what();
-			}
-			/// delete temp folder data before zipping
-			for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
-			{
-				filesystem::remove(entry);
-			}
-			filesystem::remove(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
-			// zip the whole file
-			std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
-			std::system(cli.c_str());
-			// delete temp data
-			for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
-			{
-				if (!filesystem::is_directory(entry))
+				m_Impl->m_EncodingNode->SetInputDirectory(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
+				m_Impl->m_EncodingNode->SetInputFilenamePrefix(m_Impl->k_MergedTextureFilenamePrefix);
+				std::string filepath = m_Impl->m_ExportDir + "\\" + std::string(m_Impl->k_MergedTextureOuputFilename) + ".avi";
+				m_Impl->m_EncodingNode->SetOutputFilepath(filepath);
+				/// 
+				m_Impl->m_EncodingNode->ExportVideo();
+				try
+				{
+					std::string skeletonFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkeletonFilename;
+					std::string skinningFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkinningFilename;
+					std::string tempMeshFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TemplateMeshFilename;
+					std::string trackedFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TrackedParamsFilename;
+					filesystem::copy_file(skeletonFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkeletonFilename);
+					filesystem::copy_file(skinningFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkinningFilename);
+					filesystem::copy_file(tempMeshFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TemplateMeshFilename);
+					filesystem::copy_file(trackedFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TrackedParamsFilename);
+					/// have to copy the deformed files too
+					for (auto& path : filesystem::directory_iterator(m_Impl->m_TempFolderPath))
+					{
+						std::string pathStr = path.path().generic_string();
+						if (pathStr.find("deformed_points_") != std::string::npos)
+						{
+							std::string filename = filesystem::path(pathStr).filename().generic_string();
+							std::string toCopyTo = m_Impl->m_ExportDir + "\\" + filename;
+							filesystem::copy_file(pathStr, toCopyTo);
+						}
+					}
+				}
+				catch (std::exception& ex)
+				{
+					LOG_ERROR << ex.what();
+				}
+				if (!m_Impl->m_SaveAnimatedMeshEnabled)
+				{
+					/// delete temp folder data before zipping
+					for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
+					{
+						filesystem::remove(entry);
+					}
+					filesystem::remove(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
+				}
+				// zip the whole file
+				std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
+				std::system(cli.c_str());
+				// delete temp data
+				for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+				{
+					if (!filesystem::is_directory(entry))
+						filesystem::remove(entry);
+				}
+				for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+				{
 					filesystem::remove(entry);
+				}
+				filesystem::remove(m_Impl->m_OutputDir);
 			}
-			for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+			else
 			{
-				filesystem::remove(entry);
+				if (!filesystem::exists(m_Impl->m_ExportDir))
+				{
+					filesystem::create_directory(m_Impl->m_ExportDir);
+				}
+
+				m_Impl->m_EncodingNode->SetInputDirectory(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
+				m_Impl->m_EncodingNode->SetInputFilenamePrefix(m_Impl->k_MergedTextureFilenamePrefix);
+				std::string filepath = m_Impl->m_ExportDir + "\\" + std::string(m_Impl->k_MergedTextureOuputFilename) + ".avi";
+				m_Impl->m_EncodingNode->SetOutputFilepath(filepath);
+				/// 
+				m_Impl->m_EncodingNode->ExportVideo();
+				try
+				{
+					std::string skeletonFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkeletonFilename;
+					std::string skinningFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkinningFilename;
+					std::string tempMeshFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TemplateMeshFilename;
+					std::string trackedFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TrackedParamsFilename;
+					filesystem::copy_file(skeletonFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkeletonFilename);
+					filesystem::copy_file(skinningFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkinningFilename);
+					filesystem::copy_file(tempMeshFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TemplateMeshFilename);
+					filesystem::copy_file(trackedFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TrackedParamsFilename);
+				}
+				catch (std::exception& ex)
+				{
+					LOG_ERROR << ex.what();
+				}
+				/// delete temp folder data before zipping
+				for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
+				{
+					filesystem::remove(entry);
+				}
+				filesystem::remove(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
+				// zip the whole file
+				std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
+				std::system(cli.c_str());
+				// delete temp data
+				for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+				{
+					if (!filesystem::is_directory(entry))
+						filesystem::remove(entry);
+				}
+				for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+				{
+					filesystem::remove(entry);
+				}
+				filesystem::remove(m_Impl->m_OutputDir);
 			}
-			filesystem::remove(m_Impl->m_OutputDir);
 		}
 	}, [this](std::exception_ptr ptr)
 	{
@@ -680,6 +809,16 @@ void MVTModel::SetTrackedParamsFilename(const std::string & filename)
 void MVTModel::SetTemplateMeshFilename(const std::string & filename)
 {
 	m_Impl->m_TemplateMeshFilename = filename;
+}
+
+void MVTModel::SetSaveAnimatedMeshEnabled(const bool enabled)
+{
+	m_Impl->m_SaveAnimatedMeshEnabled = enabled;
+}
+
+void MVTModel::SetExtraDataDir(const std::string & dir)
+{
+	m_Impl->m_ExtraDataDir = dir;
 }
 
 rxcpp::observer<io::MeshData> MVTModel::MeshDataFlowIn()

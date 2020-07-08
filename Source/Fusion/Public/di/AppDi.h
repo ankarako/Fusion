@@ -38,6 +38,7 @@
 #include <Models/AnimationModel.h>
 #include <Models/WindowsMenuModel.h>
 #include <Models/FuImportModel.h>
+#include <Models/FusedExportModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -54,6 +55,7 @@
 #include <Presenters/IlluminationResultPresenter.h>
 #include <Presenters/FuImportPresenter.h>
 #include <Presenters/ProgressBarPresenter.h>
+#include <Presenters/FusedExportPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -112,7 +114,9 @@ namespace di {
 			WindowsMenuPresenter,
 			FuImportModel,
 			FuImportPresenter,
-			ProgressBarPresenter
+			ProgressBarPresenter,
+			FusedExportModel,
+			FusedExportPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,

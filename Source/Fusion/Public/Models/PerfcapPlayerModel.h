@@ -34,6 +34,8 @@ public:
 	rxcpp::observable<io::MeshData>				AnimatedMeshDataFlowOut();
 	rxcpp::observable<void*>					AnimationFrameCompleted();
 	rxcpp::observer<perfcap_tex_mesh_t>			PerfcapMeshDataFlowIn();
+	rxcpp::observer<std::string>				DeformedFramesDirectoryFlowIn();
+	rxcpp::observable<int>						AnimationFramesCountFlowOut();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

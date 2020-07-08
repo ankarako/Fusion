@@ -7,6 +7,7 @@
 #include <Views/FileExplorerView.h>
 #include <Models/AssetLoadingModel.h>
 #include <Models/PerfcapPlayerModel.h>
+#include <Models/FusedExportModel.h>
 ///
 #include <plog/Log.h>
 
@@ -14,6 +15,7 @@ namespace fu {
 namespace fusion {
 struct PlayerViewportPresenter::Impl
 {
+	bool m_PlayingEnabled = true;
 	model_ptr_t			m_Model;
 	view_ptr_t			m_View;
 	tracer_model_ptr_t	m_TracerModel;
@@ -22,9 +24,11 @@ struct PlayerViewportPresenter::Impl
 	fexp_view_ptr_t		m_FexpView;
 	asset_model_ptr_t	m_AssetModel;
 	perfcap_model_ptr_t	m_PerfcapModel;
+	fused_export_model_ptr_t m_FusedExportModel;
+	rxcpp::composite_subscription m_TracerSub;
 
-	Impl(model_ptr_t model, view_ptr_t view, tracer_model_ptr_t tracer_model, wrepo_ptr_t wrepo, coord_ptr_t coord, fexp_view_ptr_t fexp_view, asset_model_ptr_t asset_model, perfcap_model_ptr_t perfcap_model)
-		: m_Model(model), m_View(view), m_TracerModel(tracer_model), m_Wrepo(wrepo), m_Coord(coord), m_FexpView(fexp_view), m_AssetModel(asset_model), m_PerfcapModel(perfcap_model)
+	Impl(model_ptr_t model, view_ptr_t view, tracer_model_ptr_t tracer_model, wrepo_ptr_t wrepo, coord_ptr_t coord, fexp_view_ptr_t fexp_view, asset_model_ptr_t asset_model, perfcap_model_ptr_t perfcap_model, fused_export_model_ptr_t fused_export_model)
+		: m_Model(model), m_View(view), m_TracerModel(tracer_model), m_Wrepo(wrepo), m_Coord(coord), m_FexpView(fexp_view), m_AssetModel(asset_model), m_PerfcapModel(perfcap_model), m_FusedExportModel(fused_export_model)
 	{ }
 };
 /// Construction
@@ -36,8 +40,9 @@ PlayerViewportPresenter::PlayerViewportPresenter(
 	coord_ptr_t coord, 
 	fexp_view_ptr_t fexp_view,
 	asset_model_ptr_t asset_model,
-	perfcap_model_ptr_t perfcap_model)
-	: m_Impl(spimpl::make_unique_impl<Impl>(model, view, tracer_model, wrepo, coord, fexp_view, asset_model, perfcap_model))
+	perfcap_model_ptr_t perfcap_model,
+	fused_export_model_ptr_t fused_export_model)
+	: m_Impl(spimpl::make_unique_impl<Impl>(model, view, tracer_model, wrepo, coord, fexp_view, asset_model, perfcap_model, fused_export_model))
 { }
 
 void PlayerViewportPresenter::Init()
@@ -62,7 +67,7 @@ void PlayerViewportPresenter::Init()
 	/// frame size subscription
 	///========================
 	m_Impl->m_Model->FrameSizeFlowOut()
-		.observe_on(m_Impl->m_Coord->UICoordination())
+		//.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_TracerModel->FrameSizeFlowIn());
 
 	m_Impl->m_Model->FrameSizeFlowOut()
@@ -88,15 +93,24 @@ void PlayerViewportPresenter::Init()
 	/// frame flow out from decoder task
 	///=================================
 	m_Impl->m_Model->CurrentFrameFlowOut()
-		.observe_on(m_Impl->m_Coord->UICoordination())
+		//.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_TracerModel->FrameFlowIn());
 	///================================
 	/// frame flow out from tracer task
 	///================================
+	//m_Impl->m_TracerSub.add(
 	m_Impl->m_TracerModel->FrameFlowOut()
 		.observe_on(m_Impl->m_Coord->UICoordination())
 		.subscribe(m_Impl->m_View->FrameFlowIn());
+	//);
+
 	m_Impl->m_View->Activate();
+
+	m_Impl->m_FusedExportModel->StartedExportingFlowOut()
+		.subscribe([this](auto _) 
+	{
+		//m_Impl->m_TracerSub.clear();
+	});
 }
 }	///	!namespace fusion
 }	///	!namespace fu

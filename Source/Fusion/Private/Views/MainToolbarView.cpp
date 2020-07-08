@@ -17,6 +17,8 @@ struct MainToolbarView::Impl
 	rxcpp::subjects::subject<void*> FileMenu_Open3DFileClickedSubj;
 	rxcpp::subjects::subject<void*> FileMenu_OpenPerfcapFileClickedSubj;
 	rxcpp::subjects::subject<void*> FileMenu_OpenFuFileClickedSubj;
+	rxcpp::subjects::subject<void*>	FileMenu_ExportFusedVideoClickedSubj;
+	rxcpp::subjects::subject<void*> FileMenu_ExportMentorLayerClickedSubj;
 
 	rxcpp::subjects::subject<void*> FiltersMenu_ClickedSubj;
 	rxcpp::subjects::subject<void*> FiltersMenu_EstimateDepthClickedSubj;
@@ -77,6 +79,14 @@ void MainToolbarView::Render()
 			if (ImGui::MenuItem("Import Fu File"))
 			{
 				m_Impl->FileMenu_OpenFuFileClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			if (ImGui::MenuItem("Export Fused Video"))
+			{
+				m_Impl->FileMenu_ExportFusedVideoClickedSubj.get_subscriber().on_next(nullptr);
+			}
+			if (ImGui::MenuItem("Export Mentor Layer"))
+			{
+				m_Impl->FileMenu_ExportMentorLayerClickedSubj.get_subscriber().on_next(nullptr);
 			}
 			ImGui::EndMenu();
 		}
@@ -190,6 +200,15 @@ rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFiltersMenu_EstimateIllu
 rxcpp::observable<void*> fu::fusion::MainToolbarView::OnWindowsMenu_IlluminationResultClicked()
 {
 	return m_Impl->WindowsMenu_IlluminationResultClickedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFileMenu_ExportFusedVideoClicked()
+{
+	return m_Impl->FileMenu_ExportFusedVideoClickedSubj.get_observable().as_dynamic();
+}
+rxcpp::observable<void*> MainToolbarView::OnFileMenu_ExportMentorLayerClicked()
+{
+	return m_Impl->FileMenu_ExportMentorLayerClickedSubj.get_observable().as_dynamic();
 }
 }	///	!namespce fusion
 }	///	!namespace fu

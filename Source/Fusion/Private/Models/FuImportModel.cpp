@@ -36,6 +36,7 @@ struct FuImportModel::Impl
 	rxcpp::subjects::subject<io::perfcap_skin_data_ptr_t>	m_SkinDataFlowOutSubj;
 	rxcpp::subjects::subject<io::tracked_seq_ptr_t>			m_TrackedParamsFlowOutSubj;
 	rxcpp::subjects::subject<perfcap_tex_mesh_t>			m_PerfcapMeshFlowOutSubj;
+	rxcpp::subjects::subject<std::string>					m_DeformedFramesFilepathFlowOutSubj;
 
 	Impl(srepo_ptr_t srepo) 
 		: m_Settings(std::make_shared<FuImportSettings>())
@@ -77,6 +78,8 @@ void FuImportModel::Init()
 		int ret = std::system(cli.c_str());
 		if (ret == 0)
 		{
+			std::string deformedFramesDir = unzipPath + "\\deformed_frames";
+			m_Impl->m_DeformedFramesFilepathFlowOutSubj.get_subscriber().on_next(deformedFramesDir);
 			/// load skin data
 			std::string skinFPath = unzipPath + "\\" + m_Impl->k_SkinningFilename;
 			m_Impl->m_Settings->SkinDataFilepath = skinFPath;
@@ -162,6 +165,11 @@ rxcpp::observer<FuImportModel::prj_settings_ptr_t> FuImportModel::PrjSettingsFlo
 rxcpp::observable<FuImportModel::perfcap_tex_mesh_t> FuImportModel::PerfcapMeshDataFlowOut()
 {
 	return m_Impl->m_PerfcapMeshFlowOutSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<std::string> FuImportModel::DeformedFramesDirectoryFlowOut()
+{
+	return m_Impl->m_DeformedFramesFilepathFlowOutSubj.get_observable().as_dynamic();
 }
 
 

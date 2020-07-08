@@ -142,6 +142,15 @@ add_executable(
 	"${FusionSettingsHdrFiles}"
 	"${FusionSettingsSrcFiles}"
 )
+option(WITH_DYNAMIC_PERFCAP_TEXTURE "Set to build with dynamic perfcap texture" off)
+option(WITH_DEFORMED_FRAMES "Set to build with deformed animated frames" off)
+
+if(WITH_DYNAMIC_PERFCAP_TEXTURE)
+	target_compile_definitions(Fusion PUBLIC WITH_DYNAMIC_PERFCAP_TEXTURE)
+endif()
+if(WITH_DEFORMED_FRAMES)
+	target_compile_definitions(Fusion PUBLIC WITH_DEFORMED_FRAMES)
+endif()
 #### set properties
 set_target_properties(Fusion PROPERTIES FOLDER "Fusion360")
 set_property(TARGET Fusion PROPERTY CXX_STANDARD 17)

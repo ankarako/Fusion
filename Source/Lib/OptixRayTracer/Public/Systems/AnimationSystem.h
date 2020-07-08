@@ -155,22 +155,10 @@ public:
 
 	static optix::Matrix4x4 GetJointTransform(const io::perfcap_joint_ptr_t& joint, const io::perfcap_skeleton_ptr_t& skeleton, const float3& rotation)
 	{
-		optix::float3 swing1 = optix::make_float3(
-			joint->Swing1[0],
-			joint->Swing1[1],
-			joint->Swing1[2]
-		);
-		optix::float3 swing2 = optix::make_float3(
-			joint->Swing2[0],
-			joint->Swing2[1],
-			joint->Swing2[2]
-		);
-		//optix::float3 twist = optix::make_float3(
-		//	joint->Twist[0],
-		//	joint->Twist[1],
-		//	joint->Twist[2]
-		//);
+		optix::float3 swing1 = optix::make_float3(joint->Swing1[0], joint->Swing1[1], joint->Swing1[2]);
+		optix::float3 swing2 = optix::make_float3(joint->Swing2[0], joint->Swing2[1], joint->Swing2[2]);
 		optix::float3 expMap = GetExpMap(swing1, swing2, rotation);
+
 		optix::float4 q = ExpMapToQuaternion(expMap);
 		int parentId = joint->ParentId;
 		optix::float3 initBoneDir = 
@@ -182,9 +170,11 @@ public:
 		optix::float4 initBoneQuaternion = NormalizeQuaternion(optix::make_float4(initBoneDir, 0.0f));
 		optix::float4 qConj = optix::make_float4(-q.x, -q.y, -q.z, q.w);
 		optix::float4 qMultConj = MultQuaternions(qConj, initBoneQuaternion);
-		optix::float4 boneQuaternion = NormalizeQuaternion(MultQuaternions(qMultConj, q));
-		optix::float3 newTwist = optix::make_float3(boneQuaternion.x, boneQuaternion.y, boneQuaternion.z);
+		//optix::float4 qMultConj = MultQuaternions(initBoneQuaternion, qConj);
 
+		optix::float4 boneQuaternion = NormalizeQuaternion(MultQuaternions(qMultConj, q));
+		
+		optix::float3 newTwist = optix::make_float3(boneQuaternion.x, boneQuaternion.y, boneQuaternion.z);
 		optix::float4 q2 = QuaternionFromAxisAngle(newTwist, rotation.z);
 		optix::float4 qF = MultQuaternions(q, q2);
 		optix::float3 pos = optix::make_float3(
@@ -240,7 +230,6 @@ public:
 			}
 			else
 			{
-				//int jj = j - 1;
 				optix::float3 jointRot = jointRotations[j];
 				localtransforms.emplace_back(GetJointTransform(joint, skeleton, jointRot));
 			}
@@ -300,9 +289,9 @@ public:
 				transVertexPosHomo = combineTransforms[jointId] * inputVertexPosHomo;
 				transNormalHomo = combineTransforms[jointId] * inputNormalHomo;
 
-				newVertexPos.x += weight * transVertexPosHomo.x / transVertexPosHomo.w;
-				newVertexPos.y += weight * transVertexPosHomo.y / transVertexPosHomo.w;
-				newVertexPos.z += weight * transVertexPosHomo.z / transVertexPosHomo.w;
+				newVertexPos.x += weight * transVertexPosHomo.x /*/ transVertexPosHomo.w*/;
+				newVertexPos.y += weight * transVertexPosHomo.y /*/ transVertexPosHomo.w*/;
+				newVertexPos.z += weight * transVertexPosHomo.z /*/ transVertexPosHomo.w*/;
 
 				newNormal.x += weight * transNormalHomo.x /*/ transNormalHomo.w*/;
 				newNormal.y += weight * transNormalHomo.y /*/ transNormalHomo.w*/;

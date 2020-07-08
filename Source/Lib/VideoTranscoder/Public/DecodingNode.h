@@ -70,6 +70,8 @@ public:
 	void SetUndistortEnabled(bool enabled);
 	void SetSaveDebugFramesEnabled(bool enabled);
 	void SetDebugFramesOutDir(const std::string& outdir);
+	void SetChromaKeyBGEnabled(bool enabled);
+	void SetChromaKeyBGVal(const uchar4& chroma);
 	///	\brief generate a specific number of frames
 	///	generates the specified number of frames
 	///	\param	frameCount	the number of frames to generate

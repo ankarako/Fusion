@@ -68,6 +68,10 @@ struct PlayerModel::Impl
 
 	rxcpp::subjects::subject<void*>		m_OnVideoLoadedSubj;
 
+	rxcpp::subjects::subject<void*>		m_ChromaKeyBGFlowInSubj;
+
+	rxcpp::subjects::subject<void*>		m_RemoveChromaKeyBGFlowInSubj;
+
 	rxcpp::subjects::subject<SequenceItem>	m_SequenceItemFlowOutSubj;
 
 	rxcpp::subjects::subject<float>			m_FrameLoadProgressFlowOutSubj;
@@ -103,7 +107,9 @@ void PlayerModel::Init()
 		if (!m_Impl->m_Settings->LoadedVideoFilepath.empty())
 		{
 			this->LoadFile(m_Impl->m_Settings->LoadedVideoFilepath);
-			this->Seek(m_Impl->m_Settings->CurrentFrameId);
+			//this->Seek(m_Impl->m_Settings->CurrentFrameId);
+			//BufferCPU<uchar4> firstFrame = m_Impl->m_DecodingNode->GetFrame(0);
+			//m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(firstFrame);
 		}
 	}, [this](std::exception_ptr ptr) 
 	{
@@ -147,7 +153,8 @@ void PlayerModel::Init()
 	///	Prefetching frames completed notification task:
 	///	set is generating to false
 	///================================================
-	m_Impl->m_DecodingNode->PrefetchFramesCompleted().observe_on(m_Impl->m_Coord->ModelCoordination())
+	m_Impl->m_DecodingNode->PrefetchFramesCompleted()
+		//.observe_on(m_Impl->m_Coord->ModelCoordination())
 		.subscribe([this](auto _)
 	{
 		m_Impl->m_IsGenerating = false;
@@ -159,6 +166,22 @@ void PlayerModel::Init()
 		.subscribe([this](const std::pair<int, BufferCPU<uchar4>>& frameData) 
 	{
 		m_Impl->m_FrameMap.insert(frameData);	
+	});
+
+	m_Impl->m_ChromaKeyBGFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](auto _) 
+	{
+		m_Impl->m_DecodingNode->SetChromaKeyBGEnabled(true);
+		m_Impl->m_DecodingNode->SetChromaKeyBGVal(make_uchar4(0, 255, 0, 255));
+		this->Stop();
+		//m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+	});
+
+	m_Impl->m_RemoveChromaKeyBGFlowInSubj.get_observable().as_dynamic()
+		.subscribe([this](auto _) 
+	{
+		m_Impl->m_DecodingNode->SetChromaKeyBGEnabled(false);
+		this->Stop();
 	});
 }
 ///	\brief destroy the player
@@ -186,7 +209,7 @@ void PlayerModel::LoadFile(const std::string& filepath)
 	/// check if there is alreaduy a file loaded
 	if (!m_Impl->m_Settings->LoadedVideoFilepath.empty() || m_Impl->m_DecodingNode->IsGenerating() || m_Impl->m_IsPlaying.load(std::memory_order_seq_cst))
 	{
-		Destroy();
+		//Destroy();
 	}
 	std::string filename = std::filesystem::path(filepath).filename().generic_string();
 	std::string msg = "Loading: " + filename;
@@ -369,28 +392,35 @@ void PlayerModel::Seek(int framePos)
 			m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 			m_Impl->m_FrameMap.erase(framePos);
 		}
-		if (
-			(m_Impl->m_FrameMap.size() < (m_Impl->k_FrameQueueSizeThreshold * m_Impl->k_FrameQueueSizeFactor))
-			&& (!m_Impl->m_IsGenerating)
-			&& (lastFrameId != frameCount - 1))
+		bool frameMapSize = m_Impl->m_FrameMap.size() < (m_Impl->k_FrameQueueSizeThreshold * m_Impl->k_FrameQueueSizeFactor);
+		bool isGenerating = !m_Impl->m_IsGenerating;
+		bool lastFrame = lastFrameId != frameCount - 1;
+		if (frameMapSize && isGenerating && lastFrame)
 		{
 			m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 		}
+	}
+	else
+	{
+		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 	}
 }
 ///	\brief seek forward one frame
 void PlayerModel::SeekForward()
 {
-	int frame = m_Impl->m_Settings->CurrentFrameId++;
+	int frame = m_Impl->m_Settings->CurrentFrameId + 1;
 	auto it = m_Impl->m_FrameMap.find(frame);
 	if (it != m_Impl->m_FrameMap.end())
 	{
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(it->second);
 		m_Impl->m_Settings->CurrentFrameId = frame;
+		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 	}
 	else
 	{	
-		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrame(m_Impl->m_Settings->CurrentFrameId));
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrame(frame));
+		m_Impl->m_Settings->CurrentFrameId = frame;
+		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 		m_Impl->m_FrameMap.clear();
 		m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
 		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
@@ -399,19 +429,26 @@ void PlayerModel::SeekForward()
 ///	\brief seek backward one frame
 void PlayerModel::SeekBackward()
 {
-	int frame = m_Impl->m_Settings->CurrentFrameId--;
+	int frame = m_Impl->m_Settings->CurrentFrameId - 1;
 	auto it = m_Impl->m_FrameMap.find(frame);
 	if (it != m_Impl->m_FrameMap.end())
 	{
 		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(it->second);
 		m_Impl->m_Settings->CurrentFrameId = frame;
+		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 	}
 	else
 	{
-		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrame(m_Impl->m_Settings->CurrentFrameId));
+		while (m_Impl->m_DecodingNode->IsGenerating())
+		{
+
+		}
+		m_Impl->m_FrameFlowOutSubj.get_subscriber().on_next(m_Impl->m_DecodingNode->GetFrame(frame));
+		m_Impl->m_Settings->CurrentFrameId = frame;
+		m_Impl->m_CurrentFrameIdFlowOutSubj.get_subscriber().on_next(m_Impl->m_Settings->CurrentFrameId);
 		m_Impl->m_FrameMap.clear();
-		m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
-		m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
+		//m_Impl->m_DecodingNode->SetCurrentFramePos(m_Impl->m_Settings->CurrentFrameId);
+		//m_Impl->m_StartPrefetchEventSubj.get_subscriber().on_next(nullptr);
 	}
 }
 ///	\brief set the number of frames to prefetch
@@ -516,6 +553,14 @@ rxcpp::observable<void*> fu::fusion::PlayerModel::OnVideoLoaded()
 rxcpp::observable<SequenceItem> fu::fusion::PlayerModel::SequenceItemFlowOut()
 {
 	return m_Impl->m_SequenceItemFlowOutSubj.get_observable().as_dynamic();
+}
+rxcpp::observer<void*> PlayerModel::ChromaKeyBGFlowIn()
+{
+	return m_Impl->m_ChromaKeyBGFlowInSubj.get_subscriber().get_observer().as_dynamic();
+}
+rxcpp::observer<void*> PlayerModel::RemoveChromaKeyBGFlowIn()
+{
+	return m_Impl->m_RemoveChromaKeyBGFlowInSubj.get_subscriber().get_observer().as_dynamic();
 }
 rxcpp::observable<std::string> PlayerModel::ProgressMessageFlowOut()
 {
