@@ -198,7 +198,8 @@ void PlayerModel::Destroy()
 
 	}
 	/// Stop (clears frame queue)
-	Stop();
+	if (m_Impl->m_IsPlaying)
+		Stop();
 	/// Release the decoding node
 	m_Impl->m_DecodingNode->Release();
 }

@@ -207,6 +207,23 @@ target_include_directories(Fusion PRIVATE "${3rdPartyPath}/rapidjson/include")
 # STB
 #####
 target_include_directories(Fusion PUBLIC "${3rdPartyPath}/stb")
+# we depend on cpprest-sdk
+set(CPPRESTSDK_INCLUDE_DIR CACHE STRING "cpprest-sdk include directory")
+set(CPPRESTSDK_LIBRARY_DIR CACHE STRING "cpprest-sdk libraries directory")
+# replace backslashes
+STRING(REGEX REPLACE "\\\\" "/" CPPRESTSDK_INCLUDE_DIR "${CPPRESTSDK_INCLUDE_DIR}")
+STRING(REGEX REPLACE "\\\\" "/" CPPRESTSDK_LIBRARY_DIR "${CPPRESTSDK_LIBRARY_DIR}")
+target_include_directories(Fusion PUBLIC "${CPPRESTSDK_INCLUDE_DIR}")
+target_link_libraries(Fusion PUBLIC "${CPPRESTSDK_LIBRARY_DIR}/cpprest_2_10.lib")
+# we depend on curl
+set(CURL_INCLUDE_DIR CACHE STRING "curl include directory")
+set(CURL_LIBRARY_DIR CACHE STRING "curl libraries directory")
+# replace backslashes
+STRING(REGEX REPLACE "\\\\" "/" CURL_INCLUDE_DIR "${CURL_INCLUDE_DIR}")
+STRING(REGEX REPLACE "\\\\" "/" CURL_LIBRARY_DIR "${CURL_LIBRARY_DIR}")
+
+target_include_directories(Fusion PUBLIC "${CURL_INCLUDE_DIR}")
+target_link_libraries(Fusion PUBLIC "${CURL_LIBRARY_DIR}/libcurl_imp.lib")
 ###################
 # FusionTranscoder
 ###################

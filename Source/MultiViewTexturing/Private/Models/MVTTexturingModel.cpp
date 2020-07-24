@@ -33,6 +33,7 @@ struct MVTModel::Impl
 	static constexpr const char* k_MergedTextureOuputFilename	= "texels";
 	static constexpr const char* k_DeformedFramesFolder			= "deformed_frames";
 	static constexpr const char* k_TSPExecutable = "Resources\\TSP\\TextureStitching.exe";
+	static constexpr const char* k_CalibrationFilename = "calibration.json";
 	/// ray tracing related
 	rt::ContextComp							m_ContextComp;
 	rt::AccelerationComp					m_TopLevelAcceleration;
@@ -466,7 +467,7 @@ void MVTModel::Init()
 			+ directoryToMerge + "\\" + weights + " "
 			+ "--multi --out " + m_Impl->m_OutputDir + "\\temp\\" + ss.str();
 
-		//std::system(cli.c_str());
+		std::system(cli.c_str());
 		/// delete the folder with the separate multi view data
 		for (auto& path : std::experimental::filesystem::directory_iterator(directoryToMerge))
 		{
@@ -660,16 +661,19 @@ void MVTModel::Init()
 				std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
 				std::system(cli.c_str());
 				// delete temp data
-				for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+				if (!m_Impl->m_SaveAnimatedMeshEnabled)
 				{
-					if (!filesystem::is_directory(entry))
+					for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+					{
+						if (!filesystem::is_directory(entry))
+							filesystem::remove(entry);
+					}
+					for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
+					{
 						filesystem::remove(entry);
+					}
+					filesystem::remove(m_Impl->m_OutputDir);
 				}
-				for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir))
-				{
-					filesystem::remove(entry);
-				}
-				filesystem::remove(m_Impl->m_OutputDir);
 			}
 			else
 			{
@@ -683,10 +687,14 @@ void MVTModel::Init()
 				std::string filepath = m_Impl->m_ExportDir + "\\" + std::string(m_Impl->k_MergedTextureOuputFilename) + ".avi";
 				m_Impl->m_EncodingNode->SetOutputFilepath(filepath);
 				/// 
-				m_Impl->m_EncodingNode->ExportVideo();
+				if (!m_Impl->m_SaveAnimatedMeshEnabled)
+				{
+					m_Impl->m_EncodingNode->ExportVideo();
+				}
 				try
 				{
 					std::string skeletonFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkeletonFilename;
+					std::string calibrationFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->k_CalibrationFilename;
 					std::string skinningFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_SkinningFilename;
 					std::string tempMeshFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TemplateMeshFilename;
 					std::string trackedFilepath = m_Impl->m_TempFolderPath + "\\" + m_Impl->m_TrackedParamsFilename;
@@ -694,17 +702,21 @@ void MVTModel::Init()
 					filesystem::copy_file(skinningFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_SkinningFilename);
 					filesystem::copy_file(tempMeshFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TemplateMeshFilename);
 					filesystem::copy_file(trackedFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->m_TrackedParamsFilename);
+					filesystem::copy_file(calibrationFilepath, m_Impl->m_ExportDir + "\\" + m_Impl->k_CalibrationFilename);
 				}
 				catch (std::exception& ex)
 				{
 					LOG_ERROR << ex.what();
 				}
-				/// delete temp folder data before zipping
-				for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
+				if (!m_Impl->m_SaveAnimatedMeshEnabled)
 				{
-					filesystem::remove(entry);
+					/// delete temp folder data before zipping
+					for (auto entry : filesystem::recursive_directory_iterator(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath))
+					{
+						filesystem::remove(entry);
+					}
+					filesystem::remove(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
 				}
-				filesystem::remove(m_Impl->m_OutputDir + "\\" + m_Impl->m_TempFolderPath);
 				// zip the whole file
 				std::string cli = std::string(m_Impl->k_7zipPath) + " a -tzip " + m_Impl->m_ExportDir + ".fu " + m_Impl->m_ExportDir;
 				std::system(cli.c_str());

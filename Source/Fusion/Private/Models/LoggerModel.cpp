@@ -44,7 +44,7 @@ void LoggerModel::Init()
 #if defined(_DEBUG)
 	plog::init(plog::debug, m_Impl->m_ConsoleAppender.get()).addAppender(m_Impl->m_FileAppender.get());
 #else
-	plog::init(plog::error, m_Impl->m_ConsoleAppender.get()).addAppender(m_Impl->m_FileAppender.get());
+	plog::init(plog::info, m_Impl->m_ConsoleAppender.get()).addAppender(m_Impl->m_FileAppender.get());
 #endif	///	!_DEBUG
 }
 }	///	!namespace fusion

@@ -37,6 +37,9 @@ public:
 	rxcpp::observable<void*> OnWindowsMenu_RayTracingControlClicked();
 	rxcpp::observable<void*> OnWindowsMenu_NormalsResultClicked();
 	rxcpp::observable<void*> OnWindowsMenu_IlluminationResultClicked();
+
+	rxcpp::observable<void*> OnOmniconnectMenu_ShowVideoListClicked();
+	rxcpp::observable<void*> OnOmniconnectMenu_UploadMentorLayerClicked();
 private:
 	struct Impl;
 	spimpl::unique_impl_ptr<Impl> m_Impl;

@@ -202,6 +202,16 @@ rxcpp::observable<void*> fu::fusion::MainToolbarView::OnWindowsMenu_Illumination
 	return m_Impl->WindowsMenu_IlluminationResultClickedSubj.get_observable().as_dynamic();
 }
 
+rxcpp::observable<void*> MainToolbarView::OnOmniconnectMenu_ShowVideoListClicked()
+{
+	return m_Impl->Omniconnect_ShowVideoListClickedSubj.get_observable().as_dynamic();
+}
+
+rxcpp::observable<void*> MainToolbarView::OnOmniconnectMenu_UploadMentorLayerClicked()
+{
+	return m_Impl->Omniconnect_UploadMentorLayerClickedSubj.get_observable().as_dynamic();
+}
+
 rxcpp::observable<void*> fu::fusion::MainToolbarView::OnFileMenu_ExportFusedVideoClicked()
 {
 	return m_Impl->FileMenu_ExportFusedVideoClickedSubj.get_observable().as_dynamic();

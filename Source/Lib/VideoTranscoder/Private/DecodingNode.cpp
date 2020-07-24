@@ -46,6 +46,7 @@ struct DecodingNodeObj::Impl
 	double		m_FrameRate{ 0 };
 
 	cv::Mat		m_CameraMatrix;
+	cv::Mat		m_OptimalCamMatrix;
 	///	the actual opencv video decoder
 	dec_t		m_Decoder;
 	/// 
@@ -250,8 +251,14 @@ BufferCPU<uchar4> DecodingNodeObj::GetFrame(int id)
 		{
 			try
 			{
+				cv::Mat newCamMat = 
+					cv::getOptimalNewCameraMatrix(m_Impl->m_CameraMatrix, 
+						m_Impl->m_DistCoeffs, 
+						cv::Size(m_Impl->m_CurrentFrameNative.cols, m_Impl->m_CurrentFrameNative.rows), 
+						0, 
+						cv::Size(m_Impl->m_CurrentFrameNative.cols, m_Impl->m_CurrentFrameNative.rows));
 				cv::Mat undistorted;
-				cv::undistort(m_Impl->m_CurrentFrameNative, undistorted, m_Impl->m_CameraMatrix, m_Impl->m_DistCoeffs);
+				cv::undistort(m_Impl->m_CurrentFrameNative, undistorted, m_Impl->m_CameraMatrix, m_Impl->m_DistCoeffs, newCamMat);
 				m_Impl->m_CurrentFrameNative = undistorted;
 			}
 			catch (std::exception& ex)
@@ -376,6 +383,7 @@ void DecodingNodeObj::SetCameraMatrix(const BufferCPU<float>& mat)
 	cv::Mat camMat = cv::Mat::zeros(cv::Size(3, 3), CV_32FC1);
 	std::memcpy(camMat.data, mat->Data(), 9 * sizeof(float));
 	m_Impl->m_CameraMatrix = camMat;
+
 }
 void DecodingNodeObj::SetDisrtionCoefficients(const DistCoeffs & coeffs)
 {

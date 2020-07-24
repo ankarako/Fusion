@@ -13,6 +13,7 @@ class PerfcapPlayerModel;
 class VideoTracingModel;
 class FileExplorerView;
 class Coordination;
+class OmniconnectModel;
 
 class FusedExportPresenter : public app::Initializable
 {
@@ -23,13 +24,15 @@ public:
 	using video_tracing_model_ptr_t		= std::shared_ptr<VideoTracingModel>;
 	using fexp_view_ptr_t				= std::shared_ptr<FileExplorerView>;
 	using coord_ptr_t					= std::shared_ptr<Coordination>;
+	using omni_model_ptr_t				= std::shared_ptr<OmniconnectModel>;
 
-	FusedExportPresenter(model_ptr_t model, 
-		player_model_ptr_t player_model, 
-		perfcap_player_model_ptr_t perfcap_player_model, 
+	FusedExportPresenter(model_ptr_t model,
+		player_model_ptr_t player_model,
+		perfcap_player_model_ptr_t perfcap_player_model,
 		video_tracing_model_ptr_t video_tracing_model,
 		fexp_view_ptr_t fexp_view,
-		coord_ptr_t coord);
+		coord_ptr_t coord,
+		omni_model_ptr_t omni_model);
 	void Init();
 private:
 	struct Impl;

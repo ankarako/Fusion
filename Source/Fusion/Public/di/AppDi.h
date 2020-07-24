@@ -39,6 +39,7 @@
 #include <Models/WindowsMenuModel.h>
 #include <Models/FuImportModel.h>
 #include <Models/FusedExportModel.h>
+#include <Models/OmniConnectModel.h>
 /// Presenters
 #include <Presenters/PlayerControllerPresenter.h>
 #include <Presenters/PlayerViewportPresenter.h>
@@ -56,6 +57,7 @@
 #include <Presenters/FuImportPresenter.h>
 #include <Presenters/ProgressBarPresenter.h>
 #include <Presenters/FusedExportPresenter.h>
+#include <Presenters/OmniconnectMenuPresenter.h>
 ///	Widgets
 #include <Views/PlayerControllerView.h>
 #include <Views/PlayerViewportView.h>
@@ -69,6 +71,7 @@
 #include <Views/TransformationView.h>
 #include <Views/IlluminationResultView.h>
 #include <Views/ProgressBarView.h>
+#include <Views/OmniconnectVideoListView.h>
 
 namespace fu {
 namespace fusion {
@@ -116,7 +119,10 @@ namespace di {
 			FuImportPresenter,
 			ProgressBarPresenter,
 			FusedExportModel,
-			FusedExportPresenter
+			FusedExportPresenter,
+			OmniconnectModel,
+			OmniconnectVideoListView,
+			OmniconnectMenuPresenter
 			>(),
 			boost::di::bind<app::Updateable * []>().to<
 			app::AppWindow,

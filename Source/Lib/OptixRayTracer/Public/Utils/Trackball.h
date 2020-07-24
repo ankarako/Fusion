@@ -27,6 +27,11 @@ public:
 
 	void UpdateTracking(int x, int y, int /*canvasWidth*/, int /*canvasHeight*/)
 	{
+		if (!m_PerformTracking)
+		{
+			StartTracking(x, y);
+			return;
+		}
 		int deltaX = x - m_PrevPosX;
 		int deltaY = y - m_PrevPosX;
 
@@ -35,6 +40,7 @@ public:
 
 		m_Latitude = radians(std::min(89.0f, std::max(-89.0f, degrees(m_Latitude) + 0.5f * deltaY)));
 		m_Longitude = radians(fmod(degrees(m_Longitude) - 0.5f * deltaX, 360.0f));
+
 
 		if (!m_GimbalLock)
 		{

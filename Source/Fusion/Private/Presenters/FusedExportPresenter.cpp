@@ -4,6 +4,7 @@
 #include <Models/PerfcapPlayerModel.h>
 #include <Models/VideoTracingModel.h>
 #include <Views/FileExplorerView.h>
+#include <Models/OmniConnectModel.h>
 #include <Core/Coordination.h>
 
 namespace fu {
@@ -17,19 +18,22 @@ struct FusedExportPresenter::Impl
 	video_tracing_model_ptr_t	m_VideoTracingModel;
 	fexp_view_ptr_t				m_FexpView;
 	coord_ptr_t					m_Coord;
+	omni_model_ptr_t			m_OmniModel;
 
 	Impl(model_ptr_t model, 
 		player_model_ptr_t player_model, 
 		perfcap_player_model_ptr_t perfcap_player_model, 
 		video_tracing_model_ptr_t video_tracing_model,
 		fexp_view_ptr_t fexp_view,
-		coord_ptr_t coord)
+		coord_ptr_t coord,
+		omni_model_ptr_t omni_model)
 		: m_Model(model)
 		, m_PlayerModel(player_model)
 		, m_PerfcapPlayer(perfcap_player_model)
 		, m_VideoTracingModel(video_tracing_model)
 		, m_FexpView(fexp_view)
 		, m_Coord(coord)
+		, m_OmniModel(omni_model)
 	{ }
 };	///	!struct Impl
 
@@ -39,8 +43,9 @@ FusedExportPresenter::FusedExportPresenter(
 	perfcap_player_model_ptr_t perfcap_player_model, 
 	video_tracing_model_ptr_t video_tracing_model,
 	fexp_view_ptr_t fexp_view,
-	coord_ptr_t coord)
-	: m_Impl(spimpl::make_unique_impl<Impl>(model, player_model, perfcap_player_model, video_tracing_model, fexp_view, coord))
+	coord_ptr_t coord,
+	omni_model_ptr_t omni_model)
+	: m_Impl(spimpl::make_unique_impl<Impl>(model, player_model, perfcap_player_model, video_tracing_model, fexp_view, coord, omni_model))
 { }
 
 void FusedExportPresenter::Init()
@@ -65,6 +70,16 @@ void FusedExportPresenter::Init()
 		m_Impl->m_ExportingEnabled = true;
 		return filepath;
 	}).subscribe(m_Impl->m_Model->ExportMentorLayerFilepathFlowIn());
+
+
+	m_Impl->m_OmniModel->ExportMentorLayerFilepathFlowOut()
+		.observe_on(m_Impl->m_Coord->ModelCoordination())
+		.map([this](const std::string& filepath)
+	{
+		m_Impl->m_ExportingEnabled = true;
+		return filepath;
+	}).subscribe(m_Impl->m_Model->ExportMentorLayerFilepathFlowIn());
+
 
 
 	m_Impl->m_Model->StartedExportingMentorLayer()
